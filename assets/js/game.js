@@ -1,6 +1,8 @@
+
 const knight = document.getElementById('knight');
 const hotspots = document.querySelectorAll('.hotspot');
 const lockButtons = document.querySelectorAll('[data-lock-button]');
+const mapStage = document.querySelector('.map-stage');
 
 const backgroundMusic = document.getElementById('backgroundMusic');
 const volumeSlider = document.getElementById('volumeSlider');
@@ -23,6 +25,7 @@ const infoModalActions = document.getElementById('infoModalActions');
 const settingsButton = document.getElementById('settingsButton');
 const settingsModal = document.getElementById('settingsModal');
 const showQrButton = document.getElementById('showQrButton');
+const unlockAllButton = document.getElementById('unlockAllButton');
 const resetGameButton = document.getElementById('resetGameButton');
 const qrOverview = document.getElementById('qrOverview');
 
@@ -36,6 +39,7 @@ const STORAGE_AREA = 'sinnesmagie-last-area';
 const STORAGE_INTRO_SEEN = 'sinnesmagie-game-intro-seen';
 const STORAGE_VOLUME = 'sinnesmagie-volume';
 const STORAGE_FRAGMENTS = 'sinnesmagie-fragments';
+const STORAGE_LEVEL_PROGRESS = 'sinnesmagie-level-progress';
 
 const areaNames = {
   koenigsschloss: 'Königsschloss',
@@ -57,22 +61,30 @@ const levelPages = {
 };
 
 const fragmentMeta = {
-  farbenreich: { label: 'Sehen', color: '#ff6b6b', short: 'S' },
-  klangwald: { label: 'Hören', color: '#ffd166', short: 'H' },
-  tastminen: { label: 'Tasten', color: '#8d99ae', short: 'T' },
-  duftgarten: { label: 'Riechen', color: '#b388ff', short: 'R' },
-  flammenkueche: { label: 'Schmecken', color: '#ff7b54', short: 'G' }
+  farbenreich: { label: 'Kristall des Sehens', image: 'assets/images/fragments/red.png' },
+  klangwald: { label: 'Kristall des Hörens', image: 'assets/images/fragments/blue.png' },
+  tastminen: { label: 'Kristall des Tastens', image: 'assets/images/fragments/gold.png' },
+  duftgarten: { label: 'Kristall des Riechens', image: 'assets/images/fragments/purple.png' },
+  flammenkueche: { label: 'Kristall des Schmeckens', image: 'assets/images/fragments/green.png' }
+};
+
+const fragmentOrbitPositions = {
+  farbenreich: { x: 42, y: 16.4, delay: 0 },
+  klangwald: { x: 50, y: 12.2, delay: 0.6 },
+  tastminen: { x: 58, y: 16.4, delay: 1.2 },
+  duftgarten: { x: 45.5, y: 20.8, delay: 1.8 },
+  flammenkueche: { x: 54.5, y: 20.8, delay: 2.4 }
 };
 const fragmentAreas = Object.keys(fragmentMeta);
 
 const introSlides = [
   {
     title: 'Die Suche beginnt',
-    text: 'Der Zauberer hat fünf Schlüsselfragmente in verschiedenen Bereichen des Königreichs versteckt. Finde sie, öffne sein Schloss und hole die Sinnesmagie zurück.'
+    text: 'Der Zauberer hat fünf Kristallfragmente in verschiedenen Bereichen des Königreichs versteckt. Finde sie, öffne sein Schloss und hole die Sinnesmagie zurück.'
   },
   {
     title: 'So schaltest du Level frei',
-    text: 'An den Stationen im Raum findest du QR-Codes. Scanne sie, um Level freizuschalten und die Schlüsselfragmente zu erspielen.'
+    text: 'An den Stationen im Raum findest du QR-Codes. Scanne sie, um Level freizuschalten und die Kristalle zu erspielen.'
   },
   {
     title: 'Spielfeld bedienen',
@@ -86,7 +98,7 @@ let html5QrCode = null;
 let scannerRunning = false;
 let scannerBusy = false;
 let pendingNavigation = null;
-let fragmentHud = null;
+let fragmentOrbitLayer = null;
 
 function readUnlocked() {
   try {
@@ -111,8 +123,25 @@ function readFragments() {
   }
 }
 
+function saveFragments(fragmentSet) {
+  localStorage.setItem(STORAGE_FRAGMENTS, JSON.stringify([...fragmentSet]));
+}
+
 function allFragmentsCollected() {
   return readFragments().size >= fragmentAreas.length;
+}
+
+function readLevelProgress() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_LEVEL_PROGRESS) || '{}');
+    return saved && typeof saved === 'object' ? saved : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveLevelProgress(progress) {
+  localStorage.setItem(STORAGE_LEVEL_PROGRESS, JSON.stringify(progress));
 }
 
 let unlockedAreas = readUnlocked();
@@ -136,45 +165,41 @@ function applyVolume(value) {
 
 function startMusic() {
   applyVolume(Number(volumeSlider.value) / 100);
-  backgroundMusic.play().catch(() => {
-    // Browser blockiert Wiedergabe, bis erneut interagiert wird.
-  });
+  backgroundMusic.play().catch(() => {});
 }
 
-function ensureFragmentHud() {
-  if (fragmentHud) return fragmentHud;
-  fragmentHud = document.createElement('div');
-  fragmentHud.className = 'fragment-hud';
-  fragmentHud.id = 'fragmentHud';
-  fragmentHud.innerHTML = `
-    <div class="fragment-hud-title">Schlüsselfragmente</div>
-    <div class="fragment-hud-slots" id="fragmentHudSlots"></div>
-    <div class="fragment-hud-text" id="fragmentHudText"></div>
-  `;
-  document.querySelector('.overworld').appendChild(fragmentHud);
-  return fragmentHud;
+function ensureFragmentOrbitLayer() {
+  if (fragmentOrbitLayer) return fragmentOrbitLayer;
+  fragmentOrbitLayer = document.createElement('div');
+  fragmentOrbitLayer.id = 'fragmentOrbitLayer';
+  fragmentOrbitLayer.className = 'fragment-orbit-layer';
+  mapStage.appendChild(fragmentOrbitLayer);
+  return fragmentOrbitLayer;
 }
 
 function renderFragments() {
-  const hud = ensureFragmentHud();
-  const slots = hud.querySelector('#fragmentHudSlots');
-  const text = hud.querySelector('#fragmentHudText');
+  const layer = ensureFragmentOrbitLayer();
   const fragments = readFragments();
+  layer.innerHTML = '';
 
-  slots.innerHTML = fragmentAreas.map(area => {
+  [...fragments].forEach(area => {
     const meta = fragmentMeta[area];
-    const collected = fragments.has(area);
-    return `
-      <div class="fragment-slot ${collected ? 'collected' : ''}" title="${meta.label}" style="--fragment-color:${meta.color}">
-        <span>${meta.short}</span>
-      </div>
-    `;
-  }).join('');
+    const pos = fragmentOrbitPositions[area];
+    if (!meta || !pos) return;
+    const wrap = document.createElement('div');
+    wrap.className = 'castle-fragment-orbit';
+    wrap.style.setProperty('--x', `${pos.x}%`);
+    wrap.style.setProperty('--y', `${pos.y}%`);
+    wrap.style.setProperty('--delay', `${pos.delay}s`);
+    wrap.title = meta.label;
 
-  const total = fragments.size;
-  text.textContent = allFragmentsCollected()
-    ? 'Alle Fragmente gefunden – das Zauberschloss kann zerbrochen werden.'
-    : `${total} / ${fragmentAreas.length} Fragmente gesammelt`;
+    const img = document.createElement('img');
+    img.src = meta.image;
+    img.alt = meta.label;
+    img.draggable = false;
+    wrap.appendChild(img);
+    layer.appendChild(wrap);
+  });
 }
 
 function renderInfoActions(options = {}) {
@@ -234,7 +259,7 @@ function showLockedInfo(area) {
     if (allFragmentsCollected()) {
       showInfo(
         'Zauberschloss versiegelt',
-        'Alle fünf Fragmente sind gesammelt. Nutze ihre Magie, um das Schloss zu zerbrechen und den Zauberer herauszufordern.',
+        'Alle fünf Kristalle sind gesammelt. Nutze ihre Magie, um das Schloss zu zerbrechen und den Zauberer herauszufordern.',
         {
           showScanButton: false,
           extraButtons: [
@@ -249,7 +274,7 @@ function showLockedInfo(area) {
     } else {
       showInfo(
         'Zauberschloss ist gesperrt',
-        `Du brauchst zuerst alle fünf Fragmente. Bisher gesammelt: ${total} / ${fragmentAreas.length}.`,
+        `Du brauchst zuerst alle fünf Kristalle. Bisher gesammelt: ${total} / ${fragmentAreas.length}.`,
         { showScanButton: false }
       );
     }
@@ -274,7 +299,14 @@ function updateLocks() {
     if (area === 'zauberschloss') {
       button.classList.toggle('castle-ready', canBreakCastle);
       button.textContent = canBreakCastle ? '✨' : '🔒';
-      button.setAttribute('aria-label', unlocked ? 'Zauberschloss ist geöffnet' : canBreakCastle ? 'Zauberschloss kann zerbrochen werden' : 'Zauberschloss ist gesperrt');
+      button.setAttribute(
+        'aria-label',
+        unlocked
+          ? 'Zauberschloss ist geöffnet'
+          : canBreakCastle
+            ? 'Zauberschloss kann zerbrochen werden'
+            : 'Zauberschloss ist gesperrt'
+      );
     }
   });
   renderFragments();
@@ -296,7 +328,7 @@ function breakCastleSeal() {
   showInfo(
     newlyUnlocked ? 'Zauberschloss geöffnet' : 'Zauberschloss ist bereits geöffnet',
     newlyUnlocked
-      ? 'Die Fragmente zerbrechen das Schloss. Jetzt kannst du das Zauberschloss betreten.'
+      ? 'Die Kristalle zerbrechen das Schloss. Jetzt kannst du das Zauberschloss betreten.'
       : 'Das Zauberschloss ist bereits geöffnet.',
     { showScanButton: false }
   );
@@ -308,6 +340,11 @@ function moveKnightTo(button) {
   if (!isUnlocked(area)) {
     showLockedInfo(area);
     return;
+  }
+
+  if (pendingNavigation) {
+    clearTimeout(pendingNavigation);
+    pendingNavigation = null;
   }
 
   const x = button.dataset.targetX;
@@ -357,16 +394,8 @@ function normalizeScannedArea(rawText) {
 
 async function stopScanner() {
   if (!html5QrCode || !scannerRunning) return;
-  try {
-    await html5QrCode.stop();
-  } catch {
-    // ignore stop errors
-  }
-  try {
-    await html5QrCode.clear();
-  } catch {
-    // ignore clear errors
-  }
+  try { await html5QrCode.stop(); } catch {}
+  try { await html5QrCode.clear(); } catch {}
   scannerRunning = false;
 }
 
@@ -391,7 +420,7 @@ async function onScanSuccess(decodedText) {
     await closeScanner();
     showInfo(
       'Zauberschloss bleibt versiegelt',
-      'Das Zauberschloss wird nicht per QR-Code geöffnet. Sammle zuerst alle fünf Fragmente und zerbrich dann das Schloss auf der Overworld.',
+      'Das Zauberschloss wird nicht per QR-Code geöffnet. Sammle zuerst alle fünf Kristalle und zerbrich dann das Schloss auf der Overworld.',
       { showScanButton: false }
     );
     scannerBusy = false;
@@ -452,7 +481,7 @@ function applyUnlockFromUrl() {
   if (area === 'zauberschloss') {
     showInfo(
       'Zauberschloss bleibt versiegelt',
-      'Das Zauberschloss öffnet sich nicht per Direktlink. Sammle zuerst alle Fragmente und zerbrich dann das Schloss auf der Overworld.',
+      'Das Zauberschloss öffnet sich nicht per Direktlink. Sammle zuerst alle Kristalle und zerbrich dann das Schloss auf der Overworld.',
       { showScanButton: false }
     );
     const cleanUrl = `${window.location.origin}${window.location.pathname}`;
@@ -482,10 +511,7 @@ function renderIntro() {
   introText.textContent = slide.text;
   introBackButton.classList.toggle('hidden', introIndex === 0);
   introNextButton.textContent = introIndex === introSlides.length - 1 ? 'Abenteuer beginnen' : 'Weiter';
-
-  introDots.innerHTML = introSlides.map((_, index) =>
-    `<span class="slider-dot ${index === introIndex ? 'active' : ''}"></span>`
-  ).join('');
+  introDots.innerHTML = introSlides.map((_, index) => `<span class="slider-dot ${index === introIndex ? 'active' : ''}"></span>`).join('');
 }
 
 function openIntro() {
@@ -516,6 +542,26 @@ function maybeShowEntryModal() {
   }
 }
 
+function unlockAllForTesting() {
+  const confirmed = window.confirm('Alle Gebiete, Kristalle und Levelpfade für Testzwecke freischalten?');
+  if (!confirmed) return;
+
+  unlockedAreas = new Set(['koenigsschloss', ...Object.keys(levelPages)]);
+  saveUnlocked(unlockedAreas);
+
+  saveFragments(new Set(fragmentAreas));
+
+  const progress = {};
+  Object.keys(levelPages).forEach(area => {
+    progress[area] = { level1Completed: true, level2Completed: true };
+  });
+  saveLevelProgress(progress);
+
+  updateLocks();
+  closeSettings();
+  showInfo('Test-Freischaltung aktiv', 'Alle Level, Kristalle und Wege wurden für den Test freigeschaltet.', { showScanButton: false });
+}
+
 hotspots.forEach(button => {
   button.addEventListener('click', () => moveKnightTo(button));
 });
@@ -534,7 +580,6 @@ introNextButton.addEventListener('click', () => {
     renderIntro();
     return;
   }
-
   closeIntroAndStart();
 });
 
@@ -552,21 +597,21 @@ returnContinueButton.addEventListener('click', () => {
 
 showQrButton.addEventListener('click', () => {
   qrOverview.classList.toggle('hidden');
-  showQrButton.textContent = qrOverview.classList.contains('hidden')
-    ? 'QR-Codes anzeigen'
-    : 'QR-Codes ausblenden';
+  showQrButton.textContent = qrOverview.classList.contains('hidden') ? 'QR-Codes anzeigen' : 'QR-Codes ausblenden';
 });
 
-resetGameButton.addEventListener('click', () => {
-  const confirmed = window.confirm('Spiel wirklich zurücksetzen? Alle Freischaltungen, Fragmente und gespeicherten Positionen werden gelöscht.');
-  if (!confirmed) return;
+if (unlockAllButton) {
+  unlockAllButton.addEventListener('click', unlockAllForTesting);
+}
 
+resetGameButton.addEventListener('click', () => {
+  const confirmed = window.confirm('Spiel wirklich zurücksetzen? Alle Freischaltungen, Kristalle und gespeicherten Positionen werden gelöscht.');
+  if (!confirmed) return;
   Object.keys(localStorage).forEach(key => {
     if (key.startsWith('sinnesmagie-')) {
       localStorage.removeItem(key);
     }
   });
-
   window.location.href = 'index.html';
 });
 
@@ -574,32 +619,13 @@ volumeSlider.addEventListener('input', event => {
   applyVolume(Number(event.target.value) / 100);
 });
 
-document.querySelectorAll('[data-close-modal]').forEach(button => {
-  button.addEventListener('click', closeInfo);
-});
+document.querySelectorAll('[data-close-modal]').forEach(button => button.addEventListener('click', closeInfo));
+document.querySelectorAll('[data-close-settings]').forEach(button => button.addEventListener('click', closeSettings));
+document.querySelectorAll('[data-close-scanner]').forEach(button => button.addEventListener('click', () => closeScanner()));
 
-document.querySelectorAll('[data-close-settings]').forEach(button => {
-  button.addEventListener('click', closeSettings);
-});
-
-document.querySelectorAll('[data-close-scanner]').forEach(button => {
-  button.addEventListener('click', () => {
-    closeScanner();
-  });
-});
-
-infoModal.addEventListener('click', event => {
-  if (event.target === infoModal) closeInfo();
-});
-
-settingsModal.addEventListener('click', event => {
-  if (event.target === settingsModal) closeSettings();
-});
-
-scannerModal.addEventListener('click', event => {
-  if (event.target === scannerModal) closeScanner();
-});
-
+infoModal.addEventListener('click', event => { if (event.target === infoModal) closeInfo(); });
+settingsModal.addEventListener('click', event => { if (event.target === settingsModal) closeSettings(); });
+scannerModal.addEventListener('click', event => { if (event.target === scannerModal) closeScanner(); });
 settingsButton.addEventListener('click', openSettings);
 
 const savedX = localStorage.getItem(STORAGE_POS_X);
@@ -610,7 +636,6 @@ if (savedX && savedY) {
 }
 
 applyVolume(currentVolume());
-ensureFragmentHud();
 updateLocks();
 applyUnlockFromUrl();
 maybeShowEntryModal();

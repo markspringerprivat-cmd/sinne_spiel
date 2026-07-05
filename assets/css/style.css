@@ -1195,3 +1195,94 @@ p { line-height: 1.5; }
     font-size: .9rem;
   }
 }
+
+
+/* ===== v6 Kristalle auf Overworld ===== */
+.fragment-hud { display: none !important; }
+.fragment-orbit-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+.castle-fragment-orbit {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  width: clamp(38px, 7.8%, 66px);
+  transform: translate(-50%, -50%);
+  animation: fragmentFloat 3.2s ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
+  filter: drop-shadow(0 8px 12px rgba(0,0,0,.24));
+}
+.castle-fragment-orbit img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+@keyframes fragmentFloat {
+  0%, 100% { transform: translate(-50%, -50%) translateY(0) rotate(-4deg) scale(1); }
+  50% { transform: translate(-50%, -50%) translateY(-8px) rotate(4deg) scale(1.06); }
+}
+
+/* ===== Levelpunkte und Pfad ===== */
+.level-path-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 6;
+  pointer-events: none;
+  overflow: visible;
+}
+.level-guide-line {
+  fill: none;
+  stroke: rgba(255,255,255,.95);
+  stroke-width: 1.1;
+  stroke-linecap: round;
+  stroke-dasharray: 1.1 1.3;
+  animation: marchingPath 1.1s linear infinite;
+  filter: drop-shadow(0 0 4px rgba(255,255,255,.45));
+}
+@keyframes marchingPath {
+  from { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: -4.8; }
+}
+.level-marker::after {
+  width: clamp(40px, 7.2vmin, 56px) !important;
+  height: clamp(40px, 7.2vmin, 56px) !important;
+  border-width: 3px !important;
+}
+.level-marker.available::after {
+  background: rgba(255,255,255,.4) !important;
+  box-shadow: 0 0 16px rgba(255,255,255,.28), inset 0 0 14px rgba(255,255,255,.24) !important;
+}
+.level-marker.completed::after {
+  background: rgba(99, 221, 105, .9) !important;
+  border-color: rgba(228,255,230,.96) !important;
+  box-shadow: 0 0 20px rgba(76,200,85,.45), inset 0 0 14px rgba(255,255,255,.26) !important;
+}
+.level-marker.locked::after {
+  background: rgba(161,169,184,.42) !important;
+  border-color: rgba(219,224,232,.68) !important;
+  box-shadow: 0 0 10px rgba(0,0,0,.12), inset 0 0 12px rgba(255,255,255,.12) !important;
+}
+.level-marker.completed,
+.level-marker.available { cursor: pointer; }
+.level-marker.locked { cursor: not-allowed; }
+.level-knight {
+  width: clamp(54px, 14vmin, 108px) !important;
+}
+
+/* ===== Kristall-Fund im Quizpopup ===== */
+.fragment-mini-image {
+  width: 62px;
+  height: 62px;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 16px rgba(0,0,0,.18));
+}
+
+/* Kleine Optimierung für den Testbutton */
+#unlockAllButton {
+  margin-top: 4px;
+}

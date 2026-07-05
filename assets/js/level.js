@@ -1,13 +1,17 @@
+
+const levelStage = document.querySelector('.level-map-stage');
 const levelKnight = document.getElementById('levelKnight');
-const levelMarkers = document.querySelectorAll('.level-marker');
+const levelMarkers = [...document.querySelectorAll('.level-marker')];
 const levelPopup = document.getElementById('levelPopup');
 const levelPopupTitle = document.getElementById('levelPopupTitle');
 const levelPopupText = document.getElementById('levelPopupText');
 const levelPopupClose = document.getElementById('levelPopupClose');
 const levelMusic = document.getElementById('levelMusic');
+const backButton = document.querySelector('.level-back-button');
 
 const STORAGE_VOLUME = 'sinnesmagie-volume';
 const STORAGE_FRAGMENTS = 'sinnesmagie-fragments';
+const STORAGE_LEVEL_PROGRESS = 'sinnesmagie-level-progress';
 const QUIZ_SECONDS = 30;
 const QUIZ_TRANSITION_MS = 560;
 const BATTLE_ANIMATION_MS = 1500;
@@ -15,19 +19,24 @@ const STRIKE_RESET_MS = 760;
 const DAMAGE_RESET_MS = 760;
 const ATTACK_IMPACT_MS = 320;
 const ENEMY_IMPACT_MS = 320;
+const MOVE_MS = 950;
 
+const currentArea = window.location.pathname.split('/').pop().replace('.html', '');
 const FRAGMENT_REWARDS = {
-  farbenreich: { name: 'Seh-Fragment', color: '#ff6b6b', icon: '◈' },
-  klangwald: { name: 'Hör-Fragment', color: '#ffd166', icon: '◈' },
-  tastminen: { name: 'Tast-Fragment', color: '#8d99ae', icon: '◈' },
-  duftgarten: { name: 'Duft-Fragment', color: '#b388ff', icon: '◈' },
-  flammenkueche: { name: 'Geschmacks-Fragment', color: '#ff7b54', icon: '◈' }
+  farbenreich: { name: 'Kristall des Sehens', image: '../assets/images/fragments/red.png' },
+  klangwald: { name: 'Kristall des Hörens', image: '../assets/images/fragments/blue.png' },
+  tastminen: { name: 'Kristall des Tastens', image: '../assets/images/fragments/gold.png' },
+  duftgarten: { name: 'Kristall des Riechens', image: '../assets/images/fragments/purple.png' },
+  flammenkueche: { name: 'Kristall des Schmeckens', image: '../assets/images/fragments/green.png' }
 };
-
 const ENEMIES_WITH_ATTACK_ASSET = new Set(['farbgolem', 'waldgeist', 'maulwurf', 'duftgeist', 'feuergolem']);
 
 let activeQuiz = null;
 let quizTimer = null;
+let popupCloseHandler = null;
+let currentNode = 'start';
+let guideSvg = null;
+
 const sfxCorrect = new Audio('../assets/audio/richtig_1.mp3');
 const sfxWrong = new Audio('../assets/audio/falsch_3.mp3');
 
@@ -38,9 +47,7 @@ function playSfx(audio) {
     audio.currentTime = 0;
     audio.volume = currentVolume();
     audio.play().catch(() => {});
-  } catch (err) {
-    // Ignorieren
-  }
+  } catch {}
 }
 
 function currentVolume() {
@@ -60,6 +67,37 @@ function readFragments() {
 
 function saveFragments(fragmentSet) {
   localStorage.setItem(STORAGE_FRAGMENTS, JSON.stringify([...fragmentSet]));
+}
+
+function readProgress() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_LEVEL_PROGRESS) || '{}');
+    return saved && typeof saved === 'object' ? saved : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeProgress(progress) {
+  localStorage.setItem(STORAGE_LEVEL_PROGRESS, JSON.stringify(progress));
+}
+
+function getAreaProgress() {
+  const progress = readProgress();
+  return {
+    level1Completed: !!progress[currentArea]?.level1Completed,
+    level2Completed: !!progress[currentArea]?.level2Completed
+  };
+}
+
+function setAreaProgress(patch) {
+  const progress = readProgress();
+  progress[currentArea] = {
+    level1Completed: !!progress[currentArea]?.level1Completed,
+    level2Completed: !!progress[currentArea]?.level2Completed,
+    ...patch
+  };
+  writeProgress(progress);
 }
 
 function awardFragment(quizId) {
@@ -84,9 +122,7 @@ function awardFragment(quizId) {
 function startLevelMusic() {
   if (!levelMusic) return;
   levelMusic.volume = currentVolume();
-  levelMusic.play().catch(() => {
-    // Browser erlaubt Musik erst nach Nutzerinteraktion.
-  });
+  levelMusic.play().catch(() => {});
 }
 
 function pauseLevelMusic() {
@@ -94,44 +130,168 @@ function pauseLevelMusic() {
   levelMusic.pause();
 }
 
-function showLevelPopup(title, text) {
+function parsePercent(value, fallback = 0) {
+  const num = parseFloat(String(value || '').replace('%', ''));
+  return Number.isFinite(num) ? num : fallback;
+}
+
+function stageStart() {
+  return {
+    x: parsePercent(levelStage.style.getPropertyValue('--start-x'), 20),
+    y: parsePercent(levelStage.style.getPropertyValue('--start-y'), 82)
+  };
+}
+
+function markerPoint(marker) {
+  return {
+    x: parsePercent(marker.style.getPropertyValue('--x')),
+    y: parsePercent(marker.style.getPropertyValue('--y'))
+  };
+}
+
+function getNodes() {
+  return {
+    start: stageStart(),
+    level1: markerPoint(levelMarkers[0]),
+    level2: markerPoint(levelMarkers[1])
+  };
+}
+
+function showLevelPopup(title, text, buttonLabel = 'Weiter', onClose = null) {
   levelPopupTitle.textContent = title || 'Level';
   levelPopupText.textContent = text || 'Inhalt folgt später.';
+  levelPopupClose.textContent = buttonLabel;
+  popupCloseHandler = onClose;
   levelPopup.classList.remove('hidden');
 }
 
-function moveLevelKnightTo(marker) {
-  const x = marker.dataset.targetX;
-  const y = marker.dataset.targetY;
-  levelKnight.style.left = `${x}%`;
-  levelKnight.style.top = `${y}%`;
-
-  window.setTimeout(() => {
-    if (marker.dataset.quizId) {
-      openQuizIntro(marker.dataset.quizId);
-    } else {
-      showLevelPopup(marker.dataset.title || 'Level', marker.dataset.text || 'Inhalt folgt später.');
-    }
-  }, 950);
+function closeLevelPopup() {
+  levelPopup.classList.add('hidden');
+  const handler = popupCloseHandler;
+  popupCloseHandler = null;
+  if (typeof handler === 'function') handler();
+  startLevelMusic();
 }
 
-levelMarkers.forEach(marker => {
-  marker.addEventListener('click', () => moveLevelKnightTo(marker));
+function moveKnightToCoords(point) {
+  return new Promise(resolve => {
+    levelKnight.style.left = `${point.x}%`;
+    levelKnight.style.top = `${point.y}%`;
+    window.setTimeout(resolve, MOVE_MS);
+  });
+}
+
+async function moveKnightAlong(points) {
+  for (const point of points) {
+    await moveKnightToCoords(point);
+  }
+}
+
+function ensureGuideSvg() {
+  if (guideSvg) return guideSvg;
+  guideSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  guideSvg.setAttribute('viewBox', '0 0 100 100');
+  guideSvg.setAttribute('preserveAspectRatio', 'none');
+  guideSvg.classList.add('level-path-svg');
+  levelStage.appendChild(guideSvg);
+  return guideSvg;
+}
+
+function renderGuidePath() {
+  const svg = ensureGuideSvg();
+  const progress = getAreaProgress();
+  const nodes = getNodes();
+  let from = null;
+  let to = null;
+
+  if (!progress.level1Completed) {
+    from = nodes.start;
+    to = nodes.level1;
+  } else if (!progress.level2Completed) {
+    from = nodes.level1;
+    to = nodes.level2;
+  }
+
+  if (!from || !to) {
+    svg.innerHTML = '';
+    return;
+  }
+
+  svg.innerHTML = `<line class="level-guide-line" x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}"></line>`;
+}
+
+function applyMarkerStates() {
+  const progress = getAreaProgress();
+  levelMarkers.forEach((marker, index) => {
+    const isLevel1 = index === 0;
+    const completed = isLevel1 ? progress.level1Completed : progress.level2Completed;
+    const locked = !isLevel1 && !progress.level1Completed;
+    marker.classList.toggle('completed', completed);
+    marker.classList.toggle('locked', locked);
+    marker.classList.toggle('available', !locked && !completed);
+    marker.setAttribute('aria-disabled', locked ? 'true' : 'false');
+  });
+  renderGuidePath();
+}
+
+async function handleLevelOne() {
+  const nodes = getNodes();
+  await moveKnightAlong([nodes.level1]);
+  currentNode = 'level1';
+
+  const progress = getAreaProgress();
+  if (!progress.level1Completed) {
+    showLevelPopup(
+      levelMarkers[0].dataset.title || 'Minispiel',
+      `${levelMarkers[0].dataset.text || 'Hier startet das Minispiel.'} Wenn du hier fertig bist, wird der zweite Punkt freigeschaltet.`,
+      'Minispiel abschließen',
+      () => {
+        setAreaProgress({ level1Completed: true });
+        applyMarkerStates();
+        showLevelPopup('Level 1 geschafft', 'Der erste Bereich ist nun erledigt. Der zweite Punkt mit dem Quiz ist jetzt freigeschaltet.');
+      }
+    );
+  } else {
+    showLevelPopup(levelMarkers[0].dataset.title || 'Minispiel', 'Dieses Minispiel hast du bereits geschafft. Du kannst nun zum zweiten Punkt weitergehen.');
+  }
+}
+
+async function handleLevelTwo() {
+  const progress = getAreaProgress();
+  if (!progress.level1Completed) {
+    showLevelPopup('Noch gesperrt', 'Du musst zuerst das erste Level mit dem Minispiel abschließen, bevor du das Quiz betreten kannst.');
+    return;
+  }
+
+  const nodes = getNodes();
+  if (currentNode === 'start') {
+    await moveKnightAlong([nodes.level1, nodes.level2]);
+  } else {
+    await moveKnightAlong([nodes.level2]);
+  }
+  currentNode = 'level2';
+  openQuizIntro(levelMarkers[1].dataset.quizId || currentArea);
+}
+
+async function moveLevelKnightTo(marker, index) {
+  if (index === 0) {
+    await handleLevelOne();
+  } else {
+    await handleLevelTwo();
+  }
+}
+
+levelMarkers.forEach((marker, index) => {
+  marker.addEventListener('click', () => moveLevelKnightTo(marker, index));
 });
 
 if (levelPopupClose) {
-  levelPopupClose.addEventListener('click', () => {
-    levelPopup.classList.add('hidden');
-    startLevelMusic();
-  });
+  levelPopupClose.addEventListener('click', closeLevelPopup);
 }
 
 if (levelPopup) {
   levelPopup.addEventListener('click', event => {
-    if (event.target === levelPopup) {
-      levelPopup.classList.add('hidden');
-      startLevelMusic();
-    }
+    if (event.target === levelPopup) closeLevelPopup();
   });
 }
 
@@ -173,6 +333,7 @@ function preloadQuizAssets(data, quizId) {
   ['normal', 'attack', 'damage', 'defeated', 'victory'].forEach(state => preloadImage(knightAsset(state)));
   ['normal', 'damage', 'defeated'].forEach(state => preloadImage(enemyAsset(data.enemy, state)));
   preloadImage(enemyAttackAsset(data.enemy));
+  if (FRAGMENT_REWARDS[quizId]) preloadImage(FRAGMENT_REWARDS[quizId].image);
 }
 
 function ensureQuizModal() {
@@ -337,7 +498,6 @@ function answerQuestion(idx) {
   setTimeout(() => {
     const game = document.getElementById('quizGame');
     game.classList.add('slide-out-left');
-
     setTimeout(() => {
       game.classList.add('hidden');
       game.classList.remove('slide-out-left');
@@ -404,9 +564,7 @@ function playBattleAnimation(correct, idx) {
     }, DAMAGE_RESET_MS);
   }
 
-  if (correct) {
-    renderHearts();
-  }
+  if (correct) renderHearts();
 
   setTimeout(() => {
     knight.classList.remove('sprite-pop', 'sprite-shake', 'knight-strike', 'knight-damaged');
@@ -454,6 +612,11 @@ function showQuizResult() {
   document.getElementById('quizKnight').src = won ? knightAsset('victory') : knightAsset('defeated');
   document.getElementById('quizEnemy').src = won ? enemyAsset(activeQuiz.data.enemy, 'defeated') : enemyAsset(activeQuiz.data.enemy, 'normal');
 
+  if (won) {
+    setAreaProgress({ level2Completed: true });
+    applyMarkerStates();
+  }
+
   const fragmentStatus = won ? awardFragment(activeQuiz.quizId) : { gained: false, reward: null, total: readFragments().size, allCollected: false };
   const result = modal.querySelector('#quizResult');
   result.className = 'quiz-result quiz-panel quiz-final-result';
@@ -461,14 +624,14 @@ function showQuizResult() {
   let extraBlock = '';
   if (won && fragmentStatus.reward) {
     const allText = fragmentStatus.allCollected
-      ? '<p class="fragment-hint">Alle fünf Fragmente sind gesammelt. Auf der Overworld kannst du jetzt das Zauberschloss zerbrechen.</p>'
+      ? '<p class="fragment-hint">Alle fünf Kristalle sind gesammelt. Auf der Overworld kannst du jetzt das Zauberschloss zerbrechen.</p>'
       : '';
     extraBlock = `
       <div class="fragment-reward-box">
-        <span class="fragment-mini" style="--fragment-color:${fragmentStatus.reward.color}">${fragmentStatus.reward.icon}</span>
+        <img class="fragment-mini-image" src="${fragmentStatus.reward.image}" alt="${fragmentStatus.reward.name}">
         <div>
-          <strong>${fragmentStatus.gained ? 'Fragment freigeschaltet!' : 'Fragment bereits gesichert!'}</strong>
-          <p>${fragmentStatus.reward.name} · Gesammelt: ${fragmentStatus.total} / ${Object.keys(FRAGMENT_REWARDS).length}</p>
+          <strong>${fragmentStatus.gained ? 'Kristall gefunden!' : 'Kristall bereits gesichert!'}</strong>
+          <p>Du hast den <strong>${fragmentStatus.reward.name}</strong> erhalten. Gesammelt: ${fragmentStatus.total} / ${Object.keys(FRAGMENT_REWARDS).length}</p>
         </div>
       </div>
       ${allText}
@@ -490,27 +653,36 @@ function showQuizResult() {
     ${extraBlock}
     <div class="quiz-result-actions">
       <button id="retryQuizButton" class="ghost-button" type="button">Nochmal spielen</button>
-      <button id="closeQuizButton" class="primary-button" type="button">Zur Karte</button>
+      <button id="closeQuizButton" class="primary-button" type="button">Zur Overworld</button>
     </div>
   `;
   document.getElementById('retryQuizButton').addEventListener('click', () => startQuiz(activeQuiz.quizId));
   document.getElementById('closeQuizButton').addEventListener('click', returnToOverworld);
 }
 
-function returnToOverworld() {
+async function returnToOverworld() {
   window.location.href = '../game.html?fromLevel=1';
 }
 
-function closeQuiz() {
-  clearInterval(quizTimer);
-  const modal = ensureQuizModal();
-  modal.classList.add('hidden');
-  activeQuiz = null;
-  startLevelMusic();
+async function exitLevel() {
+  pauseLevelMusic();
+  const nodes = getNodes();
+  if (currentNode === 'level2') {
+    await moveKnightAlong([nodes.level1, nodes.start]);
+  } else if (currentNode === 'level1') {
+    await moveKnightAlong([nodes.start]);
+  }
+  window.location.href = '../game.html?fromLevel=1';
 }
 
-window.addEventListener('load', () => {
-  window.setTimeout(() => {
-    showLevelPopup('Level betreten', 'Platzhalter: Hier wird später kurz erklärt, was in diesem Bereich zu tun ist.');
-  }, 180);
-});
+if (backButton) {
+  backButton.addEventListener('click', event => {
+    event.preventDefault();
+    exitLevel();
+  });
+}
+
+levelKnight.style.left = `${stageStart().x}%`;
+levelKnight.style.top = `${stageStart().y}%`;
+applyMarkerStates();
+startLevelMusic();
