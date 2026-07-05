@@ -94,3 +94,11 @@ Wenn das Repository anders heißt oder unter einer anderen Adresse veröffentlic
 
 Die einzelnen Level-HTMLs verwenden eigene Vollbild-Hintergründe unter `assets/images/level-backgrounds/`.
 Jedes Level startet mit dem Ritter am Eingang und enthält zwei halbtransparente Klickflächen als Platzhalter für Minispiel und Quiz/Bossbereich.
+
+
+## Update Levelkarten
+
+- Levelkarten füllen den Bildschirm per `object-fit: cover`, damit keine Balken entstehen.
+- Levelpunkte sind sichtbar kleiner, behalten aber eine großzügige Klickfläche.
+- Levelseiten zeigen beim Betreten ein Platzhalter-Pop-up; nach „Weiter“ startet die Musik.
+- In den Einstellungen gibt es einen Button zum Zurücksetzen des Spielstands.

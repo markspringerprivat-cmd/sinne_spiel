@@ -511,3 +511,59 @@ p { line-height: 1.5; }
   .level-map-page, .level-map-shell, .level-map-stage { height: 100vh; }
   .level-map-stage { width: calc(100vh * var(--level-w, 1024) / var(--level-h, 1536)); }
 }
+
+
+/* Level maps: full responsive screen without bars */
+.level-map-stage {
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  max-width: none !important;
+  max-height: none !important;
+  aspect-ratio: auto !important;
+  background: #0b1d31;
+}
+.level-bg-image {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: center center;
+}
+.level-marker {
+  width: var(--size, 24%);
+  max-width: none;
+  min-width: 96px;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+.level-marker::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: clamp(26px, 5.4vmin, 38px);
+  height: clamp(26px, 5.4vmin, 38px);
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,.74);
+  background: rgba(255,255,255,.34);
+  box-shadow: 0 0 14px rgba(255,255,255,.28), inset 0 0 10px rgba(255,255,255,.20);
+}
+.level-marker:focus::after,
+.level-marker:focus-visible::after,
+.level-marker:hover::after,
+.level-marker:active::after {
+  background: rgba(255,255,255,.48);
+  border-color: rgba(255,255,255,.92);
+}
+.level-knight {
+  width: clamp(48px, 13vmin, 98px);
+}
+.settings-danger-button {
+  width: 100%;
+  margin-top: 12px;
+  background: #ffe8e8;
+  color: #7c1d1d;
+}

@@ -24,6 +24,7 @@ const scanFromInfoButton = document.getElementById('scanFromInfoButton');
 const settingsButton = document.getElementById('settingsButton');
 const settingsModal = document.getElementById('settingsModal');
 const showQrButton = document.getElementById('showQrButton');
+const resetGameButton = document.getElementById('resetGameButton');
 const qrOverview = document.getElementById('qrOverview');
 
 const scannerModal = document.getElementById('scannerModal');
@@ -395,6 +396,19 @@ showQrButton.addEventListener('click', () => {
   showQrButton.textContent = qrOverview.classList.contains('hidden')
     ? 'QR-Codes anzeigen'
     : 'QR-Codes ausblenden';
+});
+
+resetGameButton.addEventListener('click', () => {
+  const confirmed = window.confirm('Spiel wirklich zurücksetzen? Alle Freischaltungen und gespeicherten Positionen werden gelöscht.');
+  if (!confirmed) return;
+
+  Object.keys(localStorage).forEach(key => {
+    if (key.startsWith('sinnesmagie-')) {
+      localStorage.removeItem(key);
+    }
+  });
+
+  window.location.href = 'index.html';
 });
 
 volumeSlider.addEventListener('input', event => {
