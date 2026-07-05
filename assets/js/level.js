@@ -589,26 +589,14 @@ function showQuizEndPanel() {
   const modal = ensureQuizModal();
   modal.querySelector('#quizGame').classList.add('hidden');
   document.getElementById('battleFeedback').classList.add('hidden');
-  document.getElementById('quizKnight').src = knightAsset('normal');
-  document.getElementById('quizEnemy').src = enemyAsset(activeQuiz.data.enemy, 'normal');
-
-  const result = modal.querySelector('#quizResult');
-  result.className = 'quiz-result quiz-panel slide-in-right';
-  const couldWin = activeQuiz.hearts > 0;
-  result.innerHTML = `
-    <h2>Quiz abgeschlossen</h2>
-    <p>${couldWin ? 'Du hast alle Fragen überstanden.' : 'Du hast keine Herzen mehr.'}</p>
-    <p>Drücke auf „Quiz beenden“, damit das Ergebnis angezeigt wird.</p>
-    <button id="finishQuizButton" class="primary-button" type="button">Quiz beenden</button>
-  `;
-  setTimeout(() => result.classList.remove('slide-in-right'), QUIZ_TRANSITION_MS + 80);
-  document.getElementById('finishQuizButton').addEventListener('click', showQuizResult);
+  showQuizResult();
 }
 
 function showQuizResult() {
   const won = activeQuiz.hearts > 0;
   const modal = ensureQuizModal();
   modal.querySelector('#quizGame').classList.add('hidden');
+  document.getElementById('battleFeedback').classList.add('hidden');
   document.getElementById('quizKnight').src = won ? knightAsset('victory') : knightAsset('defeated');
   document.getElementById('quizEnemy').src = won ? enemyAsset(activeQuiz.data.enemy, 'defeated') : enemyAsset(activeQuiz.data.enemy, 'normal');
 
@@ -618,46 +606,39 @@ function showQuizResult() {
   }
 
   const fragmentStatus = won ? awardFragment(activeQuiz.quizId) : { gained: false, reward: null, total: readFragments().size, allCollected: false };
+  const reward = fragmentStatus.reward || FRAGMENT_REWARDS[activeQuiz.quizId] || null;
   const result = modal.querySelector('#quizResult');
   result.className = 'quiz-result quiz-panel quiz-final-result';
 
-  let extraBlock = '';
-  if (won && fragmentStatus.reward) {
-    const allText = fragmentStatus.allCollected
-      ? '<p class="fragment-hint">Alle fünf Kristalle sind gesammelt. Auf der Overworld kannst du jetzt das Zauberschloss zerbrechen.</p>'
+  if (won) {
+    const rewardBlock = reward
+      ? `
+        <div class="fragment-reward-box simple-fragment-box" aria-label="Kristall-Belohnung">
+          <strong>Kristall erhalten</strong>
+          <img class="fragment-mini-image" src="${reward.image}" alt="${reward.name}">
+          <p>Der Kristall wird automatisch auf der Weltkarte angezeigt.</p>
+        </div>
+      `
       : '';
-    const rewardText = fragmentStatus.gained
-      ? `Du hast den <strong>${fragmentStatus.reward.name}</strong> gefunden.`
-      : `Du hast den <strong>${fragmentStatus.reward.name}</strong> bereits gesammelt.`;
-    extraBlock = `
-      <div class="fragment-reward-box" aria-label="Kristall-Belohnung">
-        <img class="fragment-mini-image" src="${fragmentStatus.reward.image}" alt="${fragmentStatus.reward.name}">
-        <div>
-          <strong>${fragmentStatus.gained ? 'Kristall gefunden!' : 'Kristall bereits gesichert!'}</strong>
-          <p>${rewardText}</p>
-          <p>Gesammelt: ${fragmentStatus.total} / ${Object.keys(FRAGMENT_REWARDS).length}</p>
-        </div>
-      </div>
-      ${allText}
-    `;
-  } else if (won && activeQuiz.quizId === 'zauberschloss') {
-    extraBlock = `
-      <div class="fragment-reward-box finale-box" aria-label="Schloss befreit">
-        <div>
-          <strong>Das Zauberschloss ist befreit!</strong>
-          <p>Du hast den Zauberer besiegt und die Sinnesmagie zurückerobert.</p>
-        </div>
+
+    result.innerHTML = `
+      <h2>Gewonnen!</h2>
+      <p>Du hast ${activeQuiz.correct} von ${activeQuiz.data.questions.length} Fragen richtig beantwortet.</p>
+      ${rewardBlock}
+      <div class="quiz-result-actions single-action">
+        <button id="closeQuizButton" class="primary-button" type="button">Zur Weltkarte</button>
       </div>
     `;
+    document.getElementById('closeQuizButton').addEventListener('click', returnToOverworld);
+    return;
   }
 
   result.innerHTML = `
-    <h2>${won ? 'Gewonnen!' : 'Verloren!'}</h2>
-    <p>${won ? `Du hast ${activeQuiz.correct} von ${activeQuiz.data.questions.length} Fragen richtig beantwortet und den Gegner besiegt.` : 'Der Gegner hat gewonnen. Versuche es noch einmal.'}</p>
-    ${extraBlock}
+    <h2>Verloren!</h2>
+    <p>Du hast ${activeQuiz.correct} von ${activeQuiz.data.questions.length} Fragen richtig beantwortet.</p>
     <div class="quiz-result-actions">
       <button id="retryQuizButton" class="ghost-button" type="button">Nochmal spielen</button>
-      <button id="closeQuizButton" class="primary-button" type="button">Zur Overworld</button>
+      <button id="closeQuizButton" class="primary-button" type="button">Zur Weltkarte</button>
     </div>
   `;
   document.getElementById('retryQuizButton').addEventListener('click', () => startQuiz(activeQuiz.quizId));
