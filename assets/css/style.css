@@ -820,14 +820,14 @@ p { line-height: 1.5; }
   position: absolute;
   left: 5%;
   right: 5%;
-  top: 26%;
-  height: 38%;
+  top: 28.5%;
+  height: 35.5%;
   z-index: 2;
   pointer-events: none;
 }
 .battle-sprite {
   position: absolute;
-  bottom: 0;
+  bottom: -2.6%;
   width: 46%;
   height: 100%;
   object-fit: contain;
@@ -1011,7 +1011,7 @@ p { line-height: 1.5; }
   .quiz-card { width: 100vw; height: 100dvh; }
   .quiz-panel { left: 3.2%; right: 3.2%; top: 24.5%; padding: 12px; }
   .quiz-intro, .quiz-result { top: 30%; }
-  .quiz-battle-zone { left: 3%; right: 3%; }
+  .quiz-battle-zone { left: 3%; right: 3%; top: 29.4%; height: 35%; }
   .battle-sprite { width: 48%; height: 100%; }
   .quiz-answer { border-radius: 13px; }
 }
@@ -1035,26 +1035,23 @@ p { line-height: 1.5; }
   margin-bottom: 6px !important;
 }
 .knight-strike {
-  animation: knightStrikeOverlap 1.05s ease-in-out both;
+  animation: knightAdvanceStrike .76s ease-in-out both;
   z-index: 5;
 }
 .enemy-hit {
-  animation: enemyHitShake .68s ease-in-out 2;
+  animation: enemyDamageRecoil .44s ease-out both;
   z-index: 4;
 }
-@keyframes knightStrikeOverlap {
+@keyframes knightAdvanceStrike {
   0% { transform: translateX(0) translateY(0) scale(1); }
-  22% { transform: translateX(68%) translateY(-1%) scale(1.11); }
-  48% { transform: translateX(74%) translateY(-1%) scale(1.12); }
-  76% { transform: translateX(20%) translateY(0) scale(1.04); }
+  45% { transform: translateX(34%) translateY(0) scale(1.05); }
+  58% { transform: translateX(38%) translateY(0) scale(1.06); }
   100% { transform: translateX(0) translateY(0) scale(1); }
 }
-@keyframes enemyHitShake {
-  0%, 100% { transform: translateX(0) rotate(0deg) scale(1); }
-  18% { transform: translateX(11px) rotate(2deg) scale(1.03); }
-  36% { transform: translateX(-10px) rotate(-2deg) scale(.99); }
-  54% { transform: translateX(8px) rotate(2deg) scale(1.02); }
-  72% { transform: translateX(-6px) rotate(-1deg) scale(.995); }
+@keyframes enemyDamageRecoil {
+  0% { transform: translateX(0) scale(1); filter: drop-shadow(0 12px 13px rgba(0,0,0,.33)); }
+  50% { transform: translateX(4%) scale(1.02); filter: drop-shadow(0 12px 13px rgba(0,0,0,.33)) brightness(1.08); }
+  100% { transform: translateX(0) scale(1); filter: drop-shadow(0 12px 13px rgba(0,0,0,.33)); }
 }
 @media (max-width: 520px) {
   .quiz-final-result {
@@ -1131,26 +1128,23 @@ p { line-height: 1.5; }
 
 /* Gegner greift bei falscher Antwort an */
 .enemy-attack-strike {
-  animation: enemyAttackStrike .95s ease-in-out both;
+  animation: enemyAdvanceStrike .76s ease-in-out both;
   z-index: 5;
 }
 .knight-damaged {
-  animation: knightDamageHit .85s ease-in-out both;
+  animation: knightDamageRecoil .44s ease-out both;
   z-index: 4;
 }
-@keyframes enemyAttackStrike {
+@keyframes enemyAdvanceStrike {
   0% { transform: translateX(0) scale(1); }
-  26% { transform: translateX(-30%) scale(1.04); }
-  46% { transform: translateX(-58%) scale(1.08); }
-  64% { transform: translateX(-52%) scale(1.06); }
+  45% { transform: translateX(-34%) scale(1.05); }
+  58% { transform: translateX(-38%) scale(1.06); }
   100% { transform: translateX(0) scale(1); }
 }
-@keyframes knightDamageHit {
-  0% { transform: translateX(0) scale(1); }
-  18% { transform: translateX(7%) scale(1.02); }
-  38% { transform: translateX(-6%) scale(.98) rotate(-2deg); }
-  58% { transform: translateX(4%) scale(1.01) rotate(1deg); }
-  100% { transform: translateX(0) scale(1); }
+@keyframes knightDamageRecoil {
+  0% { transform: translateX(0) scale(1); filter: drop-shadow(0 12px 13px rgba(0,0,0,.33)); }
+  50% { transform: translateX(-4%) scale(1.02); filter: drop-shadow(0 12px 13px rgba(0,0,0,.33)) brightness(1.08); }
+  100% { transform: translateX(0) scale(1); filter: drop-shadow(0 12px 13px rgba(0,0,0,.33)); }
 }
 
 /* Fragment-Popup im Ergebnisfenster */

@@ -10,9 +10,11 @@ const STORAGE_VOLUME = 'sinnesmagie-volume';
 const STORAGE_FRAGMENTS = 'sinnesmagie-fragments';
 const QUIZ_SECONDS = 30;
 const QUIZ_TRANSITION_MS = 560;
-const BATTLE_ANIMATION_MS = 2000;
-const STRIKE_RESET_MS = 1080;
-const DAMAGE_RESET_MS = 980;
+const BATTLE_ANIMATION_MS = 1500;
+const STRIKE_RESET_MS = 760;
+const DAMAGE_RESET_MS = 760;
+const ATTACK_IMPACT_MS = 320;
+const ENEMY_IMPACT_MS = 320;
 
 const FRAGMENT_REWARDS = {
   farbenreich: { name: 'Seh-Fragment', color: '#ff6b6b', icon: '◈' },
@@ -357,12 +359,17 @@ function playBattleAnimation(correct, idx) {
     activeQuiz.correct += 1;
     feedback.textContent = 'Richtig!';
     knight.src = knightAsset('attack');
-    enemy.src = enemyAsset(activeQuiz.data.enemy, 'damage');
+    enemy.src = enemyAsset(activeQuiz.data.enemy, 'normal');
     void knight.offsetWidth;
     void enemy.offsetWidth;
-    playSfx(sfxCorrect);
     knight.classList.add('knight-strike');
-    enemy.classList.add('enemy-hit');
+
+    setTimeout(() => {
+      if (!activeQuiz || activeQuiz.finished) return;
+      playSfx(sfxCorrect);
+      enemy.src = enemyAsset(activeQuiz.data.enemy, 'damage');
+      enemy.classList.add('enemy-hit');
+    }, ATTACK_IMPACT_MS);
 
     setTimeout(() => {
       if (!activeQuiz || activeQuiz.finished) return;
@@ -374,13 +381,19 @@ function playBattleAnimation(correct, idx) {
   } else {
     activeQuiz.hearts -= 1;
     feedback.textContent = idx === -1 ? 'Zeit abgelaufen!' : 'Falsch!';
-    knight.src = knightAsset('damage');
+    knight.src = knightAsset('normal');
     enemy.src = enemyAttackAsset(activeQuiz.data.enemy);
     void knight.offsetWidth;
     void enemy.offsetWidth;
-    playSfx(sfxWrong);
-    knight.classList.add('knight-damaged');
     enemy.classList.add('enemy-attack-strike');
+
+    setTimeout(() => {
+      if (!activeQuiz || activeQuiz.finished) return;
+      playSfx(sfxWrong);
+      knight.src = knightAsset('damage');
+      knight.classList.add('knight-damaged');
+      renderHearts();
+    }, ENEMY_IMPACT_MS);
 
     setTimeout(() => {
       if (!activeQuiz || activeQuiz.finished) return;
@@ -391,7 +404,9 @@ function playBattleAnimation(correct, idx) {
     }, DAMAGE_RESET_MS);
   }
 
-  renderHearts();
+  if (correct) {
+    renderHearts();
+  }
 
   setTimeout(() => {
     knight.classList.remove('sprite-pop', 'sprite-shake', 'knight-strike', 'knight-damaged');
