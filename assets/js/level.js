@@ -28,6 +28,11 @@ function startLevelMusic() {
   });
 }
 
+function pauseLevelMusic() {
+  if (!levelMusic) return;
+  levelMusic.pause();
+}
+
 function showLevelPopup(title, text) {
   levelPopupTitle.textContent = title || 'Level';
   levelPopupText.textContent = text || 'Inhalt folgt später.';
@@ -86,6 +91,20 @@ function battleBackgroundAsset(quizId) {
   return `../assets/images/battle-backgrounds/${quizId}.png`;
 }
 
+const preloadedImages = new Set();
+function preloadImage(src) {
+  if (!src || preloadedImages.has(src)) return;
+  preloadedImages.add(src);
+  const img = new Image();
+  img.src = src;
+}
+
+function preloadQuizAssets(data, quizId) {
+  preloadImage(battleBackgroundAsset(quizId));
+  ['normal', 'attack', 'damage', 'defeated'].forEach(state => preloadImage(knightAsset(state)));
+  ['normal', 'damage', 'defeated'].forEach(state => preloadImage(enemyAsset(data.enemy, state)));
+}
+
 function ensureQuizModal() {
   let modal = document.getElementById('quizModal');
   if (modal) return modal;
@@ -132,7 +151,8 @@ function openQuizIntro(quizId) {
     showLevelPopup('Quiz', 'Quizdaten fehlen noch.');
     return;
   }
-  startLevelMusic();
+  pauseLevelMusic();
+  preloadQuizAssets(data, quizId);
   const modal = ensureQuizModal();
   clearInterval(quizTimer);
   modal.classList.remove('hidden');
@@ -151,7 +171,9 @@ function openQuizIntro(quizId) {
 }
 
 function startQuiz(quizId) {
+  pauseLevelMusic();
   const data = window.SINNESMAGIE_QUIZZES[quizId];
+  preloadQuizAssets(data, quizId);
   activeQuiz = {
     quizId,
     data,
@@ -260,29 +282,33 @@ function playBattleAnimation(correct, idx) {
   const enemy = document.getElementById('quizEnemy');
 
   feedback.classList.remove('hidden');
-  knight.classList.remove('sprite-pop', 'sprite-shake');
-  enemy.classList.remove('sprite-shake');
+  knight.classList.remove('sprite-pop', 'sprite-shake', 'knight-strike');
+  enemy.classList.remove('sprite-shake', 'enemy-hit');
 
   if (correct) {
     activeQuiz.correct += 1;
     feedback.textContent = 'Treffer!';
     knight.src = knightAsset('attack');
     enemy.src = enemyAsset(activeQuiz.data.enemy, 'damage');
-    knight.classList.add('sprite-pop');
-    enemy.classList.add('sprite-shake');
+    // Reflow erzwingen, damit Bildwechsel und Bewegung gleichzeitig starten.
+    void knight.offsetWidth;
+    void enemy.offsetWidth;
+    knight.classList.add('knight-strike');
+    enemy.classList.add('enemy-hit');
   } else {
     activeQuiz.hearts -= 1;
     feedback.textContent = idx === -1 ? 'Zeit abgelaufen!' : 'Falsch!';
     knight.src = knightAsset('damage');
     enemy.src = enemyAsset(activeQuiz.data.enemy, 'normal');
+    void knight.offsetWidth;
     knight.classList.add('sprite-shake');
   }
 
   renderHearts();
 
   setTimeout(() => {
-    knight.classList.remove('sprite-pop', 'sprite-shake');
-    enemy.classList.remove('sprite-shake');
+    knight.classList.remove('sprite-pop', 'sprite-shake', 'knight-strike');
+    enemy.classList.remove('sprite-shake', 'enemy-hit');
 
     if (activeQuiz.hearts <= 0 || activeQuiz.index >= activeQuiz.data.questions.length - 1) {
       showQuizEndPanel();
@@ -327,7 +353,7 @@ function showQuizResult() {
   document.getElementById('quizEnemy').src = won ? enemyAsset(activeQuiz.data.enemy, 'defeated') : enemyAsset(activeQuiz.data.enemy, 'normal');
 
   const result = modal.querySelector('#quizResult');
-  result.className = 'quiz-result quiz-panel';
+  result.className = 'quiz-result quiz-panel quiz-final-result';
   result.innerHTML = `
     <h2>${won ? 'Gewonnen!' : 'Verloren!'}</h2>
     <p>${won ? `Du hast ${activeQuiz.correct} von ${activeQuiz.data.questions.length} Fragen richtig beantwortet und den Gegner besiegt.` : 'Der Gegner hat gewonnen. Versuche es noch einmal.'}</p>

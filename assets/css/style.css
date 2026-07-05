@@ -1018,3 +1018,49 @@ p { line-height: 1.5; }
 @supports not (height: 100dvh) {
   .quiz-card { width: min(100vw, calc(100vh * 941 / 1672)); height: min(100vh, calc(100vw * 1672 / 941)); }
 }
+
+/* Quiz-Kampf: korrigierter Ergebnisbereich und gleichzeitige Trefferanimation */
+.quiz-final-result {
+  top: auto !important;
+  bottom: 1.2% !important;
+  min-height: 23% !important;
+  z-index: 8 !important;
+  align-content: center;
+  background: rgba(255,255,255,.78);
+}
+.quiz-final-result h2 {
+  font-size: clamp(1.5rem, 5.6vmin, 2.25rem) !important;
+}
+.quiz-final-result p {
+  margin-bottom: 6px !important;
+}
+.knight-strike {
+  animation: knightStrikeOverlap 1.05s ease-in-out both;
+  z-index: 5;
+}
+.enemy-hit {
+  animation: enemyHitShake .68s ease-in-out 2;
+  z-index: 4;
+}
+@keyframes knightStrikeOverlap {
+  0% { transform: translateX(0) scale(1); }
+  22% { transform: translateX(58%) scale(1.09); }
+  48% { transform: translateX(62%) scale(1.1); }
+  76% { transform: translateX(18%) scale(1.03); }
+  100% { transform: translateX(0) scale(1); }
+}
+@keyframes enemyHitShake {
+  0%, 100% { transform: translateX(0) rotate(0deg) scale(1); }
+  18% { transform: translateX(11px) rotate(2deg) scale(1.03); }
+  36% { transform: translateX(-10px) rotate(-2deg) scale(.99); }
+  54% { transform: translateX(8px) rotate(2deg) scale(1.02); }
+  72% { transform: translateX(-6px) rotate(-1deg) scale(.995); }
+}
+@media (max-width: 520px) {
+  .quiz-final-result {
+    left: 3.2% !important;
+    right: 3.2% !important;
+    bottom: 1% !important;
+    min-height: 24% !important;
+  }
+}
