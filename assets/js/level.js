@@ -626,19 +626,23 @@ function showQuizResult() {
     const allText = fragmentStatus.allCollected
       ? '<p class="fragment-hint">Alle fünf Kristalle sind gesammelt. Auf der Overworld kannst du jetzt das Zauberschloss zerbrechen.</p>'
       : '';
+    const rewardText = fragmentStatus.gained
+      ? `Du hast den <strong>${fragmentStatus.reward.name}</strong> gefunden.`
+      : `Du hast den <strong>${fragmentStatus.reward.name}</strong> bereits gesammelt.`;
     extraBlock = `
-      <div class="fragment-reward-box">
+      <div class="fragment-reward-box" aria-label="Kristall-Belohnung">
         <img class="fragment-mini-image" src="${fragmentStatus.reward.image}" alt="${fragmentStatus.reward.name}">
         <div>
           <strong>${fragmentStatus.gained ? 'Kristall gefunden!' : 'Kristall bereits gesichert!'}</strong>
-          <p>Du hast den <strong>${fragmentStatus.reward.name}</strong> erhalten. Gesammelt: ${fragmentStatus.total} / ${Object.keys(FRAGMENT_REWARDS).length}</p>
+          <p>${rewardText}</p>
+          <p>Gesammelt: ${fragmentStatus.total} / ${Object.keys(FRAGMENT_REWARDS).length}</p>
         </div>
       </div>
       ${allText}
     `;
   } else if (won && activeQuiz.quizId === 'zauberschloss') {
     extraBlock = `
-      <div class="fragment-reward-box finale-box">
+      <div class="fragment-reward-box finale-box" aria-label="Schloss befreit">
         <div>
           <strong>Das Zauberschloss ist befreit!</strong>
           <p>Du hast den Zauberer besiegt und die Sinnesmagie zurückerobert.</p>

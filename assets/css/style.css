@@ -1412,21 +1412,19 @@ p { line-height: 1.5; }
 }
 
 .fragment-reward-box {
-  width: min(100%, 420px);
-  margin: 12px auto 6px !important;
-  padding: 24px 24px 22px !important;
-  min-height: 190px;
+  width: min(100%, 360px);
+  margin: 10px auto 6px !important;
+  padding: 12px 10px 6px !important;
+  min-height: auto;
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
   justify-content: center !important;
   gap: 10px;
   background: transparent !important;
-  background-image: var(--parchment-popup-image) !important;
-  background-repeat: no-repeat !important;
-  background-position: center center !important;
-  background-size: 100% 100% !important;
-  box-shadow: 0 14px 32px rgba(0,0,0,.14) !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  border: 0 !important;
 }
 
 .fragment-reward-box > div {
@@ -1434,7 +1432,7 @@ p { line-height: 1.5; }
   gap: 4px;
   justify-items: center;
   text-align: center;
-  max-width: 280px;
+  max-width: 300px;
 }
 
 .fragment-mini-image {
@@ -1450,7 +1448,7 @@ p { line-height: 1.5; }
 }
 
 .finale-box {
-  min-height: 165px;
+  min-height: auto;
 }
 
 @media (max-width: 520px) {
@@ -1467,12 +1465,92 @@ p { line-height: 1.5; }
   }
 
   .fragment-reward-box {
-    min-height: 175px;
-    padding: 22px 16px 18px !important;
+    min-height: auto;
+    padding: 10px 8px 6px !important;
   }
 
   .fragment-mini-image {
     width: 72px;
     height: 72px;
   }
+}
+
+
+/* ===== v8 Popup-Feinschliff ===== */
+.game-modal-card,
+.level-popup-card,
+.quiz-final-result,
+.quiz-intro,
+.quiz-result,
+.quiz-game {
+  text-align: center !important;
+}
+
+.game-modal-card h2,
+.game-modal-card p,
+.level-popup-card h2,
+.level-popup-card p,
+.quiz-final-result h2,
+.quiz-final-result p,
+.quiz-intro h2,
+.quiz-intro p,
+.quiz-result h2,
+.quiz-result p,
+.quiz-game h2,
+.quiz-game p,
+.fragment-reward-box,
+.fragment-reward-box strong,
+.fragment-reward-box p,
+.fragment-hint {
+  width: 100%;
+  text-align: center !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+.game-modal-card .modal-actions,
+.level-popup-card .modal-actions,
+.quiz-result-actions,
+.compact-actions,
+#infoModalActions {
+  width: 100%;
+  display: flex;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.game-modal-card .primary-button,
+.game-modal-card .ghost-button,
+.level-popup-card .primary-button,
+.level-popup-card .ghost-button,
+.quiz-result-actions .primary-button,
+.quiz-result-actions .ghost-button,
+.quiz-intro .primary-button,
+.quiz-intro .ghost-button,
+#infoModalActions .primary-button,
+#infoModalActions .ghost-button {
+  min-height: 42px;
+  padding: 0 18px;
+  font-size: .96rem;
+  max-width: min(100%, 250px);
+}
+
+.quiz-final-result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.fragment-mini-image {
+  background: transparent !important;
+}
+
+.game-modal-card img,
+.level-popup-card img,
+.quiz-final-result img {
+  background: transparent !important;
 }
