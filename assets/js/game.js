@@ -1,7 +1,6 @@
 const knight = document.getElementById('knight');
-const hotspots = document.querySelectorAll('.hotspot');
-const shades = document.querySelectorAll('[data-lock-area]');
-const lockButtons = document.querySelectorAll('[data-lock-button]');
+const regionCards = document.querySelectorAll('[data-region]');
+const regionButtons = document.querySelectorAll('.region-button');
 const infoModal = document.getElementById('infoModal');
 const infoModalTitle = document.getElementById('infoModalTitle');
 const infoModalText = document.getElementById('infoModalText');
@@ -26,15 +25,15 @@ const areaNames = {
 function readUnlocked() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_UNLOCKED) || '[]');
-    return new Set(['koenigsschloss', ...saved]);
+    if (!Array.isArray(saved)) return new Set();
+    return new Set(saved.filter(area => areaNames[area]));
   } catch {
-    return new Set(['koenigsschloss']);
+    return new Set();
   }
 }
 
 function saveUnlocked(unlockedSet) {
-  const values = [...unlockedSet].filter(area => area !== 'koenigsschloss');
-  localStorage.setItem(STORAGE_UNLOCKED, JSON.stringify(values));
+  localStorage.setItem(STORAGE_UNLOCKED, JSON.stringify([...unlockedSet]));
 }
 
 let unlockedAreas = readUnlocked();
@@ -61,24 +60,28 @@ function closeSettings() {
   settingsModal.classList.add('hidden');
 }
 
-function updateLocks() {
-  shades.forEach(shade => {
-    const area = shade.dataset.lockArea;
-    shade.classList.toggle('unlocked', isUnlocked(area));
+function updateRegionVisuals() {
+  regionCards.forEach(card => {
+    const area = card.dataset.region;
+    const unlocked = isUnlocked(area);
+    card.classList.toggle('unlocked', unlocked);
+    card.classList.toggle('locked', !unlocked);
   });
 
-  lockButtons.forEach(button => {
-    const area = button.dataset.lockButton;
-    button.classList.toggle('hidden-lock', isUnlocked(area));
+  regionButtons.forEach(button => {
+    const area = button.dataset.area;
+    const unlocked = isUnlocked(area);
+    const name = areaNames[area] || button.dataset.name || area;
+    button.setAttribute('aria-label', unlocked ? `${name} betreten` : `${name} ist gesperrt`);
   });
 }
 
 function unlockArea(area) {
-  if (!areaNames[area] || area === 'koenigsschloss') return false;
+  if (!areaNames[area]) return false;
   const wasUnlocked = isUnlocked(area);
   unlockedAreas.add(area);
   saveUnlocked(unlockedAreas);
-  updateLocks();
+  updateRegionVisuals();
   return !wasUnlocked;
 }
 
@@ -88,7 +91,7 @@ function moveKnightTo(button) {
   if (!isUnlocked(area)) {
     showInfo(
       `${areaNames[area]} ist noch gesperrt`,
-      `Scanne den QR-Code bei der entsprechenden Station, um dieses Gebiet freizuschalten.`
+      'Scanne den QR-Code bei der entsprechenden Station, um dieses Gebiet freizuschalten.'
     );
     return;
   }
@@ -114,8 +117,8 @@ function applyUnlockFromUrl() {
     showInfo(
       newlyUnlocked ? `${areaNames[area]} freigeschaltet` : `${areaNames[area]} ist bereits freigeschaltet`,
       newlyUnlocked
-        ? `Das Schloss ist geöffnet. Tippe auf das Gebiet, damit der Ritter dorthin läuft.`
-        : `Du kannst dieses Gebiet bereits betreten.`
+        ? 'Das Gebiet ist jetzt offen. Tippe darauf, damit der Ritter dorthin läuft.'
+        : 'Du kannst dieses Gebiet bereits betreten.'
     );
   }
 
@@ -123,19 +126,8 @@ function applyUnlockFromUrl() {
   window.history.replaceState({}, document.title, cleanUrl);
 }
 
-hotspots.forEach(button => {
+regionButtons.forEach(button => {
   button.addEventListener('click', () => moveKnightTo(button));
-});
-
-lockButtons.forEach(button => {
-  button.addEventListener('click', event => {
-    event.stopPropagation();
-    const area = button.dataset.area;
-    showInfo(
-      `${areaNames[area]} ist noch gesperrt`,
-      `Scanne den QR-Code bei der entsprechenden Station, um dieses Gebiet freizuschalten.`
-    );
-  });
 });
 
 document.querySelectorAll('[data-close-modal]').forEach(button => {
@@ -163,5 +155,5 @@ if (savedX && savedY) {
   knight.style.top = `${savedY}%`;
 }
 
-updateLocks();
+updateRegionVisuals();
 applyUnlockFromUrl();
