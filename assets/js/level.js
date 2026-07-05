@@ -8,6 +8,8 @@ const levelMusic = document.getElementById('levelMusic');
 
 const STORAGE_VOLUME = 'sinnesmagie-volume';
 const QUIZ_SECONDS = 30;
+const QUIZ_TRANSITION_MS = 560;
+const BATTLE_ANIMATION_MS = 2000;
 
 let activeQuiz = null;
 let quizTimer = null;
@@ -51,17 +53,21 @@ levelMarkers.forEach(marker => {
   marker.addEventListener('click', () => moveLevelKnightTo(marker));
 });
 
-levelPopupClose.addEventListener('click', () => {
-  levelPopup.classList.add('hidden');
-  startLevelMusic();
-});
-
-levelPopup.addEventListener('click', event => {
-  if (event.target === levelPopup) {
+if (levelPopupClose) {
+  levelPopupClose.addEventListener('click', () => {
     levelPopup.classList.add('hidden');
     startLevelMusic();
-  }
-});
+  });
+}
+
+if (levelPopup) {
+  levelPopup.addEventListener('click', event => {
+    if (event.target === levelPopup) {
+      levelPopup.classList.add('hidden');
+      startLevelMusic();
+    }
+  });
+}
 
 function enemyAsset(enemy, state) {
   if (state === 'damage') return `../assets/images/enemies/${enemy}_damage.png`;
@@ -76,6 +82,10 @@ function knightAsset(state) {
   return '../assets/images/characters/knight.png';
 }
 
+function battleBackgroundAsset(quizId) {
+  return `../assets/images/battle-backgrounds/${quizId}.png`;
+}
+
 function ensureQuizModal() {
   let modal = document.getElementById('quizModal');
   if (modal) return modal;
@@ -84,26 +94,36 @@ function ensureQuizModal() {
   modal.className = 'quiz-modal hidden';
   modal.innerHTML = `
     <div class="quiz-card" role="dialog" aria-modal="true" aria-labelledby="quizTitle">
-      <div id="quizIntro" class="quiz-intro"></div>
-      <div id="quizGame" class="quiz-game hidden">
-        <div class="quiz-topbar">
-          <div id="quizHearts" class="quiz-hearts" aria-label="Lebenspunkte"></div>
+      <img id="quizBattleBg" class="quiz-battle-bg" alt="" draggable="false">
+      <div class="quiz-hearts-area"><div id="quizHearts" class="quiz-hearts" aria-label="Lebenspunkte"></div></div>
+      <div class="quiz-battle-zone" aria-hidden="true">
+        <img id="quizKnight" class="battle-sprite knight-battle" alt="Ritter" draggable="false">
+        <img id="quizEnemy" class="battle-sprite enemy-battle" alt="Gegner" draggable="false">
+        <span id="battleFeedback" class="battle-feedback hidden"></span>
+      </div>
+      <div id="quizIntro" class="quiz-intro quiz-panel"></div>
+      <div id="quizGame" class="quiz-game quiz-panel hidden">
+        <div class="quiz-panel-top">
           <div id="quizCounter" class="quiz-counter"></div>
           <div id="quizTimer" class="quiz-timer">30</div>
-        </div>
-        <div class="battle-row">
-          <img id="quizKnight" class="battle-sprite knight-battle" alt="Ritter">
-          <span id="battleFeedback" class="battle-feedback hidden"></span>
-          <img id="quizEnemy" class="battle-sprite enemy-battle" alt="Gegner">
         </div>
         <h2 id="quizTitle"></h2>
         <p id="quizQuestion" class="quiz-question"></p>
         <div id="quizAnswers" class="quiz-answers"></div>
       </div>
-      <div id="quizResult" class="quiz-result hidden"></div>
+      <div id="quizResult" class="quiz-result quiz-panel hidden"></div>
     </div>`;
   document.body.appendChild(modal);
   return modal;
+}
+
+function setQuizScene(modal, data, quizId) {
+  const bg = modal.querySelector('#quizBattleBg');
+  bg.src = battleBackgroundAsset(quizId);
+  bg.alt = `${data.title} Kampfhintergrund`;
+  modal.querySelector('#quizKnight').src = knightAsset('normal');
+  modal.querySelector('#quizEnemy').src = enemyAsset(data.enemy, 'normal');
+  modal.querySelector('#battleFeedback').classList.add('hidden');
 }
 
 function openQuizIntro(quizId) {
@@ -118,13 +138,14 @@ function openQuizIntro(quizId) {
   modal.classList.remove('hidden');
   modal.querySelector('#quizGame').classList.add('hidden');
   modal.querySelector('#quizResult').classList.add('hidden');
+  setQuizScene(modal, data, quizId);
   const intro = modal.querySelector('#quizIntro');
-  intro.classList.remove('hidden');
+  intro.className = 'quiz-intro quiz-panel';
   intro.innerHTML = `
     <h2>${data.title}</h2>
-    <img class="quiz-intro-enemy" src="${enemyAsset(data.enemy)}" alt="${data.enemyName}">
-    <p>${data.enemyName} bewacht diesen Bereich. Beantworte sieben Fragen. Für jede falsche Antwort oder abgelaufene Zeit verlierst du ein Herz.</p>
-    <button id="startQuizButton" class="primary-button" type="button">Quiz starten</button>
+    <p><strong>${data.enemyName}</strong> stellt sich dir in den Weg.</p>
+    <p>Beantworte sieben Fragen. Richtige Antworten lassen den Ritter angreifen. Bei falschen Antworten oder abgelaufener Zeit verlierst du ein Herz.</p>
+    <button id="startQuizButton" class="primary-button" type="button">Kampf starten</button>
   `;
   modal.querySelector('#startQuizButton').addEventListener('click', () => startQuiz(quizId));
 }
@@ -139,17 +160,22 @@ function startQuiz(quizId) {
     correct: 0,
     answered: false,
     seconds: QUIZ_SECONDS,
-    finished: false
+    finished: false,
+    transitioning: false
   };
   const modal = ensureQuizModal();
+  setQuizScene(modal, data, quizId);
   modal.querySelector('#quizIntro').classList.add('hidden');
   modal.querySelector('#quizResult').classList.add('hidden');
-  modal.querySelector('#quizGame').classList.remove('hidden');
-  renderQuestion();
+  const game = modal.querySelector('#quizGame');
+  game.className = 'quiz-game quiz-panel hidden';
+  game.classList.remove('hidden');
+  renderQuestion('in');
 }
 
 function renderHearts() {
   const hearts = document.getElementById('quizHearts');
+  if (!hearts || !activeQuiz) return;
   hearts.innerHTML = '';
   for (let i = 0; i < 3; i++) {
     const span = document.createElement('span');
@@ -158,12 +184,21 @@ function renderHearts() {
   }
 }
 
-function renderQuestion() {
+function renderQuestion(entrance = 'none') {
   clearInterval(quizTimer);
   if (!activeQuiz || activeQuiz.finished) return;
   const q = activeQuiz.data.questions[activeQuiz.index];
   activeQuiz.answered = false;
+  activeQuiz.transitioning = false;
   activeQuiz.seconds = QUIZ_SECONDS;
+
+  const game = document.getElementById('quizGame');
+  game.className = 'quiz-game quiz-panel';
+  if (entrance === 'in') {
+    game.classList.add('slide-in-right');
+    setTimeout(() => game.classList.remove('slide-in-right'), QUIZ_TRANSITION_MS + 80);
+  }
+
   document.getElementById('quizTitle').textContent = activeQuiz.data.title;
   document.getElementById('quizCounter').textContent = `Frage ${activeQuiz.index + 1} / ${activeQuiz.data.questions.length}`;
   document.getElementById('quizTimer').textContent = activeQuiz.seconds;
@@ -172,6 +207,7 @@ function renderQuestion() {
   document.getElementById('quizEnemy').src = enemyAsset(activeQuiz.data.enemy, 'normal');
   document.getElementById('battleFeedback').classList.add('hidden');
   renderHearts();
+
   const answers = document.getElementById('quizAnswers');
   answers.innerHTML = '';
   q[1].forEach((answer, idx) => {
@@ -182,20 +218,21 @@ function renderQuestion() {
     btn.addEventListener('click', () => answerQuestion(idx));
     answers.appendChild(btn);
   });
+
   quizTimer = setInterval(() => {
-    if (!activeQuiz || activeQuiz.answered) return;
+    if (!activeQuiz || activeQuiz.answered || activeQuiz.transitioning) return;
     activeQuiz.seconds -= 1;
     document.getElementById('quizTimer').textContent = activeQuiz.seconds;
-    if (activeQuiz.seconds <= 0) {
-      answerQuestion(-1);
-    }
+    if (activeQuiz.seconds <= 0) answerQuestion(-1);
   }, 1000);
 }
 
 function answerQuestion(idx) {
-  if (!activeQuiz || activeQuiz.answered || activeQuiz.finished) return;
+  if (!activeQuiz || activeQuiz.answered || activeQuiz.finished || activeQuiz.transitioning) return;
   activeQuiz.answered = true;
+  activeQuiz.transitioning = true;
   clearInterval(quizTimer);
+
   const q = activeQuiz.data.questions[activeQuiz.index];
   const correct = idx === q[2];
   const answerButtons = document.querySelectorAll('.quiz-answer');
@@ -204,64 +241,96 @@ function answerQuestion(idx) {
     if (i === q[2]) btn.classList.add('correct-answer');
     if (i === idx && !correct) btn.classList.add('wrong-answer');
   });
+
+  setTimeout(() => {
+    const game = document.getElementById('quizGame');
+    game.classList.add('slide-out-left');
+
+    setTimeout(() => {
+      game.classList.add('hidden');
+      game.classList.remove('slide-out-left');
+      playBattleAnimation(correct, idx);
+    }, QUIZ_TRANSITION_MS);
+  }, 430);
+}
+
+function playBattleAnimation(correct, idx) {
   const feedback = document.getElementById('battleFeedback');
+  const knight = document.getElementById('quizKnight');
+  const enemy = document.getElementById('quizEnemy');
+
   feedback.classList.remove('hidden');
+  knight.classList.remove('sprite-pop', 'sprite-shake');
+  enemy.classList.remove('sprite-shake');
+
   if (correct) {
     activeQuiz.correct += 1;
     feedback.textContent = 'Treffer!';
-    document.getElementById('quizKnight').src = knightAsset('attack');
-    document.getElementById('quizKnight').classList.add('sprite-pop');
-    document.getElementById('quizEnemy').src = enemyAsset(activeQuiz.data.enemy, 'damage');
-    document.getElementById('quizEnemy').classList.add('sprite-shake');
+    knight.src = knightAsset('attack');
+    enemy.src = enemyAsset(activeQuiz.data.enemy, 'damage');
+    knight.classList.add('sprite-pop');
+    enemy.classList.add('sprite-shake');
   } else {
     activeQuiz.hearts -= 1;
     feedback.textContent = idx === -1 ? 'Zeit abgelaufen!' : 'Falsch!';
-    document.getElementById('quizKnight').src = knightAsset('damage');
-    document.getElementById('quizKnight').classList.add('sprite-shake');
+    knight.src = knightAsset('damage');
+    enemy.src = enemyAsset(activeQuiz.data.enemy, 'normal');
+    knight.classList.add('sprite-shake');
   }
+
   renderHearts();
+
   setTimeout(() => {
-    document.getElementById('quizKnight').classList.remove('sprite-pop','sprite-shake');
-    document.getElementById('quizEnemy').classList.remove('sprite-shake');
-    if (activeQuiz.hearts <= 0) {
-      showQuizEndButton();
-    } else if (activeQuiz.index >= activeQuiz.data.questions.length - 1) {
-      showQuizEndButton();
+    knight.classList.remove('sprite-pop', 'sprite-shake');
+    enemy.classList.remove('sprite-shake');
+
+    if (activeQuiz.hearts <= 0 || activeQuiz.index >= activeQuiz.data.questions.length - 1) {
+      showQuizEndPanel();
     } else {
       activeQuiz.index += 1;
-      renderQuestion();
+      knight.src = knightAsset('normal');
+      enemy.src = enemyAsset(activeQuiz.data.enemy, 'normal');
+      feedback.classList.add('hidden');
+      document.getElementById('quizGame').classList.remove('hidden');
+      renderQuestion('in');
     }
-  }, 1150);
+  }, BATTLE_ANIMATION_MS);
 }
 
-function showQuizEndButton() {
+function showQuizEndPanel() {
   activeQuiz.finished = true;
   clearInterval(quizTimer);
-  const answers = document.getElementById('quizAnswers');
-  answers.innerHTML = '';
-  const btn = document.createElement('button');
-  btn.type = 'button';
-  btn.className = 'primary-button';
-  btn.textContent = 'Quiz beenden';
-  btn.addEventListener('click', showQuizResult);
-  answers.appendChild(btn);
+  const modal = ensureQuizModal();
+  modal.querySelector('#quizGame').classList.add('hidden');
+  document.getElementById('battleFeedback').classList.add('hidden');
+  document.getElementById('quizKnight').src = knightAsset('normal');
+  document.getElementById('quizEnemy').src = enemyAsset(activeQuiz.data.enemy, 'normal');
+
+  const result = modal.querySelector('#quizResult');
+  result.className = 'quiz-result quiz-panel slide-in-right';
+  const couldWin = activeQuiz.hearts > 0;
+  result.innerHTML = `
+    <h2>Quiz abgeschlossen</h2>
+    <p>${couldWin ? 'Du hast alle Fragen überstanden.' : 'Du hast keine Herzen mehr.'}</p>
+    <p>Drücke auf „Quiz beenden“, damit das Ergebnis angezeigt wird.</p>
+    <button id="finishQuizButton" class="primary-button" type="button">Quiz beenden</button>
+  `;
+  setTimeout(() => result.classList.remove('slide-in-right'), QUIZ_TRANSITION_MS + 80);
+  document.getElementById('finishQuizButton').addEventListener('click', showQuizResult);
 }
 
 function showQuizResult() {
   const won = activeQuiz.hearts > 0;
   const modal = ensureQuizModal();
   modal.querySelector('#quizGame').classList.add('hidden');
+  document.getElementById('quizKnight').src = won ? knightAsset('normal') : knightAsset('defeated');
+  document.getElementById('quizEnemy').src = won ? enemyAsset(activeQuiz.data.enemy, 'defeated') : enemyAsset(activeQuiz.data.enemy, 'normal');
+
   const result = modal.querySelector('#quizResult');
-  result.classList.remove('hidden');
-  const img = won ? knightAsset('normal') : enemyAsset(activeQuiz.data.enemy, 'normal');
-  const defeatedImg = won ? enemyAsset(activeQuiz.data.enemy, 'defeated') : knightAsset('defeated');
+  result.className = 'quiz-result quiz-panel';
   result.innerHTML = `
     <h2>${won ? 'Gewonnen!' : 'Verloren!'}</h2>
-    <div class="result-images">
-      <img src="${img}" alt="${won ? 'Ritter' : activeQuiz.data.enemyName}">
-      <img src="${defeatedImg}" alt="Besiegt">
-    </div>
-    <p>${won ? `Du hast ${activeQuiz.correct} von ${activeQuiz.data.questions.length} Fragen richtig beantwortet.` : 'Der Gegner hat gewonnen. Versuche es noch einmal.'}</p>
+    <p>${won ? `Du hast ${activeQuiz.correct} von ${activeQuiz.data.questions.length} Fragen richtig beantwortet und den Gegner besiegt.` : 'Der Gegner hat gewonnen. Versuche es noch einmal.'}</p>
     <div class="quiz-result-actions">
       <button id="retryQuizButton" class="ghost-button" type="button">Nochmal spielen</button>
       <button id="closeQuizButton" class="primary-button" type="button">Zur Karte</button>
