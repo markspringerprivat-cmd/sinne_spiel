@@ -7,6 +7,8 @@
   <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body class="game-page">
+  <audio id="backgroundMusic" src="assets/audio/spielfeld.mp3" loop preload="auto"></audio>
+
   <main class="overworld" aria-label="Interaktive Sinneskarte">
     <section class="map-stage" aria-label="Karte des Königreichs">
       <img class="map-image" src="assets/images/map/overworld.png" alt="Karte des Königreichs mit Sinnesgebieten" draggable="false">
@@ -32,6 +34,28 @@
     <button id="settingsButton" class="settings-button" aria-label="Einstellungen öffnen">⚙️</button>
   </main>
 
+  <div id="introModal" class="game-modal hidden" role="dialog" aria-modal="true" aria-labelledby="introTitle">
+    <div class="game-modal-card intro-card">
+      <h2 id="introTitle"></h2>
+      <p id="introText"></p>
+      <div class="slider-dots" id="introDots" aria-hidden="true"></div>
+      <div class="modal-actions compact-actions">
+        <button id="introBackButton" class="ghost-button" type="button">Zurück</button>
+        <button id="introNextButton" class="primary-button" type="button">Weiter</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="returnModal" class="game-modal hidden" role="dialog" aria-modal="true" aria-labelledby="returnModalTitle">
+    <div class="game-modal-card">
+      <h2 id="returnModalTitle">Zurück auf dem Spielfeld</h2>
+      <p>Scanne einen QR-Code, um weitere Level freizuschalten, oder tippe ein bereits geöffnetes Gebiet an.</p>
+      <div class="modal-actions compact-actions">
+        <button id="returnContinueButton" class="primary-button" type="button">Weiter</button>
+      </div>
+    </div>
+  </div>
+
   <div id="infoModal" class="game-modal hidden" role="dialog" aria-modal="true" aria-labelledby="infoModalTitle">
     <div class="game-modal-card">
       <button class="modal-close" type="button" data-close-modal aria-label="Fenster schließen">×</button>
@@ -48,7 +72,22 @@
     <div class="game-modal-card settings-card">
       <button class="modal-close" type="button" data-close-settings aria-label="Einstellungen schließen">×</button>
       <h2 id="settingsModalTitle">Einstellungen</h2>
-      <div class="settings-empty" aria-label="Noch keine Einstellungen vorhanden"></div>
+
+      <label class="setting-row" for="volumeSlider">
+        <span>Lautstärke</span>
+        <input id="volumeSlider" type="range" min="0" max="100" value="60">
+      </label>
+
+      <button id="showQrButton" class="ghost-button full-width-button" type="button">QR-Codes anzeigen</button>
+
+      <div id="qrOverview" class="qr-overview hidden" aria-label="QR-Code-Übersicht">
+        <div class="qr-tile"><img src="assets/qr/unlock-zauberschloss.png" alt="QR-Code Zauberschloss"><span>Zauberschloss</span></div>
+        <div class="qr-tile"><img src="assets/qr/unlock-farbenreich.png" alt="QR-Code Farbenreich"><span>Farbenreich</span></div>
+        <div class="qr-tile"><img src="assets/qr/unlock-klangwald.png" alt="QR-Code Klangwald"><span>Klangwald</span></div>
+        <div class="qr-tile"><img src="assets/qr/unlock-tastminen.png" alt="QR-Code Tastminen"><span>Tastminen</span></div>
+        <div class="qr-tile"><img src="assets/qr/unlock-duftgarten.png" alt="QR-Code Duftgarten"><span>Duftgarten</span></div>
+        <div class="qr-tile"><img src="assets/qr/unlock-flammenkueche.png" alt="QR-Code Flammenküche"><span>Flammenküche</span></div>
+      </div>
     </div>
   </div>
 

@@ -287,3 +287,88 @@ p { line-height: 1.5; }
   .game-page, .overworld, .map-stage { height: 100vh; }
   .map-stage { width: calc(100vh * 941 / 1672); }
 }
+
+
+.intro-card {
+  min-height: 260px;
+}
+.slider-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 18px 0 4px;
+}
+.slider-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #c9cfdb;
+}
+.slider-dot.active {
+  background: #6540c9;
+}
+.compact-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+.setting-row {
+  display: grid;
+  gap: 10px;
+  text-align: left;
+  margin: 18px 0 16px;
+  font-weight: 800;
+}
+.setting-row input[type="range"] {
+  width: 100%;
+}
+.full-width-button {
+  width: 100%;
+  margin: 6px 0 14px;
+}
+.qr-overview {
+  max-height: min(48vh, 420px);
+  overflow: auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding-right: 2px;
+}
+.qr-tile {
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  padding: 10px;
+  border-radius: 14px;
+  background: #f3f6fb;
+  font-size: .82rem;
+  font-weight: 800;
+}
+.qr-tile img {
+  width: 90px;
+  height: 90px;
+  image-rendering: pixelated;
+}
+.scanner-card {
+  width: min(480px, 100%);
+}
+.scanner-hint {
+  margin: 0 0 14px;
+}
+.qr-reader {
+  width: 100%;
+  overflow: hidden;
+  border-radius: 18px;
+  background: #f3f6fb;
+  min-height: 260px;
+}
+#qr-reader video {
+  border-radius: 18px;
+}
+.scanner-status {
+  margin-top: 14px !important;
+  font-size: .95rem !important;
+  color: #536071 !important;
+}

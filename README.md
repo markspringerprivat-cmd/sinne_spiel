@@ -78,3 +78,13 @@ Wenn das Repository anders heißt oder unter einer anderen Adresse veröffentlic
 - Gesperrte Gebiete werden nur durch ein großes Schloss-Symbol markiert
 - Beim Tippen auf ein gesperrtes Gebiet erscheint ein Pop-up mit Zurück- und QR-Code-Scanner-Button
 - QR-Codes können über URL-Parameter oder den integrierten Kamera-Scanner freischalten
+
+## Erweiterungen
+
+- Beim ersten Betreten des Spielfelds erscheint ein dreiteiliges Einführungs-Pop-up.
+- Die Hintergrundmusik `assets/audio/spielfeld.mp3` startet nach Klick auf „Abenteuer beginnen“.
+- In den Einstellungen gibt es einen Lautstärkeregler.
+- In den Einstellungen können alle QR-Codes eingeblendet werden.
+- Gesperrte Gebiete zeigen nur ein Schloss-Symbol; die Karte bleibt sichtbar.
+- Freigeschaltete Level führen zu eigenen HTML-Seiten unter `levels/`.
+- Zurück aus einem Level führt zu `game.html?fromLevel=1` und zeigt ein Rückkehr-Pop-up.

@@ -1,13 +1,31 @@
 const knight = document.getElementById('knight');
 const hotspots = document.querySelectorAll('.hotspot');
 const lockButtons = document.querySelectorAll('[data-lock-button]');
+
+const backgroundMusic = document.getElementById('backgroundMusic');
+const volumeSlider = document.getElementById('volumeSlider');
+
+const introModal = document.getElementById('introModal');
+const introTitle = document.getElementById('introTitle');
+const introText = document.getElementById('introText');
+const introDots = document.getElementById('introDots');
+const introBackButton = document.getElementById('introBackButton');
+const introNextButton = document.getElementById('introNextButton');
+
+const returnModal = document.getElementById('returnModal');
+const returnContinueButton = document.getElementById('returnContinueButton');
+
 const infoModal = document.getElementById('infoModal');
 const infoModalTitle = document.getElementById('infoModalTitle');
 const infoModalText = document.getElementById('infoModalText');
 const infoModalActions = document.getElementById('infoModalActions');
 const scanFromInfoButton = document.getElementById('scanFromInfoButton');
+
 const settingsButton = document.getElementById('settingsButton');
 const settingsModal = document.getElementById('settingsModal');
+const showQrButton = document.getElementById('showQrButton');
+const qrOverview = document.getElementById('qrOverview');
+
 const scannerModal = document.getElementById('scannerModal');
 const scannerStatus = document.getElementById('scannerStatus');
 
@@ -15,6 +33,8 @@ const STORAGE_UNLOCKED = 'sinnesmagie-unlocked-areas';
 const STORAGE_POS_X = 'sinnesmagie-knight-x';
 const STORAGE_POS_Y = 'sinnesmagie-knight-y';
 const STORAGE_AREA = 'sinnesmagie-last-area';
+const STORAGE_INTRO_SEEN = 'sinnesmagie-game-intro-seen';
+const STORAGE_VOLUME = 'sinnesmagie-volume';
 
 const areaNames = {
   koenigsschloss: 'Königsschloss',
@@ -26,10 +46,36 @@ const areaNames = {
   flammenkueche: 'Flammenküche'
 };
 
+const levelPages = {
+  zauberschloss: 'levels/zauberschloss.html',
+  farbenreich: 'levels/farbenreich.html',
+  klangwald: 'levels/klangwald.html',
+  tastminen: 'levels/tastminen.html',
+  duftgarten: 'levels/duftgarten.html',
+  flammenkueche: 'levels/flammenkueche.html'
+};
+
+const introSlides = [
+  {
+    title: 'Die Suche beginnt',
+    text: 'Der Zauberer hat fünf Schlüsselfragmente in verschiedenen Bereichen des Königreichs versteckt. Finde sie, öffne sein Schloss und hole die Sinnesmagie zurück.'
+  },
+  {
+    title: 'So schaltest du Level frei',
+    text: 'An den Stationen im Raum findest du QR-Codes. Scanne sie, um Level freizuschalten und die Schlüsselfragmente zu erspielen.'
+  },
+  {
+    title: 'Spielfeld bedienen',
+    text: 'Tippe auf ein Gebiet, um dorthin zu reisen. Unten rechts findest du die Einstellungen, zum Beispiel für die Lautstärke.'
+  }
+];
+
+let introIndex = 0;
 let selectedLockedArea = '';
 let html5QrCode = null;
 let scannerRunning = false;
 let scannerBusy = false;
+let pendingNavigation = null;
 
 function readUnlocked() {
   try {
@@ -49,6 +95,26 @@ let unlockedAreas = readUnlocked();
 
 function isUnlocked(area) {
   return unlockedAreas.has(area);
+}
+
+function currentVolume() {
+  const saved = Number(localStorage.getItem(STORAGE_VOLUME));
+  if (Number.isFinite(saved)) return Math.min(1, Math.max(0, saved));
+  return 0.6;
+}
+
+function applyVolume(value) {
+  const volume = Math.min(1, Math.max(0, Number(value)));
+  backgroundMusic.volume = volume;
+  localStorage.setItem(STORAGE_VOLUME, String(volume));
+  volumeSlider.value = String(Math.round(volume * 100));
+}
+
+function startMusic() {
+  applyVolume(Number(volumeSlider.value) / 100);
+  backgroundMusic.play().catch(() => {
+    // Browser blockiert Wiedergabe, bis erneut interagiert wird.
+  });
 }
 
 function showInfo(title, text, options = {}) {
@@ -111,6 +177,12 @@ function moveKnightTo(button) {
   localStorage.setItem(STORAGE_POS_X, x);
   localStorage.setItem(STORAGE_POS_Y, y);
   localStorage.setItem(STORAGE_AREA, area);
+
+  if (levelPages[area]) {
+    pendingNavigation = window.setTimeout(() => {
+      window.location.href = levelPages[area];
+    }, 850);
+  }
 }
 
 function normalizeScannedArea(rawText) {
@@ -242,6 +314,46 @@ function applyUnlockFromUrl() {
   window.history.replaceState({}, document.title, cleanUrl);
 }
 
+function renderIntro() {
+  const slide = introSlides[introIndex];
+  introTitle.textContent = slide.title;
+  introText.textContent = slide.text;
+  introBackButton.classList.toggle('hidden', introIndex === 0);
+  introNextButton.textContent = introIndex === introSlides.length - 1 ? 'Abenteuer beginnen' : 'Weiter';
+
+  introDots.innerHTML = introSlides.map((_, index) =>
+    `<span class="slider-dot ${index === introIndex ? 'active' : ''}"></span>`
+  ).join('');
+}
+
+function openIntro() {
+  introIndex = 0;
+  renderIntro();
+  introModal.classList.remove('hidden');
+}
+
+function closeIntroAndStart() {
+  introModal.classList.add('hidden');
+  localStorage.setItem(STORAGE_INTRO_SEEN, 'true');
+  startMusic();
+}
+
+function maybeShowEntryModal() {
+  const params = new URLSearchParams(window.location.search);
+  const fromLevel = params.get('fromLevel') === '1';
+
+  if (fromLevel) {
+    returnModal.classList.remove('hidden');
+    const cleanUrl = `${window.location.origin}${window.location.pathname}`;
+    window.history.replaceState({}, document.title, cleanUrl);
+    return;
+  }
+
+  if (localStorage.getItem(STORAGE_INTRO_SEEN) !== 'true') {
+    openIntro();
+  }
+}
+
 hotspots.forEach(button => {
   button.addEventListener('click', () => moveKnightTo(button));
 });
@@ -255,6 +367,39 @@ lockButtons.forEach(button => {
 });
 
 scanFromInfoButton.addEventListener('click', openScanner);
+
+introNextButton.addEventListener('click', () => {
+  if (introIndex < introSlides.length - 1) {
+    introIndex += 1;
+    renderIntro();
+    return;
+  }
+
+  closeIntroAndStart();
+});
+
+introBackButton.addEventListener('click', () => {
+  if (introIndex > 0) {
+    introIndex -= 1;
+    renderIntro();
+  }
+});
+
+returnContinueButton.addEventListener('click', () => {
+  returnModal.classList.add('hidden');
+  startMusic();
+});
+
+showQrButton.addEventListener('click', () => {
+  qrOverview.classList.toggle('hidden');
+  showQrButton.textContent = qrOverview.classList.contains('hidden')
+    ? 'QR-Codes anzeigen'
+    : 'QR-Codes ausblenden';
+});
+
+volumeSlider.addEventListener('input', event => {
+  applyVolume(Number(event.target.value) / 100);
+});
 
 document.querySelectorAll('[data-close-modal]').forEach(button => {
   button.addEventListener('click', closeInfo);
@@ -291,5 +436,7 @@ if (savedX && savedY) {
   knight.style.top = `${savedY}%`;
 }
 
+applyVolume(currentVolume());
 updateLocks();
 applyUnlockFromUrl();
+maybeShowEntryModal();
