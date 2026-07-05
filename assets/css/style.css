@@ -1064,3 +1064,140 @@ p { line-height: 1.5; }
     min-height: 24% !important;
   }
 }
+
+/* Fragment-HUD auf der Overworld */
+.fragment-hud {
+  position: fixed;
+  top: max(10px, env(safe-area-inset-top));
+  left: max(10px, env(safe-area-inset-left));
+  z-index: 12;
+  min-width: min(340px, calc(100vw - 24px));
+  max-width: min(420px, calc(100vw - 24px));
+  padding: 12px 14px;
+  border-radius: 20px;
+  background: rgba(255,255,255,.82);
+  border: 2px solid rgba(255,255,255,.72);
+  box-shadow: 0 14px 30px rgba(0,0,0,.18);
+  backdrop-filter: blur(4px);
+}
+.fragment-hud-title {
+  font-size: .92rem;
+  font-weight: 900;
+  color: #243047;
+  margin-bottom: 8px;
+}
+.fragment-hud-slots {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.fragment-slot {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  color: #6b7280;
+  background: rgba(226,232,240,.95);
+  border: 2px dashed rgba(100,116,139,.45);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.35);
+}
+.fragment-slot span {
+  transform: translateY(-1px);
+}
+.fragment-slot.collected {
+  color: #fff;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--fragment-color) 82%, white), var(--fragment-color));
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--fragment-color) 74%, #3b2a17);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--fragment-color) 36%, transparent), inset 0 0 0 1px rgba(255,255,255,.3);
+}
+.fragment-hud-text {
+  margin-top: 8px;
+  font-size: .84rem;
+  font-weight: 800;
+  color: #334155;
+}
+.lock-button.castle-ready {
+  animation: castlePulse 1.4s ease-in-out infinite;
+  box-shadow: 0 0 0 4px rgba(255,255,255,.42), 0 0 24px rgba(255,224,112,.72);
+  background: radial-gradient(circle at 30% 30%, #fff8d0, #f7c948);
+}
+@keyframes castlePulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -50%) scale(1.08); }
+}
+
+/* Gegner greift bei falscher Antwort an */
+.enemy-attack-strike {
+  animation: enemyAttackStrike .95s ease-in-out both;
+  z-index: 5;
+}
+.knight-damaged {
+  animation: knightDamageHit .85s ease-in-out both;
+  z-index: 4;
+}
+@keyframes enemyAttackStrike {
+  0% { transform: translateX(0) scale(1); }
+  26% { transform: translateX(-30%) scale(1.04); }
+  46% { transform: translateX(-58%) scale(1.08); }
+  64% { transform: translateX(-52%) scale(1.06); }
+  100% { transform: translateX(0) scale(1); }
+}
+@keyframes knightDamageHit {
+  0% { transform: translateX(0) scale(1); }
+  18% { transform: translateX(7%) scale(1.02); }
+  38% { transform: translateX(-6%) scale(.98) rotate(-2deg); }
+  58% { transform: translateX(4%) scale(1.01) rotate(1deg); }
+  100% { transform: translateX(0) scale(1); }
+}
+
+/* Fragment-Popup im Ergebnisfenster */
+.fragment-reward-box {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+  align-items: center;
+  margin: 10px auto 4px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: rgba(255,255,255,.82);
+  box-shadow: inset 0 0 0 2px rgba(255,255,255,.45), 0 8px 18px rgba(0,0,0,.12);
+}
+.fragment-reward-box p {
+  margin: 3px 0 0 !important;
+  font-size: clamp(.82rem, 2.4vmin, .96rem) !important;
+}
+.fragment-mini {
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 1.5rem;
+  font-weight: 900;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--fragment-color) 84%, white), var(--fragment-color));
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--fragment-color) 40%, transparent);
+}
+.fragment-hint {
+  margin-top: 2px !important;
+  color: #3b2a17 !important;
+}
+.finale-box {
+  grid-template-columns: 1fr;
+}
+@media (max-width: 680px) {
+  .fragment-hud {
+    min-width: auto;
+    max-width: calc(100vw - 20px);
+    padding: 10px 12px;
+  }
+  .fragment-slot {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    font-size: .9rem;
+  }
+}

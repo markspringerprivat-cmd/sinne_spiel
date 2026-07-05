@@ -7,11 +7,22 @@ const levelPopupClose = document.getElementById('levelPopupClose');
 const levelMusic = document.getElementById('levelMusic');
 
 const STORAGE_VOLUME = 'sinnesmagie-volume';
+const STORAGE_FRAGMENTS = 'sinnesmagie-fragments';
 const QUIZ_SECONDS = 30;
 const QUIZ_TRANSITION_MS = 560;
 const BATTLE_ANIMATION_MS = 2000;
 const STRIKE_RESET_MS = 1080;
-const DAMAGE_RESET_MS = 900;
+const DAMAGE_RESET_MS = 980;
+
+const FRAGMENT_REWARDS = {
+  farbenreich: { name: 'Seh-Fragment', color: '#ff6b6b', icon: '◈' },
+  klangwald: { name: 'Hör-Fragment', color: '#ffd166', icon: '◈' },
+  tastminen: { name: 'Tast-Fragment', color: '#8d99ae', icon: '◈' },
+  duftgarten: { name: 'Duft-Fragment', color: '#b388ff', icon: '◈' },
+  flammenkueche: { name: 'Geschmacks-Fragment', color: '#ff7b54', icon: '◈' }
+};
+
+const ENEMIES_WITH_ATTACK_ASSET = new Set(['farbgolem', 'waldgeist', 'maulwurf', 'duftgeist', 'feuergolem']);
 
 let activeQuiz = null;
 let quizTimer = null;
@@ -34,6 +45,38 @@ function currentVolume() {
   const saved = Number(localStorage.getItem(STORAGE_VOLUME));
   if (Number.isFinite(saved)) return Math.min(1, Math.max(0, saved));
   return 0.6;
+}
+
+function readFragments() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_FRAGMENTS) || '[]');
+    return new Set(Array.isArray(saved) ? saved : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function saveFragments(fragmentSet) {
+  localStorage.setItem(STORAGE_FRAGMENTS, JSON.stringify([...fragmentSet]));
+}
+
+function awardFragment(quizId) {
+  const reward = FRAGMENT_REWARDS[quizId];
+  if (!reward) return { gained: false, reward: null, total: readFragments().size };
+
+  const fragments = readFragments();
+  const alreadyHad = fragments.has(quizId);
+  if (!alreadyHad) {
+    fragments.add(quizId);
+    saveFragments(fragments);
+  }
+
+  return {
+    gained: !alreadyHad,
+    reward,
+    total: fragments.size,
+    allCollected: fragments.size >= Object.keys(FRAGMENT_REWARDS).length
+  };
 }
 
 function startLevelMusic() {
@@ -96,6 +139,13 @@ function enemyAsset(enemy, state) {
   return `../assets/images/enemies/${enemy}.png`;
 }
 
+function enemyAttackAsset(enemy) {
+  if (ENEMIES_WITH_ATTACK_ASSET.has(enemy)) {
+    return `../assets/images/enemies/${enemy}_attack.png`;
+  }
+  return enemyAsset(enemy, 'normal');
+}
+
 function knightAsset(state) {
   if (state === 'attack') return '../assets/images/characters/ritter_attack.png';
   if (state === 'damage') return '../assets/images/characters/ritter_damage.png';
@@ -120,6 +170,7 @@ function preloadQuizAssets(data, quizId) {
   preloadImage(battleBackgroundAsset(quizId));
   ['normal', 'attack', 'damage', 'defeated', 'victory'].forEach(state => preloadImage(knightAsset(state)));
   ['normal', 'damage', 'defeated'].forEach(state => preloadImage(enemyAsset(data.enemy, state)));
+  preloadImage(enemyAttackAsset(data.enemy));
 }
 
 function ensureQuizModal() {
@@ -181,7 +232,7 @@ function openQuizIntro(quizId) {
   intro.innerHTML = `
     <h2>${data.title}</h2>
     <p><strong>${data.enemyName}</strong> stellt sich dir in den Weg.</p>
-    <p>Beantworte sieben Fragen. Richtige Antworten lassen den Ritter angreifen. Bei falschen Antworten oder abgelaufener Zeit verlierst du ein Herz.</p>
+    <p>Beantworte sieben Fragen. Richtige Antworten lassen den Ritter angreifen. Bei falschen Antworten oder abgelaufener Zeit greift der Gegner an und du verlierst ein Herz.</p>
     <button id="startQuizButton" class="primary-button" type="button">Kampf starten</button>
   `;
   modal.querySelector('#startQuizButton').addEventListener('click', () => startQuiz(quizId));
@@ -299,8 +350,8 @@ function playBattleAnimation(correct, idx) {
   const enemy = document.getElementById('quizEnemy');
 
   feedback.classList.remove('hidden');
-  knight.classList.remove('sprite-pop', 'sprite-shake', 'knight-strike');
-  enemy.classList.remove('sprite-shake', 'enemy-hit');
+  knight.classList.remove('sprite-pop', 'sprite-shake', 'knight-strike', 'knight-damaged');
+  enemy.classList.remove('sprite-shake', 'enemy-hit', 'enemy-attack-strike');
 
   if (correct) {
     activeQuiz.correct += 1;
@@ -324,23 +375,27 @@ function playBattleAnimation(correct, idx) {
     activeQuiz.hearts -= 1;
     feedback.textContent = idx === -1 ? 'Zeit abgelaufen!' : 'Falsch!';
     knight.src = knightAsset('damage');
-    enemy.src = enemyAsset(activeQuiz.data.enemy, 'normal');
+    enemy.src = enemyAttackAsset(activeQuiz.data.enemy);
     void knight.offsetWidth;
+    void enemy.offsetWidth;
     playSfx(sfxWrong);
-    knight.classList.add('sprite-shake');
+    knight.classList.add('knight-damaged');
+    enemy.classList.add('enemy-attack-strike');
 
     setTimeout(() => {
       if (!activeQuiz || activeQuiz.finished) return;
-      knight.classList.remove('sprite-shake');
+      knight.classList.remove('knight-damaged');
+      enemy.classList.remove('enemy-attack-strike');
       knight.src = knightAsset('normal');
+      enemy.src = enemyAsset(activeQuiz.data.enemy, 'normal');
     }, DAMAGE_RESET_MS);
   }
 
   renderHearts();
 
   setTimeout(() => {
-    knight.classList.remove('sprite-pop', 'sprite-shake', 'knight-strike');
-    enemy.classList.remove('sprite-shake', 'enemy-hit');
+    knight.classList.remove('sprite-pop', 'sprite-shake', 'knight-strike', 'knight-damaged');
+    enemy.classList.remove('sprite-shake', 'enemy-hit', 'enemy-attack-strike');
 
     if (activeQuiz.hearts <= 0 || activeQuiz.index >= activeQuiz.data.questions.length - 1) {
       showQuizEndPanel();
@@ -384,18 +439,51 @@ function showQuizResult() {
   document.getElementById('quizKnight').src = won ? knightAsset('victory') : knightAsset('defeated');
   document.getElementById('quizEnemy').src = won ? enemyAsset(activeQuiz.data.enemy, 'defeated') : enemyAsset(activeQuiz.data.enemy, 'normal');
 
+  const fragmentStatus = won ? awardFragment(activeQuiz.quizId) : { gained: false, reward: null, total: readFragments().size, allCollected: false };
   const result = modal.querySelector('#quizResult');
   result.className = 'quiz-result quiz-panel quiz-final-result';
+
+  let extraBlock = '';
+  if (won && fragmentStatus.reward) {
+    const allText = fragmentStatus.allCollected
+      ? '<p class="fragment-hint">Alle fünf Fragmente sind gesammelt. Auf der Overworld kannst du jetzt das Zauberschloss zerbrechen.</p>'
+      : '';
+    extraBlock = `
+      <div class="fragment-reward-box">
+        <span class="fragment-mini" style="--fragment-color:${fragmentStatus.reward.color}">${fragmentStatus.reward.icon}</span>
+        <div>
+          <strong>${fragmentStatus.gained ? 'Fragment freigeschaltet!' : 'Fragment bereits gesichert!'}</strong>
+          <p>${fragmentStatus.reward.name} · Gesammelt: ${fragmentStatus.total} / ${Object.keys(FRAGMENT_REWARDS).length}</p>
+        </div>
+      </div>
+      ${allText}
+    `;
+  } else if (won && activeQuiz.quizId === 'zauberschloss') {
+    extraBlock = `
+      <div class="fragment-reward-box finale-box">
+        <div>
+          <strong>Das Zauberschloss ist befreit!</strong>
+          <p>Du hast den Zauberer besiegt und die Sinnesmagie zurückerobert.</p>
+        </div>
+      </div>
+    `;
+  }
+
   result.innerHTML = `
     <h2>${won ? 'Gewonnen!' : 'Verloren!'}</h2>
     <p>${won ? `Du hast ${activeQuiz.correct} von ${activeQuiz.data.questions.length} Fragen richtig beantwortet und den Gegner besiegt.` : 'Der Gegner hat gewonnen. Versuche es noch einmal.'}</p>
+    ${extraBlock}
     <div class="quiz-result-actions">
       <button id="retryQuizButton" class="ghost-button" type="button">Nochmal spielen</button>
       <button id="closeQuizButton" class="primary-button" type="button">Zur Karte</button>
     </div>
   `;
   document.getElementById('retryQuizButton').addEventListener('click', () => startQuiz(activeQuiz.quizId));
-  document.getElementById('closeQuizButton').addEventListener('click', closeQuiz);
+  document.getElementById('closeQuizButton').addEventListener('click', returnToOverworld);
+}
+
+function returnToOverworld() {
+  window.location.href = '../game.html?fromLevel=1';
 }
 
 function closeQuiz() {

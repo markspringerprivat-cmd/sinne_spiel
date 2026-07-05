@@ -19,7 +19,6 @@ const infoModal = document.getElementById('infoModal');
 const infoModalTitle = document.getElementById('infoModalTitle');
 const infoModalText = document.getElementById('infoModalText');
 const infoModalActions = document.getElementById('infoModalActions');
-const scanFromInfoButton = document.getElementById('scanFromInfoButton');
 
 const settingsButton = document.getElementById('settingsButton');
 const settingsModal = document.getElementById('settingsModal');
@@ -36,6 +35,7 @@ const STORAGE_POS_Y = 'sinnesmagie-knight-y';
 const STORAGE_AREA = 'sinnesmagie-last-area';
 const STORAGE_INTRO_SEEN = 'sinnesmagie-game-intro-seen';
 const STORAGE_VOLUME = 'sinnesmagie-volume';
+const STORAGE_FRAGMENTS = 'sinnesmagie-fragments';
 
 const areaNames = {
   koenigsschloss: 'Königsschloss',
@@ -55,6 +55,15 @@ const levelPages = {
   duftgarten: 'levels/duftgarten.html',
   flammenkueche: 'levels/flammenkueche.html'
 };
+
+const fragmentMeta = {
+  farbenreich: { label: 'Sehen', color: '#ff6b6b', short: 'S' },
+  klangwald: { label: 'Hören', color: '#ffd166', short: 'H' },
+  tastminen: { label: 'Tasten', color: '#8d99ae', short: 'T' },
+  duftgarten: { label: 'Riechen', color: '#b388ff', short: 'R' },
+  flammenkueche: { label: 'Schmecken', color: '#ff7b54', short: 'G' }
+};
+const fragmentAreas = Object.keys(fragmentMeta);
 
 const introSlides = [
   {
@@ -77,6 +86,7 @@ let html5QrCode = null;
 let scannerRunning = false;
 let scannerBusy = false;
 let pendingNavigation = null;
+let fragmentHud = null;
 
 function readUnlocked() {
   try {
@@ -90,6 +100,19 @@ function readUnlocked() {
 function saveUnlocked(unlockedSet) {
   const values = [...unlockedSet].filter(area => area !== 'koenigsschloss');
   localStorage.setItem(STORAGE_UNLOCKED, JSON.stringify(values));
+}
+
+function readFragments() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_FRAGMENTS) || '[]');
+    return new Set(Array.isArray(saved) ? saved : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function allFragmentsCollected() {
+  return readFragments().size >= fragmentAreas.length;
 }
 
 let unlockedAreas = readUnlocked();
@@ -118,10 +141,76 @@ function startMusic() {
   });
 }
 
+function ensureFragmentHud() {
+  if (fragmentHud) return fragmentHud;
+  fragmentHud = document.createElement('div');
+  fragmentHud.className = 'fragment-hud';
+  fragmentHud.id = 'fragmentHud';
+  fragmentHud.innerHTML = `
+    <div class="fragment-hud-title">Schlüsselfragmente</div>
+    <div class="fragment-hud-slots" id="fragmentHudSlots"></div>
+    <div class="fragment-hud-text" id="fragmentHudText"></div>
+  `;
+  document.querySelector('.overworld').appendChild(fragmentHud);
+  return fragmentHud;
+}
+
+function renderFragments() {
+  const hud = ensureFragmentHud();
+  const slots = hud.querySelector('#fragmentHudSlots');
+  const text = hud.querySelector('#fragmentHudText');
+  const fragments = readFragments();
+
+  slots.innerHTML = fragmentAreas.map(area => {
+    const meta = fragmentMeta[area];
+    const collected = fragments.has(area);
+    return `
+      <div class="fragment-slot ${collected ? 'collected' : ''}" title="${meta.label}" style="--fragment-color:${meta.color}">
+        <span>${meta.short}</span>
+      </div>
+    `;
+  }).join('');
+
+  const total = fragments.size;
+  text.textContent = allFragmentsCollected()
+    ? 'Alle Fragmente gefunden – das Zauberschloss kann zerbrochen werden.'
+    : `${total} / ${fragmentAreas.length} Fragmente gesammelt`;
+}
+
+function renderInfoActions(options = {}) {
+  infoModalActions.innerHTML = '';
+
+  const backButton = document.createElement('button');
+  backButton.className = 'ghost-button';
+  backButton.type = 'button';
+  backButton.textContent = options.backLabel || 'Zurück';
+  backButton.addEventListener('click', closeInfo);
+  infoModalActions.appendChild(backButton);
+
+  if (options.showScanButton) {
+    const scanButton = document.createElement('button');
+    scanButton.id = 'scanFromInfoButton';
+    scanButton.className = 'primary-button';
+    scanButton.type = 'button';
+    scanButton.textContent = 'QR-Code scannen';
+    scanButton.addEventListener('click', openScanner);
+    infoModalActions.appendChild(scanButton);
+  }
+
+  (options.extraButtons || []).forEach(buttonConfig => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = buttonConfig.className || 'primary-button';
+    button.textContent = buttonConfig.label;
+    button.addEventListener('click', buttonConfig.onClick);
+    infoModalActions.appendChild(button);
+  });
+}
+
 function showInfo(title, text, options = {}) {
   infoModalTitle.textContent = title;
   infoModalText.textContent = text;
-  infoModalActions.classList.toggle('hidden', !options.showScanButton);
+  renderInfoActions(options);
   infoModal.classList.remove('hidden');
 }
 
@@ -139,6 +228,34 @@ function closeSettings() {
 
 function showLockedInfo(area) {
   selectedLockedArea = area;
+
+  if (area === 'zauberschloss') {
+    const total = readFragments().size;
+    if (allFragmentsCollected()) {
+      showInfo(
+        'Zauberschloss versiegelt',
+        'Alle fünf Fragmente sind gesammelt. Nutze ihre Magie, um das Schloss zu zerbrechen und den Zauberer herauszufordern.',
+        {
+          showScanButton: false,
+          extraButtons: [
+            {
+              label: 'Schloss zerbrechen',
+              className: 'primary-button',
+              onClick: breakCastleSeal
+            }
+          ]
+        }
+      );
+    } else {
+      showInfo(
+        'Zauberschloss ist gesperrt',
+        `Du brauchst zuerst alle fünf Fragmente. Bisher gesammelt: ${total} / ${fragmentAreas.length}.`,
+        { showScanButton: false }
+      );
+    }
+    return;
+  }
+
   showInfo(
     `${areaNames[area]} ist gesperrt`,
     'Um dieses Level freizuschalten, musst du den entsprechenden QR-Code an der Station scannen.',
@@ -147,20 +264,42 @@ function showLockedInfo(area) {
 }
 
 function updateLocks() {
+  const canBreakCastle = allFragmentsCollected() && !isUnlocked('zauberschloss');
   lockButtons.forEach(button => {
     const area = button.dataset.lockButton;
-    button.classList.toggle('hidden-lock', isUnlocked(area));
-    button.setAttribute('aria-hidden', isUnlocked(area) ? 'true' : 'false');
+    const unlocked = isUnlocked(area);
+    button.classList.toggle('hidden-lock', unlocked);
+    button.setAttribute('aria-hidden', unlocked ? 'true' : 'false');
+
+    if (area === 'zauberschloss') {
+      button.classList.toggle('castle-ready', canBreakCastle);
+      button.textContent = canBreakCastle ? '✨' : '🔒';
+      button.setAttribute('aria-label', unlocked ? 'Zauberschloss ist geöffnet' : canBreakCastle ? 'Zauberschloss kann zerbrochen werden' : 'Zauberschloss ist gesperrt');
+    }
   });
+  renderFragments();
 }
 
-function unlockArea(area) {
+function unlockArea(area, options = {}) {
   if (!areaNames[area] || area === 'koenigsschloss') return false;
+  if (area === 'zauberschloss' && !options.force) return false;
   const wasUnlocked = isUnlocked(area);
   unlockedAreas.add(area);
   saveUnlocked(unlockedAreas);
   updateLocks();
   return !wasUnlocked;
+}
+
+function breakCastleSeal() {
+  const newlyUnlocked = unlockArea('zauberschloss', { force: true });
+  closeInfo();
+  showInfo(
+    newlyUnlocked ? 'Zauberschloss geöffnet' : 'Zauberschloss ist bereits geöffnet',
+    newlyUnlocked
+      ? 'Die Fragmente zerbrechen das Schloss. Jetzt kannst du das Zauberschloss betreten.'
+      : 'Das Zauberschloss ist bereits geöffnet.',
+    { showScanButton: false }
+  );
 }
 
 function moveKnightTo(button) {
@@ -242,8 +381,19 @@ async function onScanSuccess(decodedText) {
 
   const area = normalizeScannedArea(decodedText);
 
-  if (!area || area === 'koenigsschloss') {
+  if (!area) {
     scannerStatus.textContent = 'Dieser QR-Code gehört zu keinem gesperrten Gebiet.';
+    scannerBusy = false;
+    return;
+  }
+
+  if (area === 'zauberschloss') {
+    await closeScanner();
+    showInfo(
+      'Zauberschloss bleibt versiegelt',
+      'Das Zauberschloss wird nicht per QR-Code geöffnet. Sammle zuerst alle fünf Fragmente und zerbrich dann das Schloss auf der Overworld.',
+      { showScanButton: false }
+    );
     scannerBusy = false;
     return;
   }
@@ -299,6 +449,17 @@ function applyUnlockFromUrl() {
   if (!unlock) return;
 
   const area = unlock.trim().toLowerCase();
+  if (area === 'zauberschloss') {
+    showInfo(
+      'Zauberschloss bleibt versiegelt',
+      'Das Zauberschloss öffnet sich nicht per Direktlink. Sammle zuerst alle Fragmente und zerbrich dann das Schloss auf der Overworld.',
+      { showScanButton: false }
+    );
+    const cleanUrl = `${window.location.origin}${window.location.pathname}`;
+    window.history.replaceState({}, document.title, cleanUrl);
+    return;
+  }
+
   const newlyUnlocked = unlockArea(area);
 
   if (areaNames[area] && area !== 'koenigsschloss') {
@@ -367,8 +528,6 @@ lockButtons.forEach(button => {
   });
 });
 
-scanFromInfoButton.addEventListener('click', openScanner);
-
 introNextButton.addEventListener('click', () => {
   if (introIndex < introSlides.length - 1) {
     introIndex += 1;
@@ -399,7 +558,7 @@ showQrButton.addEventListener('click', () => {
 });
 
 resetGameButton.addEventListener('click', () => {
-  const confirmed = window.confirm('Spiel wirklich zurücksetzen? Alle Freischaltungen und gespeicherten Positionen werden gelöscht.');
+  const confirmed = window.confirm('Spiel wirklich zurücksetzen? Alle Freischaltungen, Fragmente und gespeicherten Positionen werden gelöscht.');
   if (!confirmed) return;
 
   Object.keys(localStorage).forEach(key => {
@@ -451,6 +610,7 @@ if (savedX && savedY) {
 }
 
 applyVolume(currentVolume());
+ensureFragmentHud();
 updateLocks();
 applyUnlockFromUrl();
 maybeShowEntryModal();
