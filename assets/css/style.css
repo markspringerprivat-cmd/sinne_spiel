@@ -567,3 +567,181 @@ p { line-height: 1.5; }
   background: #ffe8e8;
   color: #7c1d1d;
 }
+
+
+/* Battle quiz overlay */
+.quiz-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
+  background: rgba(5, 10, 22, .72);
+  backdrop-filter: blur(4px);
+}
+.quiz-card {
+  width: min(560px, 96vw);
+  max-height: 94vh;
+  max-height: 94dvh;
+  overflow: auto;
+  border-radius: 24px;
+  padding: 18px;
+  background: rgba(255,255,255,.96);
+  box-shadow: 0 24px 80px rgba(0,0,0,.38);
+  text-align: center;
+}
+.quiz-intro h2,
+.quiz-result h2,
+.quiz-game h2 {
+  margin: 0 0 10px;
+  font-size: clamp(1.35rem, 5vw, 2rem);
+}
+.quiz-intro p,
+.quiz-result p {
+  margin: 8px auto 16px;
+  max-width: 36rem;
+  font-weight: 750;
+  color: #2c3545;
+}
+.quiz-intro-enemy {
+  display: block;
+  width: min(220px, 58vw);
+  height: auto;
+  max-height: 28vh;
+  object-fit: contain;
+  margin: 4px auto 10px;
+  filter: drop-shadow(0 10px 12px rgba(0,0,0,.22));
+}
+.quiz-topbar {
+  display: grid;
+  grid-template-columns: 1fr auto 54px;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.quiz-hearts {
+  text-align: left;
+  color: #d9203a;
+  font-size: 1.45rem;
+  letter-spacing: 2px;
+  text-shadow: 0 2px 0 rgba(0,0,0,.10);
+}
+.quiz-counter {
+  font-weight: 900;
+  color: #445066;
+}
+.quiz-timer {
+  justify-self: end;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background: #fff2c2;
+  color: #5b3500;
+  font-weight: 950;
+  box-shadow: inset 0 0 0 3px rgba(232,168,28,.45);
+}
+.battle-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: end;
+  gap: 8px;
+  min-height: 150px;
+  padding: 4px 10px 0;
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(241,246,255,.95), rgba(226,235,250,.88));
+  overflow: hidden;
+}
+.battle-sprite {
+  width: min(160px, 39vw);
+  height: 145px;
+  object-fit: contain;
+  filter: drop-shadow(0 9px 10px rgba(0,0,0,.22));
+}
+.knight-battle { justify-self: start; }
+.enemy-battle { justify-self: end; }
+.battle-feedback {
+  position: absolute;
+  left: 50%;
+  top: 18px;
+  transform: translateX(-50%);
+  padding: 7px 13px;
+  border-radius: 999px;
+  background: rgba(255,225,122,.96);
+  color: #422700;
+  font-weight: 950;
+  box-shadow: 0 6px 18px rgba(0,0,0,.15);
+  z-index: 2;
+}
+.quiz-question {
+  margin: 14px 0 12px;
+  font-size: clamp(1.05rem, 4vw, 1.35rem);
+  font-weight: 900;
+  line-height: 1.25;
+  color: #1f2430;
+}
+.quiz-answers {
+  display: grid;
+  gap: 9px;
+}
+.quiz-answer {
+  width: 100%;
+  min-height: 44px;
+  border: 0;
+  border-radius: 14px;
+  padding: 10px 13px;
+  background: #edf2fb;
+  color: #1f2430;
+  font-size: .98rem;
+  font-weight: 850;
+  text-align: left;
+  cursor: pointer;
+}
+.quiz-answer.correct-answer { background: #d9f8df; color: #0f5b20; }
+.quiz-answer.wrong-answer { background: #ffe0e0; color: #7c1d1d; }
+.quiz-answer:disabled { cursor: default; }
+.result-images {
+  display: flex;
+  justify-content: center;
+  align-items: end;
+  gap: 12px;
+  min-height: 180px;
+}
+.result-images img {
+  width: min(170px, 42vw);
+  max-height: 180px;
+  object-fit: contain;
+  filter: drop-shadow(0 9px 10px rgba(0,0,0,.22));
+}
+.quiz-result-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.sprite-pop { animation: spritePop .45s ease; }
+.sprite-shake { animation: spriteShake .45s ease; }
+@keyframes spritePop {
+  0% { transform: translateX(0) scale(1); }
+  45% { transform: translateX(22px) scale(1.08); }
+  100% { transform: translateX(0) scale(1); }
+}
+@keyframes spriteShake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-9px) rotate(-2deg); }
+  40% { transform: translateX(8px) rotate(2deg); }
+  60% { transform: translateX(-6px) rotate(-1deg); }
+  80% { transform: translateX(5px) rotate(1deg); }
+}
+@media (max-width: 520px) {
+  .quiz-card { padding: 14px; border-radius: 20px; }
+  .battle-row { min-height: 126px; }
+  .battle-sprite { height: 122px; width: 41vw; }
+  .quiz-topbar { grid-template-columns: 1fr auto 46px; }
+  .quiz-hearts { font-size: 1.25rem; }
+  .quiz-timer { width: 40px; height: 40px; }
+  .quiz-answer { font-size: .92rem; }
+}

@@ -102,3 +102,8 @@ Jedes Level startet mit dem Ritter am Eingang und enthält zwei halbtransparente
 - Levelpunkte sind sichtbar kleiner, behalten aber eine großzügige Klickfläche.
 - Levelseiten zeigen beim Betreten ein Platzhalter-Pop-up; nach „Weiter“ startet die Musik.
 - In den Einstellungen gibt es einen Button zum Zurücksetzen des Spielstands.
+
+
+## Update: Quiz-Level
+
+Die zweiten Levelpunkte der Levelkarten starten nun ein Kampf-Quiz mit sieben Fragen, 30-Sekunden-Timer, drei Herzen, Ritter-/Gegner-Animationen und Ergebnisbildschirm.
