@@ -1286,3 +1286,193 @@ p { line-height: 1.5; }
 #unlockAllButton {
   margin-top: 4px;
 }
+
+
+/* ===== v7 Pergament-Popups ===== */
+:root {
+  --parchment-popup-image: url('../images/ui/parchment_popup.png');
+}
+
+.game-modal-card,
+.level-popup-card,
+.quiz-final-result {
+  position: relative;
+  background: transparent !important;
+  background-image: var(--parchment-popup-image) !important;
+  background-repeat: no-repeat !important;
+  background-position: center center !important;
+  background-size: 100% 100% !important;
+  border-radius: 28px;
+  box-shadow: 0 24px 80px rgba(0,0,0,.34);
+  text-align: center;
+}
+
+.game-modal-card,
+.level-popup-card {
+  width: min(520px, 94vw);
+  min-height: clamp(280px, 54vh, 620px);
+  padding: clamp(92px, 13vw, 122px) clamp(28px, 5.2vw, 44px) clamp(68px, 10vw, 92px) !important;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+}
+
+.game-modal-card > *,
+.level-popup-card > *,
+.quiz-final-result > * {
+  position: relative;
+  z-index: 1;
+}
+
+.game-modal:not(.hidden) .game-modal-card,
+.level-popup:not(.hidden) .level-popup-card,
+.quiz-final-result {
+  animation: parchmentSlideUp .46s cubic-bezier(.2,.8,.2,1);
+}
+
+@keyframes parchmentSlideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(16%) scale(.97);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.game-modal-card h2,
+.level-popup-card h2,
+.quiz-final-result h2 {
+  margin: 0 0 6px !important;
+  color: #5a3510;
+  text-shadow: 0 1px 0 rgba(255,255,255,.5);
+}
+
+.game-modal-card p,
+.level-popup-card p,
+.quiz-final-result p,
+.fragment-reward-box,
+.fragment-reward-box p,
+.fragment-reward-box strong {
+  text-align: center !important;
+}
+
+.game-modal-card p,
+.level-popup-card p,
+.quiz-final-result p {
+  color: #4b3319 !important;
+  max-width: 28rem;
+}
+
+.game-modal-card .modal-actions,
+.level-popup-card .modal-actions,
+.compact-actions,
+.quiz-result-actions,
+#infoModalActions {
+  justify-content: center;
+  align-items: center;
+}
+
+.game-modal-card .setting-row {
+  width: min(100%, 320px);
+  text-align: center;
+  justify-items: center;
+}
+
+.game-modal-card .setting-row input[type="range"] {
+  width: 100%;
+}
+
+.game-modal-card .full-width-button,
+.game-modal-card .settings-danger-button,
+.level-popup-card .primary-button {
+  width: min(100%, 320px);
+}
+
+.game-modal-card .qr-overview {
+  width: 100%;
+}
+
+.modal-close {
+  right: 22px;
+  top: 20px;
+  background: rgba(255, 248, 234, .92);
+  color: #6a461f;
+  box-shadow: 0 6px 16px rgba(0,0,0,.16);
+}
+
+.quiz-final-result {
+  padding: clamp(92px, 11vw, 112px) clamp(24px, 4.5vw, 36px) clamp(58px, 8vw, 78px) !important;
+  background-color: transparent !important;
+  border: 0 !important;
+  box-shadow: 0 20px 52px rgba(0,0,0,.22), inset 0 0 0 1px rgba(255,255,255,.06) !important;
+}
+
+.fragment-reward-box {
+  width: min(100%, 420px);
+  margin: 12px auto 6px !important;
+  padding: 24px 24px 22px !important;
+  min-height: 190px;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 10px;
+  background: transparent !important;
+  background-image: var(--parchment-popup-image) !important;
+  background-repeat: no-repeat !important;
+  background-position: center center !important;
+  background-size: 100% 100% !important;
+  box-shadow: 0 14px 32px rgba(0,0,0,.14) !important;
+}
+
+.fragment-reward-box > div {
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  text-align: center;
+  max-width: 280px;
+}
+
+.fragment-mini-image {
+  width: 84px;
+  height: 84px;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 18px rgba(0,0,0,.18));
+}
+
+.fragment-hint {
+  max-width: 26rem;
+  margin: 2px auto 0 !important;
+}
+
+.finale-box {
+  min-height: 165px;
+}
+
+@media (max-width: 520px) {
+  .game-modal-card,
+  .level-popup-card {
+    width: min(96vw, 520px);
+    min-height: clamp(250px, 52vh, 560px);
+    padding: 78px 20px 54px !important;
+  }
+
+  .modal-close {
+    right: 16px;
+    top: 14px;
+  }
+
+  .fragment-reward-box {
+    min-height: 175px;
+    padding: 22px 16px 18px !important;
+  }
+
+  .fragment-mini-image {
+    width: 72px;
+    height: 72px;
+  }
+}
