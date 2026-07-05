@@ -88,3 +88,9 @@ Wenn das Repository anders heißt oder unter einer anderen Adresse veröffentlic
 - Gesperrte Gebiete zeigen nur ein Schloss-Symbol; die Karte bleibt sichtbar.
 - Freigeschaltete Level führen zu eigenen HTML-Seiten unter `levels/`.
 - Zurück aus einem Level führt zu `game.html?fromLevel=1` und zeigt ein Rückkehr-Pop-up.
+
+
+## Level-Hintergründe
+
+Die einzelnen Level-HTMLs verwenden eigene Vollbild-Hintergründe unter `assets/images/level-backgrounds/`.
+Jedes Level startet mit dem Ritter am Eingang und enthält zwei halbtransparente Klickflächen als Platzhalter für Minispiel und Quiz/Bossbereich.
