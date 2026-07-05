@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vorgeschichte | Die verlorene Sinnesmagie</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body class="story-page">
+  <main class="story-shell">
+    <section class="story-stage" aria-live="polite">
+      <div class="story-image-wrap">
+        <img id="storyImage" class="story-image" src="assets/images/story/panel-01.png" alt="Vorgeschichte Bild 1">
+      </div>
+      <div class="story-text-card">
+        <div class="story-progress"><span id="storyCounter">1 / 10</span></div>
+        <p id="storyText" class="story-text"></p>
+        <div id="storyActions" class="story-actions hidden">
+          <a class="primary-button" href="game.html">Abenteuer beginnen</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="storyModal" class="modal-backdrop">
+    <div class="modal-card">
+      <h2>Vorgeschichte</h2>
+      <p>Die Geschichte dauert etwa 40 Sekunden. Du kannst sie abspielen oder direkt zum Spielfeld springen.</p>
+      <div class="modal-actions">
+        <button id="playStory" class="primary-button">Geschichte abspielen</button>
+        <a class="ghost-button" href="game.html">Geschichte überspringen</a>
+      </div>
+    </div>
+  </div>
+  <script src="assets/js/story.js"></script>
+</body>
+</html>

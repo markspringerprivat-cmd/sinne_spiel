@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Spielfeld | Die verlorene Sinnesmagie</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body class="game-page">
+  <main class="game-shell">
+    <header class="game-header">
+      <h1>Die Sinneskarte</h1>
+      <p id="locationText">Der Ritter startet am Königsschloss.</p>
+    </header>
+
+    <section class="map-frame" aria-label="Interaktive Karte">
+      <img class="map-image" src="assets/images/map/overworld.png" alt="Karte des Königreichs mit Sinnesgebieten">
+      <img id="knight" class="knight-sprite" src="assets/images/characters/knight.png" alt="Ritter">
+
+      <button class="hotspot" style="--x:50%;--y:15%;--w:32%;--h:14%;" data-area="Zauberschloss" data-target-x="50" data-target-y="17" aria-label="Zum Zauberschloss bewegen"></button>
+      <button class="hotspot" style="--x:25%;--y:37%;--w:38%;--h:18%;" data-area="Farbenreich" data-target-x="24" data-target-y="38" aria-label="Zum Farbenreich bewegen"></button>
+      <button class="hotspot" style="--x:75%;--y:38%;--w:36%;--h:18%;" data-area="Klangwald" data-target-x="75" data-target-y="38" aria-label="Zum Klangwald bewegen"></button>
+      <button class="hotspot" style="--x:50%;--y:59%;--w:34%;--h:17%;" data-area="Königsschloss" data-target-x="50" data-target-y="59" aria-label="Zum Königsschloss bewegen"></button>
+      <button class="hotspot" style="--x:22%;--y:82%;--w:38%;--h:18%;" data-area="Tastminen" data-target-x="21" data-target-y="80" aria-label="Zu den Tastminen bewegen"></button>
+      <button class="hotspot" style="--x:75%;--y:82%;--w:36%;--h:18%;" data-area="Duftgarten" data-target-x="75" data-target-y="80" aria-label="Zum Duftgarten bewegen"></button>
+      <button class="hotspot" style="--x:51%;--y:92%;--w:42%;--h:13%;" data-area="Flammenküche" data-target-x="51" data-target-y="91" aria-label="Zur Flammenküche bewegen"></button>
+    </section>
+
+    <section class="game-help">
+      <p>Tippe auf ein Gebiet. Der Ritter bewegt sich dorthin. Später können hier QR-Code-Freischaltungen, Minispiele und Quizfragen ergänzt werden.</p>
+    </section>
+  </main>
+  <script src="assets/js/game.js"></script>
+</body>
+</html>
