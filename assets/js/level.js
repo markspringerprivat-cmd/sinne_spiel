@@ -362,11 +362,11 @@ function playBattleAnimation(correct, idx) {
     enemy.src = enemyAsset(activeQuiz.data.enemy, 'normal');
     void knight.offsetWidth;
     void enemy.offsetWidth;
+    playSfx(sfxCorrect);
     knight.classList.add('knight-strike');
 
     setTimeout(() => {
       if (!activeQuiz || activeQuiz.finished) return;
-      playSfx(sfxCorrect);
       enemy.src = enemyAsset(activeQuiz.data.enemy, 'damage');
       enemy.classList.add('enemy-hit');
     }, ATTACK_IMPACT_MS);
@@ -385,11 +385,11 @@ function playBattleAnimation(correct, idx) {
     enemy.src = enemyAttackAsset(activeQuiz.data.enemy);
     void knight.offsetWidth;
     void enemy.offsetWidth;
+    playSfx(sfxWrong);
     enemy.classList.add('enemy-attack-strike');
 
     setTimeout(() => {
       if (!activeQuiz || activeQuiz.finished) return;
-      playSfx(sfxWrong);
       knight.src = knightAsset('damage');
       knight.classList.add('knight-damaged');
       renderHearts();
