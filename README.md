@@ -70,3 +70,11 @@ Wenn das Repository anders heißt oder unter einer anderen Adresse veröffentlic
 - QR-Codes schalten die passenden Gebiete frei
 - der Ritter kann nur zu freigeschalteten Gebieten laufen
 - unten rechts befindet sich ein Einstellungsbutton mit leerem Pop-up
+
+
+## Aktueller Stand
+
+- Statische Overworld-Karte mit transparenten Klickflächen
+- Gesperrte Gebiete werden nur durch ein großes Schloss-Symbol markiert
+- Beim Tippen auf ein gesperrtes Gebiet erscheint ein Pop-up mit Zurück- und QR-Code-Scanner-Button
+- QR-Codes können über URL-Parameter oder den integrierten Kamera-Scanner freischalten

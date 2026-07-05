@@ -9,51 +9,24 @@
 <body class="game-page">
   <main class="overworld" aria-label="Interaktive Sinneskarte">
     <section class="map-stage" aria-label="Karte des Königreichs">
-      <img class="map-image" src="assets/images/map/overworld.png" alt="Spielfeld mit Wiese, Hügel und verteilten Gebieten" draggable="false">
+      <img class="map-image" src="assets/images/map/overworld.png" alt="Karte des Königreichs mit Sinnesgebieten" draggable="false">
 
-      <div class="region" data-region="zauberschloss" style="--x:50%;--y:11%;--size:33%;">
-        <img class="region-image region-image-locked" src="assets/images/regions/zauberschloss_gesperrt.png" alt="Zauberschloss gesperrt" draggable="false">
-        <img class="region-image region-image-unlocked" src="assets/images/regions/zauberschloss.png" alt="Zauberschloss freigeschaltet" draggable="false">
-        <button class="region-button" data-area="zauberschloss" data-name="Zauberschloss" data-target-x="50" data-target-y="15" aria-label="Zauberschloss ist gesperrt"></button>
-      </div>
-
-      <div class="region" data-region="farbenreich" style="--x:24%;--y:34%;--size:34%;">
-        <img class="region-image region-image-locked" src="assets/images/regions/farbenreich_gesperrt.png" alt="Farbenreich gesperrt" draggable="false">
-        <img class="region-image region-image-unlocked" src="assets/images/regions/farbenreich.png" alt="Farbenreich freigeschaltet" draggable="false">
-        <button class="region-button" data-area="farbenreich" data-name="Farbenreich" data-target-x="24" data-target-y="38" aria-label="Farbenreich ist gesperrt"></button>
-      </div>
-
-      <div class="region" data-region="klangwald" style="--x:76%;--y:34%;--size:34%;">
-        <img class="region-image region-image-locked" src="assets/images/regions/klangwald_gesperrt.png" alt="Klangwald gesperrt" draggable="false">
-        <img class="region-image region-image-unlocked" src="assets/images/regions/klangwald.png" alt="Klangwald freigeschaltet" draggable="false">
-        <button class="region-button" data-area="klangwald" data-name="Klangwald" data-target-x="76" data-target-y="38" aria-label="Klangwald ist gesperrt"></button>
-      </div>
-
-      <div class="region region-kingdom" data-region="koenigsschloss" style="--x:50%;--y:57%;--size:38%;">
-        <img class="region-image region-image-locked" src="assets/images/regions/koenigsschloss_gesperrt.png" alt="Königsschloss gesperrt" draggable="false">
-        <img class="region-image region-image-unlocked" src="assets/images/regions/koenigsschloss.png" alt="Königsschloss freigeschaltet" draggable="false">
-        <button class="region-button" data-area="koenigsschloss" data-name="Königsschloss" data-target-x="50" data-target-y="61" aria-label="Königsschloss betreten"></button>
-      </div>
-
-      <div class="region" data-region="tastminen" style="--x:18%;--y:79%;--size:31%;">
-        <img class="region-image region-image-locked" src="assets/images/regions/tastminen_gesperrt.png" alt="Tastminen gesperrt" draggable="false">
-        <img class="region-image region-image-unlocked" src="assets/images/regions/tastminen.png" alt="Tastminen freigeschaltet" draggable="false">
-        <button class="region-button" data-area="tastminen" data-name="Tastminen" data-target-x="18" data-target-y="82" aria-label="Tastminen sind gesperrt"></button>
-      </div>
-
-      <div class="region" data-region="duftgarten" style="--x:80%;--y:79%;--size:31%;">
-        <img class="region-image region-image-locked" src="assets/images/regions/duftgarten_gesperrt.png" alt="Duftgarten gesperrt" draggable="false">
-        <img class="region-image region-image-unlocked" src="assets/images/regions/duftgarten.png" alt="Duftgarten freigeschaltet" draggable="false">
-        <button class="region-button" data-area="duftgarten" data-name="Duftgarten" data-target-x="80" data-target-y="82" aria-label="Duftgarten ist gesperrt"></button>
-      </div>
-
-      <div class="region" data-region="flammenkueche" style="--x:50%;--y:90%;--size:31%;">
-        <img class="region-image region-image-locked" src="assets/images/regions/flammenkueche_gesperrt.png" alt="Flammenküche gesperrt" draggable="false">
-        <img class="region-image region-image-unlocked" src="assets/images/regions/flammenkueche.png" alt="Flammenküche freigeschaltet" draggable="false">
-        <button class="region-button" data-area="flammenkueche" data-name="Flammenküche" data-target-x="50" data-target-y="93" aria-label="Flammenküche ist gesperrt"></button>
-      </div>
+      <button class="lock-button" data-lock-button="zauberschloss" data-area="zauberschloss" style="--x:50%;--y:11%;" aria-label="Zauberschloss ist gesperrt">🔒</button>
+      <button class="lock-button" data-lock-button="farbenreich" data-area="farbenreich" style="--x:24%;--y:34%;" aria-label="Farbenreich ist gesperrt">🔒</button>
+      <button class="lock-button" data-lock-button="klangwald" data-area="klangwald" style="--x:76%;--y:35%;" aria-label="Klangwald ist gesperrt">🔒</button>
+      <button class="lock-button" data-lock-button="tastminen" data-area="tastminen" style="--x:20%;--y:80%;" aria-label="Tastminen sind gesperrt">🔒</button>
+      <button class="lock-button" data-lock-button="duftgarten" data-area="duftgarten" style="--x:79%;--y:80%;" aria-label="Duftgarten ist gesperrt">🔒</button>
+      <button class="lock-button" data-lock-button="flammenkueche" data-area="flammenkueche" style="--x:51%;--y:91%;" aria-label="Flammenküche ist gesperrt">🔒</button>
 
       <img id="knight" class="knight-sprite" src="assets/images/characters/knight.png" alt="Ritter" draggable="false">
+
+      <button class="hotspot" style="--x:50%;--y:11%;--w:38%;--h:15%;" data-area="zauberschloss" data-name="Zauberschloss" data-target-x="50" data-target-y="16" aria-label="Zum Zauberschloss bewegen"></button>
+      <button class="hotspot" style="--x:24%;--y:34%;--w:39%;--h:21%;" data-area="farbenreich" data-name="Farbenreich" data-target-x="24" data-target-y="38" aria-label="Zum Farbenreich bewegen"></button>
+      <button class="hotspot" style="--x:76%;--y:35%;--w:36%;--h:21%;" data-area="klangwald" data-name="Klangwald" data-target-x="76" data-target-y="39" aria-label="Zum Klangwald bewegen"></button>
+      <button class="hotspot" style="--x:50%;--y:57%;--w:38%;--h:19%;" data-area="koenigsschloss" data-name="Königsschloss" data-target-x="50" data-target-y="60" aria-label="Zum Königsschloss bewegen"></button>
+      <button class="hotspot" style="--x:20%;--y:80%;--w:34%;--h:18%;" data-area="tastminen" data-name="Tastminen" data-target-x="20" data-target-y="83" aria-label="Zu den Tastminen bewegen"></button>
+      <button class="hotspot" style="--x:79%;--y:80%;--w:34%;--h:18%;" data-area="duftgarten" data-name="Duftgarten" data-target-x="79" data-target-y="83" aria-label="Zum Duftgarten bewegen"></button>
+      <button class="hotspot" style="--x:51%;--y:91%;--w:44%;--h:15%;" data-area="flammenkueche" data-name="Flammenküche" data-target-x="51" data-target-y="93" aria-label="Zur Flammenküche bewegen"></button>
     </section>
 
     <button id="settingsButton" class="settings-button" aria-label="Einstellungen öffnen">⚙️</button>
@@ -62,11 +35,12 @@
   <div id="infoModal" class="game-modal hidden" role="dialog" aria-modal="true" aria-labelledby="infoModalTitle">
     <div class="game-modal-card">
       <button class="modal-close" type="button" data-close-modal aria-label="Fenster schließen">×</button>
-      <div id="infoModalImageWrap" class="unlock-preview hidden">
-        <img id="infoModalImage" class="unlock-preview-image" alt="Freigeschaltetes Gebiet" draggable="false">
-      </div>
       <h2 id="infoModalTitle"></h2>
       <p id="infoModalText"></p>
+      <div id="infoModalActions" class="modal-actions compact-actions">
+        <button id="backButton" class="ghost-button" type="button" data-close-modal>Zurück</button>
+        <button id="scanFromInfoButton" class="primary-button" type="button">QR-Code scannen</button>
+      </div>
     </div>
   </div>
 
@@ -82,7 +56,7 @@
     <div class="game-modal-card scanner-card">
       <button class="modal-close" type="button" data-close-scanner aria-label="Scanner schließen">×</button>
       <h2 id="scannerModalTitle">QR-Code scannen</h2>
-      <p class="scanner-hint">Scanne hier am Königsschloss einen QR-Code, um ein Gebiet freizuschalten.</p>
+      <p class="scanner-hint">Scanne den QR-Code an der passenden Station, um ein Gebiet freizuschalten.</p>
       <div id="qr-reader" class="qr-reader"></div>
       <p id="scannerStatus" class="scanner-status">Kamera wird vorbereitet …</p>
     </div>

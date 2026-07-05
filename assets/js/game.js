@@ -1,11 +1,11 @@
 const knight = document.getElementById('knight');
-const regionCards = document.querySelectorAll('[data-region]');
-const regionButtons = document.querySelectorAll('.region-button');
+const hotspots = document.querySelectorAll('.hotspot');
+const lockButtons = document.querySelectorAll('[data-lock-button]');
 const infoModal = document.getElementById('infoModal');
 const infoModalTitle = document.getElementById('infoModalTitle');
 const infoModalText = document.getElementById('infoModalText');
-const infoModalImageWrap = document.getElementById('infoModalImageWrap');
-const infoModalImage = document.getElementById('infoModalImage');
+const infoModalActions = document.getElementById('infoModalActions');
+const scanFromInfoButton = document.getElementById('scanFromInfoButton');
 const settingsButton = document.getElementById('settingsButton');
 const settingsModal = document.getElementById('settingsModal');
 const scannerModal = document.getElementById('scannerModal');
@@ -15,10 +15,6 @@ const STORAGE_UNLOCKED = 'sinnesmagie-unlocked-areas';
 const STORAGE_POS_X = 'sinnesmagie-knight-x';
 const STORAGE_POS_Y = 'sinnesmagie-knight-y';
 const STORAGE_AREA = 'sinnesmagie-last-area';
-
-const START_AREA = 'koenigsschloss';
-const START_X = '50';
-const START_Y = '61';
 
 const areaNames = {
   koenigsschloss: 'Königsschloss',
@@ -30,16 +26,7 @@ const areaNames = {
   flammenkueche: 'Flammenküche'
 };
 
-const areaPreviewImages = {
-  koenigsschloss: 'assets/images/regions/koenigsschloss.png',
-  zauberschloss: 'assets/images/regions/zauberschloss.png',
-  farbenreich: 'assets/images/regions/farbenreich.png',
-  klangwald: 'assets/images/regions/klangwald.png',
-  tastminen: 'assets/images/regions/tastminen.png',
-  duftgarten: 'assets/images/regions/duftgarten.png',
-  flammenkueche: 'assets/images/regions/flammenkueche.png'
-};
-
+let selectedLockedArea = '';
 let html5QrCode = null;
 let scannerRunning = false;
 let scannerBusy = false;
@@ -47,39 +34,27 @@ let scannerBusy = false;
 function readUnlocked() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_UNLOCKED) || '[]');
-    const unlocked = new Set(Array.isArray(saved) ? saved.filter(area => areaNames[area]) : []);
-    unlocked.add(START_AREA);
-    return unlocked;
+    return new Set(['koenigsschloss', ...(Array.isArray(saved) ? saved : [])]);
   } catch {
-    return new Set([START_AREA]);
+    return new Set(['koenigsschloss']);
   }
 }
 
 function saveUnlocked(unlockedSet) {
-  localStorage.setItem(STORAGE_UNLOCKED, JSON.stringify([...unlockedSet]));
+  const values = [...unlockedSet].filter(area => area !== 'koenigsschloss');
+  localStorage.setItem(STORAGE_UNLOCKED, JSON.stringify(values));
 }
 
 let unlockedAreas = readUnlocked();
-saveUnlocked(unlockedAreas);
 
 function isUnlocked(area) {
   return unlockedAreas.has(area);
 }
 
-function showInfo(title, text, imageSrc = '') {
+function showInfo(title, text, options = {}) {
   infoModalTitle.textContent = title;
   infoModalText.textContent = text;
-
-  if (imageSrc) {
-    infoModalImage.src = imageSrc;
-    infoModalImage.alt = title;
-    infoModalImageWrap.classList.remove('hidden');
-  } else {
-    infoModalImage.removeAttribute('src');
-    infoModalImage.alt = '';
-    infoModalImageWrap.classList.add('hidden');
-  }
-
+  infoModalActions.classList.toggle('hidden', !options.showScanButton);
   infoModal.classList.remove('hidden');
 }
 
@@ -95,71 +70,47 @@ function closeSettings() {
   settingsModal.classList.add('hidden');
 }
 
-function updateRegionVisuals() {
-  regionCards.forEach(card => {
-    const area = card.dataset.region;
-    const unlocked = isUnlocked(area);
-    card.classList.toggle('unlocked', unlocked);
-    card.classList.toggle('locked', !unlocked);
-  });
+function showLockedInfo(area) {
+  selectedLockedArea = area;
+  showInfo(
+    `${areaNames[area]} ist gesperrt`,
+    'Um dieses Level freizuschalten, musst du den entsprechenden QR-Code an der Station scannen.',
+    { showScanButton: true }
+  );
+}
 
-  regionButtons.forEach(button => {
-    const area = button.dataset.area;
-    const unlocked = isUnlocked(area);
-    const name = areaNames[area] || button.dataset.name || area;
-
-    if (area === START_AREA) {
-      button.setAttribute('aria-label', 'Königsschloss öffnen und QR-Code scannen');
-    } else {
-      button.setAttribute('aria-label', unlocked ? `${name} betreten` : `${name} ist gesperrt`);
-    }
+function updateLocks() {
+  lockButtons.forEach(button => {
+    const area = button.dataset.lockButton;
+    button.classList.toggle('hidden-lock', isUnlocked(area));
+    button.setAttribute('aria-hidden', isUnlocked(area) ? 'true' : 'false');
   });
 }
 
 function unlockArea(area) {
-  if (!areaNames[area]) return false;
+  if (!areaNames[area] || area === 'koenigsschloss') return false;
   const wasUnlocked = isUnlocked(area);
   unlockedAreas.add(area);
   saveUnlocked(unlockedAreas);
-  updateRegionVisuals();
+  updateLocks();
   return !wasUnlocked;
-}
-
-function moveKnightToXY(x, y, area = '') {
-  knight.style.left = `${x}%`;
-  knight.style.top = `${y}%`;
-  localStorage.setItem(STORAGE_POS_X, x);
-  localStorage.setItem(STORAGE_POS_Y, y);
-  if (area) {
-    localStorage.setItem(STORAGE_AREA, area);
-  }
 }
 
 function moveKnightTo(button) {
   const area = button.dataset.area;
-  const x = button.dataset.targetX;
-  const y = button.dataset.targetY;
-  moveKnightToXY(x, y, area);
-}
-
-function handleRegionInteraction(button) {
-  const area = button.dataset.area;
-
-  if (area === START_AREA) {
-    moveKnightTo(button);
-    openScanner();
-    return;
-  }
 
   if (!isUnlocked(area)) {
-    showInfo(
-      `${areaNames[area]} ist noch gesperrt`,
-      'Scanne den QR-Code am Königsschloss, um dieses Gebiet freizuschalten.'
-    );
+    showLockedInfo(area);
     return;
   }
 
-  moveKnightTo(button);
+  const x = button.dataset.targetX;
+  const y = button.dataset.targetY;
+  knight.style.left = `${x}%`;
+  knight.style.top = `${y}%`;
+  localStorage.setItem(STORAGE_POS_X, x);
+  localStorage.setItem(STORAGE_POS_Y, y);
+  localStorage.setItem(STORAGE_AREA, area);
 }
 
 function normalizeScannedArea(rawText) {
@@ -179,7 +130,9 @@ function normalizeScannedArea(rawText) {
     if (areaNames[unlock]) return unlock;
 
     const hashUnlock = (new URLSearchParams(url.hash.replace(/^#/, ''))).get('unlock');
-    if (hashUnlock && areaNames[hashUnlock.trim().toLowerCase()]) return hashUnlock.trim().toLowerCase();
+    if (hashUnlock && areaNames[hashUnlock.trim().toLowerCase()]) {
+      return hashUnlock.trim().toLowerCase();
+    }
   } catch {
     // ignore malformed values
   }
@@ -215,8 +168,9 @@ async function onScanSuccess(decodedText) {
   scannerBusy = true;
 
   const area = normalizeScannedArea(decodedText);
-  if (!area) {
-    scannerStatus.textContent = 'Dieser QR-Code gehört zu keinem bekannten Gebiet.';
+
+  if (!area || area === 'koenigsschloss') {
+    scannerStatus.textContent = 'Dieser QR-Code gehört zu keinem gesperrten Gebiet.';
     scannerBusy = false;
     return;
   }
@@ -225,22 +179,23 @@ async function onScanSuccess(decodedText) {
   await closeScanner();
 
   showInfo(
-    newlyUnlocked ? `${areaNames[area]} freigeschaltet` : `${areaNames[area]} ist bereits freigeschaltet`,
+    newlyUnlocked ? `${areaNames[area]} freigeschaltet` : `${areaNames[area]} war bereits freigeschaltet`,
     newlyUnlocked
-      ? 'Das Gebiet ist jetzt offen. Tippe nun auf das Gebiet, damit der Ritter dorthin läuft.'
-      : 'Dieses Gebiet war bereits offen und kann direkt betreten werden.',
-    areaPreviewImages[area]
+      ? 'Das Schloss ist verschwunden. Tippe auf das Gebiet, damit der Ritter dorthin läuft.'
+      : 'Du kannst dieses Gebiet bereits betreten.',
+    { showScanButton: false }
   );
 
   scannerBusy = false;
 }
 
 async function openScanner() {
+  closeInfo();
   scannerModal.classList.remove('hidden');
   scannerStatus.textContent = 'Kamera wird vorbereitet …';
 
   if (!window.Html5Qrcode) {
-    scannerStatus.textContent = 'Der QR-Code-Scanner konnte nicht geladen werden.';
+    scannerStatus.textContent = 'Der QR-Code-Scanner konnte nicht geladen werden. Prüfe die Internetverbindung.';
     return;
   }
 
@@ -273,13 +228,13 @@ function applyUnlockFromUrl() {
   const area = unlock.trim().toLowerCase();
   const newlyUnlocked = unlockArea(area);
 
-  if (areaNames[area]) {
+  if (areaNames[area] && area !== 'koenigsschloss') {
     showInfo(
       newlyUnlocked ? `${areaNames[area]} freigeschaltet` : `${areaNames[area]} ist bereits freigeschaltet`,
       newlyUnlocked
-        ? 'Das Gebiet ist jetzt offen. Tippe darauf, damit der Ritter dorthin läuft.'
+        ? 'Das Schloss ist verschwunden. Tippe auf das Gebiet, damit der Ritter dorthin läuft.'
         : 'Du kannst dieses Gebiet bereits betreten.',
-      areaPreviewImages[area]
+      { showScanButton: false }
     );
   }
 
@@ -287,9 +242,19 @@ function applyUnlockFromUrl() {
   window.history.replaceState({}, document.title, cleanUrl);
 }
 
-regionButtons.forEach(button => {
-  button.addEventListener('click', () => handleRegionInteraction(button));
+hotspots.forEach(button => {
+  button.addEventListener('click', () => moveKnightTo(button));
 });
+
+lockButtons.forEach(button => {
+  button.addEventListener('click', event => {
+    event.stopPropagation();
+    const area = button.dataset.area;
+    showLockedInfo(area);
+  });
+});
+
+scanFromInfoButton.addEventListener('click', openScanner);
 
 document.querySelectorAll('[data-close-modal]').forEach(button => {
   button.addEventListener('click', closeInfo);
@@ -319,7 +284,12 @@ scannerModal.addEventListener('click', event => {
 
 settingsButton.addEventListener('click', openSettings);
 
-moveKnightToXY(START_X, START_Y, START_AREA);
+const savedX = localStorage.getItem(STORAGE_POS_X);
+const savedY = localStorage.getItem(STORAGE_POS_Y);
+if (savedX && savedY) {
+  knight.style.left = `${savedX}%`;
+  knight.style.top = `${savedY}%`;
+}
 
-updateRegionVisuals();
+updateLocks();
 applyUnlockFromUrl();
