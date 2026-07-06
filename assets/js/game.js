@@ -131,14 +131,6 @@ function allFragmentsCollected() {
   return readFragments().size >= fragmentAreas.length;
 }
 
-function readLevelProgress() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_LEVEL_PROGRESS) || '{}');
-    return saved && typeof saved === 'object' ? saved : {};
-  } catch {
-    return {};
-  }
-}
 
 function saveLevelProgress(progress) {
   localStorage.setItem(STORAGE_LEVEL_PROGRESS, JSON.stringify(progress));
@@ -153,7 +145,7 @@ function isUnlocked(area) {
 function currentVolume() {
   const saved = Number(localStorage.getItem(STORAGE_VOLUME));
   if (Number.isFinite(saved)) return Math.min(1, Math.max(0, saved));
-  return 0.6;
+  return 0.5;
 }
 
 function applyVolume(value) {
@@ -543,23 +535,15 @@ function maybeShowEntryModal() {
 }
 
 function unlockAllForTesting() {
-  const confirmed = window.confirm('Alle Gebiete, Kristalle und Levelpfade für Testzwecke freischalten?');
+  const confirmed = window.confirm('Alle Gebiete für Testzwecke freischalten? Kristalle und Level-Fortschritte bleiben unverändert.');
   if (!confirmed) return;
 
   unlockedAreas = new Set(['koenigsschloss', ...Object.keys(levelPages)]);
   saveUnlocked(unlockedAreas);
 
-  saveFragments(new Set(fragmentAreas));
-
-  const progress = {};
-  Object.keys(levelPages).forEach(area => {
-    progress[area] = { level1Completed: true, level2Completed: true };
-  });
-  saveLevelProgress(progress);
-
   updateLocks();
   closeSettings();
-  showInfo('Test-Freischaltung aktiv', 'Alle Level, Kristalle und Wege wurden für den Test freigeschaltet.', { showScanButton: false });
+  showInfo('Test-Freischaltung aktiv', 'Alle Gebietsschlösser wurden entfernt. Die Level selbst müssen weiterhin nacheinander gespielt werden.', { showScanButton: false });
 }
 
 hotspots.forEach(button => {

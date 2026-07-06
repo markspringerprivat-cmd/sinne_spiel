@@ -22,6 +22,14 @@ const ENEMY_IMPACT_MS = 320;
 const MOVE_MS = 950;
 
 const currentArea = window.location.pathname.split('/').pop().replace('.html', '');
+const AREA_TITLES = {
+  zauberschloss: 'Zauberschloss',
+  farbenreich: 'Farbenreich',
+  klangwald: 'Klangwald',
+  tastminen: 'Tastminen',
+  duftgarten: 'Duftgarten',
+  flammenkueche: 'Flammenküche'
+};
 const FRAGMENT_REWARDS = {
   farbenreich: { name: 'Kristall des Sehens', image: '../assets/images/fragments/red.png' },
   klangwald: { name: 'Kristall des Hörens', image: '../assets/images/fragments/blue.png' },
@@ -53,7 +61,7 @@ function playSfx(audio) {
 function currentVolume() {
   const saved = Number(localStorage.getItem(STORAGE_VOLUME));
   if (Number.isFinite(saved)) return Math.min(1, Math.max(0, saved));
-  return 0.6;
+  return 0.5;
 }
 
 function readFragments() {
@@ -694,4 +702,8 @@ if (backButton) {
 levelKnight.style.left = `${stageStart().x}%`;
 levelKnight.style.top = `${stageStart().y}%`;
 applyMarkerStates();
-startLevelMusic();
+showLevelPopup(
+  `${AREA_TITLES[currentArea] || 'Level'} betreten`,
+  'Schaffe zuerst Level 1. Danach wird Level 2 freigeschaltet. Dort wartet das Quiz mit dem Gegner.',
+  'OK'
+);

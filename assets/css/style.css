@@ -247,8 +247,6 @@ p { line-height: 1.5; }
   cursor: pointer;
 }
 .settings-card { min-height: 230px; }
-.settings-empty { min-height: 120px; }
-
 .compact-actions {
   display: flex;
   justify-content: center;
@@ -604,22 +602,6 @@ p { line-height: 1.5; }
   font-weight: 750;
   color: #2c3545;
 }
-.quiz-intro-enemy {
-  display: block;
-  width: min(220px, 58vw);
-  height: auto;
-  max-height: 28vh;
-  object-fit: contain;
-  margin: 4px auto 10px;
-  filter: drop-shadow(0 10px 12px rgba(0,0,0,.22));
-}
-.quiz-topbar {
-  display: grid;
-  grid-template-columns: 1fr auto 54px;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
-}
 .quiz-hearts {
   text-align: left;
   color: #d9203a;
@@ -642,18 +624,6 @@ p { line-height: 1.5; }
   color: #5b3500;
   font-weight: 950;
   box-shadow: inset 0 0 0 3px rgba(232,168,28,.45);
-}
-.battle-row {
-  position: relative;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  align-items: end;
-  gap: 8px;
-  min-height: 150px;
-  padding: 4px 10px 0;
-  border-radius: 20px;
-  background: linear-gradient(180deg, rgba(241,246,255,.95), rgba(226,235,250,.88));
-  overflow: hidden;
 }
 .battle-sprite {
   width: min(160px, 39vw);
@@ -703,19 +673,6 @@ p { line-height: 1.5; }
 .quiz-answer.correct-answer { background: #d9f8df; color: #0f5b20; }
 .quiz-answer.wrong-answer { background: #ffe0e0; color: #7c1d1d; }
 .quiz-answer:disabled { cursor: default; }
-.result-images {
-  display: flex;
-  justify-content: center;
-  align-items: end;
-  gap: 12px;
-  min-height: 180px;
-}
-.result-images img {
-  width: min(170px, 42vw);
-  max-height: 180px;
-  object-fit: contain;
-  filter: drop-shadow(0 9px 10px rgba(0,0,0,.22));
-}
 .quiz-result-actions {
   display: flex;
   justify-content: center;
@@ -738,9 +695,7 @@ p { line-height: 1.5; }
 }
 @media (max-width: 520px) {
   .quiz-card { padding: 14px; border-radius: 20px; }
-  .battle-row { min-height: 126px; }
   .battle-sprite { height: 122px; width: 41vw; }
-  .quiz-topbar { grid-template-columns: 1fr auto 46px; }
   .quiz-hearts { font-size: 1.25rem; }
   .quiz-timer { width: 40px; height: 40px; }
   .quiz-answer { font-size: .92rem; }
@@ -1062,60 +1017,6 @@ p { line-height: 1.5; }
   }
 }
 
-/* Fragment-HUD auf der Overworld */
-.fragment-hud {
-  position: fixed;
-  top: max(10px, env(safe-area-inset-top));
-  left: max(10px, env(safe-area-inset-left));
-  z-index: 12;
-  min-width: min(340px, calc(100vw - 24px));
-  max-width: min(420px, calc(100vw - 24px));
-  padding: 12px 14px;
-  border-radius: 20px;
-  background: rgba(255,255,255,.82);
-  border: 2px solid rgba(255,255,255,.72);
-  box-shadow: 0 14px 30px rgba(0,0,0,.18);
-  backdrop-filter: blur(4px);
-}
-.fragment-hud-title {
-  font-size: .92rem;
-  font-weight: 900;
-  color: #243047;
-  margin-bottom: 8px;
-}
-.fragment-hud-slots {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.fragment-slot {
-  width: 42px;
-  height: 42px;
-  border-radius: 14px;
-  display: grid;
-  place-items: center;
-  font-weight: 900;
-  color: #6b7280;
-  background: rgba(226,232,240,.95);
-  border: 2px dashed rgba(100,116,139,.45);
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,.35);
-}
-.fragment-slot span {
-  transform: translateY(-1px);
-}
-.fragment-slot.collected {
-  color: #fff;
-  background: linear-gradient(145deg, color-mix(in srgb, var(--fragment-color) 82%, white), var(--fragment-color));
-  border-style: solid;
-  border-color: color-mix(in srgb, var(--fragment-color) 74%, #3b2a17);
-  box-shadow: 0 6px 16px color-mix(in srgb, var(--fragment-color) 36%, transparent), inset 0 0 0 1px rgba(255,255,255,.3);
-}
-.fragment-hud-text {
-  margin-top: 8px;
-  font-size: .84rem;
-  font-weight: 800;
-  color: #334155;
-}
 .lock-button.castle-ready {
   animation: castlePulse 1.4s ease-in-out infinite;
   box-shadow: 0 0 0 4px rgba(255,255,255,.42), 0 0 24px rgba(255,224,112,.72);
@@ -1163,42 +1064,7 @@ p { line-height: 1.5; }
   margin: 3px 0 0 !important;
   font-size: clamp(.82rem, 2.4vmin, .96rem) !important;
 }
-.fragment-mini {
-  width: 48px;
-  height: 48px;
-  border-radius: 16px;
-  display: grid;
-  place-items: center;
-  color: #fff;
-  font-size: 1.5rem;
-  font-weight: 900;
-  background: linear-gradient(145deg, color-mix(in srgb, var(--fragment-color) 84%, white), var(--fragment-color));
-  box-shadow: 0 8px 18px color-mix(in srgb, var(--fragment-color) 40%, transparent);
-}
-.fragment-hint {
-  margin-top: 2px !important;
-  color: #3b2a17 !important;
-}
-.finale-box {
-  grid-template-columns: 1fr;
-}
-@media (max-width: 680px) {
-  .fragment-hud {
-    min-width: auto;
-    max-width: calc(100vw - 20px);
-    padding: 10px 12px;
-  }
-  .fragment-slot {
-    width: 36px;
-    height: 36px;
-    border-radius: 12px;
-    font-size: .9rem;
-  }
-}
-
-
 /* ===== v6 Kristalle auf Overworld ===== */
-.fragment-hud { display: none !important; }
 .fragment-orbit-layer {
   position: absolute;
   inset: 0;
@@ -1442,15 +1308,6 @@ p { line-height: 1.5; }
   filter: drop-shadow(0 10px 18px rgba(0,0,0,.18));
 }
 
-.fragment-hint {
-  max-width: 26rem;
-  margin: 2px auto 0 !important;
-}
-
-.finale-box {
-  min-height: auto;
-}
-
 @media (max-width: 520px) {
   .game-modal-card,
   .level-popup-card {
@@ -1500,8 +1357,7 @@ p { line-height: 1.5; }
 .quiz-game p,
 .fragment-reward-box,
 .fragment-reward-box strong,
-.fragment-reward-box p,
-.fragment-hint {
+.fragment-reward-box p {
   width: 100%;
   text-align: center !important;
   margin-left: auto !important;
@@ -1885,4 +1741,46 @@ p { line-height: 1.5; }
 #introBackButton.hidden,
 #battleFeedback.hidden {
   display: none !important;
+}
+
+/* ===== v15 Audio/Quiz/Popup-Fixes ===== */
+.quiz-modal:not(.hidden) .quiz-card {
+  position: relative !important;
+  display: block !important;
+}
+.quiz-modal:not(.hidden) #quizResult.quiz-final-result {
+  position: absolute !important;
+  left: 50% !important;
+  right: auto !important;
+  top: auto !important;
+  bottom: calc(10px + env(safe-area-inset-bottom, 0px)) !important;
+  transform: translateX(-50%) !important;
+  width: min(88%, 540px) !important;
+  min-height: 20% !important;
+  max-height: 30% !important;
+  overflow: visible !important;
+  z-index: 12 !important;
+}
+.quiz-modal:not(.hidden) #quizGame.hidden,
+.quiz-modal:not(.hidden) #quizIntro.hidden,
+.quiz-modal:not(.hidden) #quizResult.hidden {
+  display: none !important;
+}
+.quiz-modal:not(.hidden) #quizGame[style*="display: none"] {
+  display: none !important;
+}
+.quiz-modal:not(.hidden) .quiz-result-actions {
+  justify-content: center !important;
+}
+.quiz-modal:not(.hidden) .quiz-final-result .primary-button,
+.quiz-modal:not(.hidden) .quiz-final-result .ghost-button {
+  flex: 0 1 auto !important;
+}
+@media (max-width: 520px) {
+  .quiz-modal:not(.hidden) #quizResult.quiz-final-result {
+    width: min(86vw, 520px) !important;
+    min-height: 19.5% !important;
+    max-height: 29% !important;
+    padding: 28px 16px 24px !important;
+  }
 }
