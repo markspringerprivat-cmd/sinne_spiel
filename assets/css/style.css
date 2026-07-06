@@ -1867,3 +1867,22 @@ p { line-height: 1.5; }
   .enemy-battle { width: 74% !important; right: -6.5% !important; }
   .quiz-final-result { width: min(88vw, 520px) !important; min-height: 21% !important; max-height: 30% !important; padding: 32px 17px 27px !important; }
 }
+
+/* ===== Fix v13: versteckte Pop-ups wirklich ausblenden =====
+   Der v12-Zentrierungsblock setzte .game-modal/.level-popup/.quiz-modal per
+   display:grid !important. Dadurch wurde die frühere .hidden-Regel überstimmt,
+   weil beide Selektoren gleich stark waren und der spätere Block gewann. */
+.hidden,
+.game-modal.hidden,
+.level-popup.hidden,
+.modal-backdrop.hidden,
+.quiz-modal.hidden,
+.quiz-panel.hidden,
+#quizIntro.hidden,
+#quizGame.hidden,
+#quizResult.hidden,
+#qrOverview.hidden,
+#introBackButton.hidden,
+#battleFeedback.hidden {
+  display: none !important;
+}
