@@ -1801,3 +1801,69 @@ p { line-height: 1.5; }
     height: 64px !important;
   }
 }
+
+
+/* ===== v12 Zentrierung, Ergebnis unten, neue Ritterbilder ===== */
+.game-modal,
+.level-popup,
+.modal-backdrop,
+.quiz-modal {
+  display: grid !important;
+  place-items: center !important;
+}
+.game-modal-card,
+.level-popup-card {
+  width: min(90vw, 520px) !important;
+  max-width: calc(100vw - 24px) !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  overflow: visible !important;
+}
+.quiz-card {
+  margin: 0 auto !important;
+  left: auto !important;
+  right: auto !important;
+}
+.quiz-battle-zone {
+  top: 31.5% !important;
+  height: 34.5% !important;
+}
+.battle-sprite { bottom: -8.5% !important; }
+.knight-battle { width: 47% !important; left: 1.5% !important; }
+.knight-battle.knight-attack-pose { width: 68% !important; left: -1% !important; z-index: 6 !important; }
+.enemy-battle { width: 72% !important; right: -5.5% !important; bottom: -9% !important; }
+.quiz-final-result {
+  left: 50% !important;
+  right: auto !important;
+  top: auto !important;
+  bottom: max(1.4%, env(safe-area-inset-bottom)) !important;
+  width: min(90%, 540px) !important;
+  min-height: 22% !important;
+  max-height: 31% !important;
+  transform: translateX(-50%) !important;
+  padding: clamp(34px, 5.7vmin, 52px) clamp(18px, 4.5vmin, 30px) clamp(28px, 4.6vmin, 42px) !important;
+  overflow: visible !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 7px !important;
+  z-index: 9 !important;
+}
+.quiz-final-result h2 { font-size: clamp(1.35rem, 5.2vmin, 2.05rem) !important; margin: 0 0 3px !important; }
+.quiz-final-result p { font-size: clamp(.86rem, 2.8vmin, 1.02rem) !important; line-height: 1.2 !important; margin: 0 auto 2px !important; }
+.quiz-final-result .primary-button,
+.quiz-final-result .ghost-button { min-height: 42px !important; padding: 0 18px !important; min-width: 150px !important; max-width: 210px !important; font-size: clamp(.9rem, 2.8vmin, 1rem) !important; }
+.simple-fragment-box { margin: 0 auto !important; padding: 0 !important; gap: 5px !important; }
+.simple-fragment-box strong { font-size: clamp(1rem, 3.2vmin, 1.18rem) !important; }
+.fragment-mini-image { width: clamp(54px, 11vmin, 74px) !important; height: clamp(54px, 11vmin, 74px) !important; }
+.floating-fragment { animation: fragmentFloat 1.6s ease-in-out infinite; }
+@keyframes fragmentFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+@media (max-width: 520px) {
+  .game-modal-card, .level-popup-card { width: min(90vw, 520px) !important; max-width: calc(100vw - 22px) !important; }
+  .quiz-battle-zone { top: 32.5% !important; height: 33.5% !important; }
+  .knight-battle { width: 47% !important; left: 1% !important; }
+  .knight-battle.knight-attack-pose { width: 69% !important; left: -2% !important; }
+  .enemy-battle { width: 74% !important; right: -6.5% !important; }
+  .quiz-final-result { width: min(88vw, 520px) !important; min-height: 21% !important; max-height: 30% !important; padding: 32px 17px 27px !important; }
+}

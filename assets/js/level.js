@@ -422,6 +422,7 @@ function startQuiz(quizId) {
   modal.querySelector('#quizResult').classList.add('hidden');
   const game = modal.querySelector('#quizGame');
   game.className = 'quiz-game quiz-panel hidden';
+  game.style.display = '';
   game.classList.remove('hidden');
   renderQuestion('in');
 }
@@ -512,13 +513,14 @@ function playBattleAnimation(correct, idx) {
   const enemy = document.getElementById('quizEnemy');
 
   feedback.classList.remove('hidden');
-  knight.classList.remove('sprite-pop', 'sprite-shake', 'knight-strike', 'knight-damaged');
+  knight.classList.remove('sprite-pop', 'sprite-shake', 'knight-strike', 'knight-damaged', 'knight-attack-pose');
   enemy.classList.remove('sprite-shake', 'enemy-hit', 'enemy-attack-strike');
 
   if (correct) {
     activeQuiz.correct += 1;
     feedback.textContent = 'Richtig!';
     knight.src = knightAsset('attack');
+    knight.classList.add('knight-attack-pose');
     enemy.src = enemyAsset(activeQuiz.data.enemy, 'normal');
     void knight.offsetWidth;
     void enemy.offsetWidth;
@@ -536,6 +538,7 @@ function playBattleAnimation(correct, idx) {
       knight.classList.remove('knight-strike');
       enemy.classList.remove('enemy-hit');
       knight.src = knightAsset('normal');
+      knight.classList.remove('knight-attack-pose');
       enemy.src = enemyAsset(activeQuiz.data.enemy, 'normal');
     }, STRIKE_RESET_MS);
   } else {
@@ -560,6 +563,7 @@ function playBattleAnimation(correct, idx) {
       knight.classList.remove('knight-damaged');
       enemy.classList.remove('enemy-attack-strike');
       knight.src = knightAsset('normal');
+      knight.classList.remove('knight-attack-pose');
       enemy.src = enemyAsset(activeQuiz.data.enemy, 'normal');
     }, DAMAGE_RESET_MS);
   }
@@ -567,7 +571,7 @@ function playBattleAnimation(correct, idx) {
   if (correct) renderHearts();
 
   setTimeout(() => {
-    knight.classList.remove('sprite-pop', 'sprite-shake', 'knight-strike', 'knight-damaged');
+    knight.classList.remove('sprite-pop', 'sprite-shake', 'knight-strike', 'knight-damaged', 'knight-attack-pose');
     enemy.classList.remove('sprite-shake', 'enemy-hit', 'enemy-attack-strike');
 
     if (activeQuiz.hearts <= 0 || activeQuiz.index >= activeQuiz.data.questions.length - 1) {
@@ -575,6 +579,7 @@ function playBattleAnimation(correct, idx) {
     } else {
       activeQuiz.index += 1;
       knight.src = knightAsset('normal');
+      knight.classList.remove('knight-attack-pose');
       enemy.src = enemyAsset(activeQuiz.data.enemy, 'normal');
       feedback.classList.add('hidden');
       document.getElementById('quizGame').classList.remove('hidden');
@@ -595,10 +600,17 @@ function showQuizEndPanel() {
 function showQuizResult() {
   const won = activeQuiz.hearts > 0;
   const modal = ensureQuizModal();
-  modal.querySelector('#quizGame').classList.add('hidden');
+  const quizGame = modal.querySelector('#quizGame');
+  quizGame.classList.add('hidden');
+  quizGame.style.display = 'none';
+  modal.querySelector('#quizIntro').classList.add('hidden');
   document.getElementById('battleFeedback').classList.add('hidden');
-  document.getElementById('quizKnight').src = won ? knightAsset('victory') : knightAsset('defeated');
-  document.getElementById('quizEnemy').src = won ? enemyAsset(activeQuiz.data.enemy, 'defeated') : enemyAsset(activeQuiz.data.enemy, 'normal');
+  const knight = document.getElementById('quizKnight');
+  const enemy = document.getElementById('quizEnemy');
+  knight.classList.remove('sprite-pop', 'sprite-shake', 'knight-strike', 'knight-damaged', 'knight-attack-pose');
+  enemy.classList.remove('sprite-shake', 'enemy-hit', 'enemy-attack-strike');
+  knight.src = won ? knightAsset('victory') : knightAsset('defeated');
+  enemy.src = won ? enemyAsset(activeQuiz.data.enemy, 'defeated') : enemyAsset(activeQuiz.data.enemy, 'normal');
 
   if (won) {
     setAreaProgress({ level2Completed: true });
@@ -611,25 +623,7 @@ function showQuizResult() {
   result.className = 'quiz-result quiz-panel quiz-final-result';
 
   if (won) {
-    const rewardBlock = reward
-      ? `
-        <div class="fragment-reward-box simple-fragment-box" aria-label="Kristall-Belohnung">
-          <strong>Kristall erhalten</strong>
-          <img class="fragment-mini-image" src="${reward.image}" alt="${reward.name}">
-          <p>Der Kristall wird automatisch auf der Weltkarte angezeigt.</p>
-        </div>
-      `
-      : '';
-
-    result.innerHTML = `
-      <h2>Gewonnen!</h2>
-      <p>Du hast ${activeQuiz.correct} von ${activeQuiz.data.questions.length} Fragen richtig beantwortet.</p>
-      ${rewardBlock}
-      <div class="quiz-result-actions single-action">
-        <button id="closeQuizButton" class="primary-button" type="button">Zur Weltkarte</button>
-      </div>
-    `;
-    document.getElementById('closeQuizButton').addEventListener('click', returnToOverworld);
+    showWinResultSlide(result, reward, 1);
     return;
   }
 
@@ -642,6 +636,36 @@ function showQuizResult() {
     </div>
   `;
   document.getElementById('retryQuizButton').addEventListener('click', () => startQuiz(activeQuiz.quizId));
+  document.getElementById('closeQuizButton').addEventListener('click', returnToOverworld);
+}
+
+function showWinResultSlide(result, reward, slide) {
+  if (slide === 1) {
+    result.innerHTML = `
+      <h2>Gewonnen!</h2>
+      <p>Du hast ${activeQuiz.correct} von ${activeQuiz.data.questions.length} Fragen richtig beantwortet.</p>
+      <div class="quiz-result-actions single-action">
+        <button id="winNextButton" class="primary-button" type="button">Weiter</button>
+      </div>
+    `;
+    document.getElementById('winNextButton').addEventListener('click', () => showWinResultSlide(result, reward, 2));
+    return;
+  }
+  const rewardBlock = reward
+    ? `
+      <div class="fragment-reward-box simple-fragment-box" aria-label="Kristall-Belohnung">
+        <strong>Kristall erhalten</strong>
+        <img class="fragment-mini-image floating-fragment" src="${reward.image}" alt="${reward.name}">
+        <p>Der Kristall wird automatisch auf der Weltkarte angezeigt.</p>
+      </div>
+    `
+    : `<p>Der Kristall wird automatisch auf der Weltkarte angezeigt.</p>`;
+  result.innerHTML = `
+    ${rewardBlock}
+    <div class="quiz-result-actions single-action">
+      <button id="closeQuizButton" class="primary-button" type="button">Zur Weltkarte</button>
+    </div>
+  `;
   document.getElementById('closeQuizButton').addEventListener('click', returnToOverworld);
 }
 
