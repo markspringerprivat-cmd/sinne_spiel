@@ -10,22 +10,39 @@
     body.duft-hop-page { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color:#2a1a10; }
     .duft-hop-shell { position:fixed; inset:0; background:#142b19; }
     #duftHopCanvas { width:100vw; height:100vh; display:block; background:#224f2c; }
-    .duft-hop-hud { position:fixed; top:max(12px, env(safe-area-inset-top)); left:50%; transform:translateX(-50%); z-index:4; width:min(92vw, 620px); display:grid; grid-template-columns:1fr auto; gap:10px; pointer-events:none; }
-    .duft-card { border:3px solid rgba(77, 43, 20, .58); border-radius:20px; background:rgba(255,248,222,.9); box-shadow:0 8px 0 rgba(50,28,12,.22), 0 12px 22px rgba(0,0,0,.22); padding:10px 14px; font-weight:950; }
+    .duft-hop-hud {
+      position:fixed; top:max(12px, env(safe-area-inset-top)); left:50%; transform:translateX(-50%);
+      z-index:4; width:min(92vw, 720px); display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px; pointer-events:none;
+    }
+    .duft-card {
+      border:3px solid rgba(77, 43, 20, .58); border-radius:20px; background:rgba(255,248,222,.92);
+      box-shadow:0 8px 0 rgba(50,28,12,.22), 0 12px 22px rgba(0,0,0,.22); padding:10px 14px; font-weight:950;
+    }
     .duft-progress { margin-top:7px; height:13px; border-radius:999px; background:rgba(68,36,18,.22); overflow:hidden; }
     #duftProgressFill { width:0%; height:100%; background:linear-gradient(90deg,#77e06d,#f5d45a); border-radius:inherit; transition:width .18s linear; }
-    #duftLives { min-width:90px; text-align:center; color:#d62428; letter-spacing:1px; font-size:clamp(20px, 5vw, 30px); line-height:1; }
-    .duft-buttons { position:fixed; z-index:5; left:50%; bottom:max(16px, env(safe-area-inset-bottom)); transform:translateX(-50%); width:min(94vw, 640px); display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-    .duft-jump-button { border:0; border-radius:24px; padding:18px 10px; min-height:72px; font:inherit; font-size:clamp(22px, 6vw, 34px); font-weight:1000; color:#2b1b0b; background:linear-gradient(#fff59f,#ffc24e); box-shadow:0 9px 0 #a45e16, 0 14px 24px rgba(0,0,0,.24); touch-action:manipulation; user-select:none; -webkit-user-select:none; }
+    #duftInfoBox {
+      min-width:132px; text-align:center; display:flex; flex-direction:column; justify-content:center; gap:4px;
+      font-size:clamp(16px, 3.6vw, 22px); line-height:1.08;
+    }
+    #duftInfoLabel { font-size:clamp(12px, 2.8vw, 14px); text-transform:uppercase; letter-spacing:.6px; opacity:.78; }
+    .duft-buttons {
+      position:fixed; z-index:5; left:50%; bottom:max(16px, env(safe-area-inset-bottom)); transform:translateX(-50%);
+      width:min(94vw, 640px); display:grid; grid-template-columns:1fr 1fr; gap:14px;
+    }
+    .duft-jump-button {
+      border:0; border-radius:24px; padding:18px 10px; min-height:72px; font:inherit; font-size:clamp(22px, 6vw, 34px);
+      font-weight:1000; color:#2b1b0b; background:linear-gradient(#fff59f,#ffc24e);
+      box-shadow:0 9px 0 #a45e16, 0 14px 24px rgba(0,0,0,.24); touch-action:manipulation; user-select:none; -webkit-user-select:none;
+    }
     .duft-jump-button:active, .duft-jump-button.pressed { transform:translateY(5px); box-shadow:0 4px 0 #a45e16, 0 9px 18px rgba(0,0,0,.2); }
     .duft-jump-button:disabled { opacity:.55; filter:grayscale(.25); }
     .duft-overlay { position:fixed; inset:0; z-index:10; display:grid; place-items:center; background:rgba(0,0,0,.42); backdrop-filter:blur(3px); padding:18px; }
     .duft-overlay.hidden { display:none !important; }
-    .duft-popup { position:relative; width:min(90vw,520px); min-height:420px; display:grid; place-items:center; padding:54px 42px 58px; text-align:center; color:#432b16; isolation:isolate; animation:duftPopupIn .32s ease both; }
+    .duft-popup { position:relative; width:min(90vw,520px); min-height:430px; display:grid; place-items:center; padding:54px 42px 58px; text-align:center; color:#432b16; isolation:isolate; animation:duftPopupIn .32s ease both; }
     .duft-popup::before { content:""; position:absolute; inset:0; z-index:-1; background:url('../assets/images/ui/parchment_popup.png') center / 100% 100% no-repeat; filter:drop-shadow(0 18px 24px rgba(0,0,0,.34)); }
     .duft-popup h1, .duft-popup h2 { margin:0 0 14px; font-size:clamp(30px,7vw,46px); line-height:1.05; }
-    .duft-popup p { margin:9px auto; max-width:380px; font-size:clamp(16px,3.9vw,21px); font-weight:800; line-height:1.32; }
-    .duft-popup ul { text-align:left; max-width:380px; margin:12px auto; font-weight:800; font-size:clamp(14px,3.4vw,17px); }
+    .duft-popup p { margin:9px auto; max-width:390px; font-size:clamp(16px,3.9vw,21px); font-weight:800; line-height:1.32; }
+    .duft-popup ul { text-align:left; max-width:390px; margin:12px auto; font-weight:800; font-size:clamp(14px,3.4vw,17px); }
     .duft-popup-actions { display:flex; justify-content:center; flex-wrap:wrap; gap:12px; margin-top:18px; }
     .duft-button { border:0; border-radius:999px; padding:14px 24px; font:inherit; font-size:clamp(16px,4vw,21px); font-weight:950; color:#372511; background:linear-gradient(#ffe47c,#f5a82b); box-shadow:0 8px 0 #a65d16, 0 12px 18px rgba(0,0,0,.22); cursor:pointer; }
     .duft-button.secondary { background:#eef2ff; box-shadow:0 7px 0 #b7c2dd, 0 12px 18px rgba(0,0,0,.18); }
@@ -39,10 +56,13 @@
   </main>
   <div class="duft-hop-hud" aria-live="polite">
     <div class="duft-card">
-      <div id="duftStatusText">Ziel: Duftblume erreichen</div>
+      <div id="duftStatusText">Ziel: Die goldene Blüte erreichen</div>
       <div class="duft-progress"><div id="duftProgressFill"></div></div>
     </div>
-    <div id="duftLives" class="duft-card">♥♥♥</div>
+    <div id="duftInfoBox" class="duft-card">
+      <div id="duftInfoLabel">Käfer</div>
+      <div id="duftInfoText">Startet in 3,0 s</div>
+    </div>
   </div>
   <div class="duft-buttons" aria-label="Sprungauswahl">
     <button id="jumpOne" class="duft-jump-button" type="button">1 Feld</button>

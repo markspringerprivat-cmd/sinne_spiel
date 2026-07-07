@@ -1,43 +1,81 @@
 (() => {
   const STORAGE_VOLUME = 'sinnesmagie-volume';
   const STORAGE_LEVEL_PROGRESS = 'sinnesmagie-level-progress';
-  const FIELD_COUNT = 34;
+  const FIELD_COUNT = 20;
   const PLAYER_START = 0;
   const TARGET_INDEX = FIELD_COUNT - 1;
-  const MAX_LIVES = 3;
+  const BEETLE_HEADSTART_MS = 3000;
+  const BEETLE_STEP_MS = 1000;
+  const BEETLE_HOP_MS = 260;
 
   const canvas = document.getElementById('duftHopCanvas');
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d', { alpha: true });
   const overlay = document.getElementById('duftOverlay');
   const popup = document.getElementById('duftPopup');
   const statusText = document.getElementById('duftStatusText');
   const progressFill = document.getElementById('duftProgressFill');
-  const livesText = document.getElementById('duftLives');
+  const infoText = document.getElementById('duftInfoText');
   const jumpOne = document.getElementById('jumpOne');
   const jumpTwo = document.getElementById('jumpTwo');
   const musicElement = document.getElementById('duftMusic');
-  const musicLoop = window.createCrossfadeLoop ? window.createCrossfadeLoop(musicElement, { fadeSeconds: 0.15 }) : null;
+  const musicLoop = window.createCrossfadeLoop ? window.createCrossfadeLoop(musicElement, { fadeSeconds: 0.12 }) : null;
 
   const images = {
     background: new Image(),
+    flowerNormal: new Image(),
+    flowerSlime: new Image(),
+    flowerRotten: new Image(),
+    flowerGold: new Image(),
+    cloudStink: new Image(),
     knight: new Image(),
+    beetle: new Image(),
   };
   images.background.src = '../assets/images/level-backgrounds/duftgarten.png';
-  images.knight.src = '../assets/images/characters/knight.png';
+  images.flowerNormal.src = '../assets/images/minigame/duftgarten/flower_normal.png';
+  images.flowerSlime.src = '../assets/images/minigame/duftgarten/flower_slime.png';
+  images.flowerRotten.src = '../assets/images/minigame/duftgarten/flower_rotten.png';
+  images.flowerGold.src = '../assets/images/minigame/duftgarten/flower_gold.png';
+  images.cloudStink.src = '../assets/images/minigame/duftgarten/cloud_stink.png';
+  images.knight.src = '../assets/images/minigame/duftgarten/knight_top.png';
+  images.beetle.src = '../assets/images/minigame/duftgarten/beetle_stink.png';
+
+  const fieldPlan = [
+    'start',
+    'normal',
+    'slime',
+    'normal',
+    'cloud',
+    'normal',
+    'rotten',
+    'normal',
+    'slime',
+    'normal',
+    'cloud',
+    'normal',
+    'rotten',
+    'normal',
+    'slime',
+    'normal',
+    'cloud',
+    'normal',
+    'normal',
+    'goal',
+  ];
 
   const game = {
     running: false,
     finished: false,
     fields: [],
     playerIndex: PLAYER_START,
-    beetleIndex: -4,
-    lives: MAX_LIVES,
     lastTime: 0,
-    beetleMeter: 0,
-    beetleSpeed: 0.64,
-    stunUntil: 0,
-    jumpLockUntil: 0,
     jumpAnim: null,
+    jumpLockUntil: 0,
+    stunUntil: 0,
+    slowJumpsLeft: 0,
+    beetleStartAt: 0,
+    beetleNextStepAt: 0,
+    beetleIndex: -3,
+    beetleHop: null,
     message: '',
     messageUntil: 0,
     camera: 0,
@@ -51,7 +89,7 @@
 
   function startMusic() {
     if (!musicElement) return;
-    const volume = currentVolume() * 0.45;
+    const volume = currentVolume() * 0.42;
     if (musicLoop) {
       musicLoop.setVolume(volume);
       musicLoop.play();
@@ -86,7 +124,7 @@
   }
 
   function resizeCanvas() {
-    const dpr = 1;
+    const dpr = Math.min(1.5, Math.max(1, window.devicePixelRatio || 1));
     const w = Math.max(320, window.innerWidth);
     const h = Math.max(520, window.innerHeight);
     canvas.width = Math.round(w * dpr);
@@ -94,48 +132,38 @@
     canvas.style.width = `${w}px`;
     canvas.style.height = `${h}px`;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
   }
 
   function makeFields() {
-    const types = new Array(FIELD_COUNT).fill('flower');
-    // fest gesetzte Felder, damit 1/2-Feld-Entscheidungen sinnvoll und fair bleiben
-    const swamp = [5, 12, 18, 25, 30];
-    const gas = [4, 9, 15, 21, 28, 32];
-    const bonus = [7, 14, 23, 29];
-    swamp.forEach(i => { if (i > 0 && i < TARGET_INDEX) types[i] = 'swamp'; });
-    gas.forEach(i => { if (i > 0 && i < TARGET_INDEX) types[i] = 'gas'; });
-    bonus.forEach(i => { if (i > 0 && i < TARGET_INDEX) types[i] = 'bonus'; });
-    types[0] = 'start';
-    types[TARGET_INDEX] = 'goal';
-
-    const columns = [0.22, 0.42, 0.61, 0.79];
-    return types.map((type, index) => ({
+    return fieldPlan.map((type, index) => ({
       index,
       type,
-      col: columns[(index * 2 + Math.floor(index / 3)) % columns.length] + (Math.sin(index * 1.7) * 0.025),
-      visited: false,
+      visited: index === 0,
     }));
   }
 
   function resetGame() {
+    const now = performance.now();
     game.running = true;
     game.finished = false;
     game.fields = makeFields();
     game.playerIndex = PLAYER_START;
-    game.beetleIndex = -4;
-    game.lives = MAX_LIVES;
-    game.lastTime = performance.now();
-    game.beetleMeter = 0;
-    game.beetleSpeed = 0.64;
-    game.stunUntil = 0;
-    game.jumpLockUntil = 0;
+    game.lastTime = now;
     game.jumpAnim = null;
+    game.jumpLockUntil = 0;
+    game.stunUntil = 0;
+    game.slowJumpsLeft = 0;
+    game.beetleStartAt = now + BEETLE_HEADSTART_MS;
+    game.beetleNextStepAt = now + BEETLE_HEADSTART_MS;
+    game.beetleIndex = -3;
+    game.beetleHop = null;
     game.message = '';
     game.messageUntil = 0;
     game.camera = 0;
     game.particles = [];
-    game.fields[0].visited = true;
-    updateHud();
+    updateHud(now);
   }
 
   function showPopup(type) {
@@ -147,14 +175,15 @@
       popup.innerHTML = `
         <div>
           <h1>Blütensprung</h1>
-          <p>Der Ritter springt im Duftgarten von Blume zu Blume. Hinter ihm krabbelt ein Käfer heran.</p>
+          <p>Der Ritter springt im Duftgarten nur nach vorne – immer 1 oder 2 Felder weit. Hinter ihm kommt ein stinkender Käfer näher.</p>
           <ul>
-            <li><strong>1 Feld</strong> oder <strong>2 Felder</strong> springen.</li>
-            <li><strong>Gestankwolke:</strong> 1 Sekunde betäubt.</li>
-            <li><strong>Sumpf:</strong> wirft dich 1 Feld zurück.</li>
-            <li><strong>Duftblume:</strong> bremst den Käfer kurz aus.</li>
+            <li><strong>Normale pinke Blüte:</strong> sicherer Stand.</li>
+            <li><strong>Vergammelte Blüte:</strong> wirft dich 1 Feld zurück.</li>
+            <li><strong>Blüte mit grünen Flecken:</strong> die nächsten 3 Sprünge sind 50 % langsamer.</li>
+            <li><strong>Gestankwolke:</strong> 2 Sekunden betäubt.</li>
+            <li><strong>Goldene Blüte:</strong> Ziel erreicht!</li>
           </ul>
-          <p>Erreiche die große Duftblume, bevor der Käfer dich einholt.</p>
+          <p>Du hast 3 Sekunden Vorsprung. Danach springt der Käfer jede Sekunde 1 Feld weiter.</p>
           <div class="duft-popup-actions">
             <button id="startDuftGame" class="duft-button" type="button">Starten</button>
             <button id="leaveDuftGame" class="duft-button secondary" type="button">Zurück</button>
@@ -169,7 +198,7 @@
       popup.innerHTML = `
         <div>
           <h2>Geschafft!</h2>
-          <p>Der Ritter hat die Duftblume erreicht und den Käfer abgehängt.</p>
+          <p>Der Ritter hat die goldene Blüte erreicht, bevor der Käfer ihn eingeholt hat.</p>
           <p>Level 1 im Duftgarten ist abgeschlossen.</p>
           <div class="duft-popup-actions">
             <button id="returnDuft" class="duft-button" type="button">Zurück zum Duftgarten</button>
@@ -183,7 +212,7 @@
       <div>
         <h2>Erwischt!</h2>
         <p>Der Käfer hat den Ritter eingeholt.</p>
-        <p>Entscheide schneller, ob 1 oder 2 Felder besser sind.</p>
+        <p>Springe schneller weiter und nutze 2-Feld-Sprünge geschickt.</p>
         <div class="duft-popup-actions">
           <button id="retryDuft" class="duft-button" type="button">Nochmal spielen</button>
           <button id="returnDuft" class="duft-button secondary" type="button">Zurück</button>
@@ -217,57 +246,89 @@
     setTimeout(() => showPopup(won ? 'won' : 'lost'), 420);
   }
 
-  function updateHud() {
+  function setMessage(text, ms = 1300) {
+    game.message = text;
+    game.messageUntil = performance.now() + ms;
+  }
+
+  function updateHud(now = performance.now()) {
     const progress = Math.max(0, Math.min(100, (game.playerIndex / TARGET_INDEX) * 100));
     progressFill.style.width = `${progress}%`;
-    const dist = Math.max(0, Math.ceil(game.playerIndex - game.beetleIndex));
-    statusText.textContent = game.message || `Abstand zum Käfer: ${dist} Felder`;
-    livesText.textContent = '♥'.repeat(game.lives) + '♡'.repeat(MAX_LIVES - game.lives);
+
+    if (game.message) {
+      statusText.textContent = game.message;
+    } else if (game.slowJumpsLeft > 0) {
+      statusText.textContent = `Verlangsamt: noch ${game.slowJumpsLeft} Sprünge`; 
+    } else {
+      statusText.textContent = 'Ziel: Die goldene Blüte erreichen';
+    }
+
+    if (now < game.beetleStartAt) {
+      const sec = Math.max(0, (game.beetleStartAt - now) / 1000).toFixed(1);
+      infoText.textContent = `Startet in ${sec} s`;
+    } else {
+      const distance = Math.max(0, game.playerIndex - Math.floor(game.beetleIndex));
+      infoText.textContent = `${distance} Felder Abstand`;
+    }
   }
 
   function fieldWorld(index, w, h) {
-    const rowGap = Math.min(96, Math.max(66, h * 0.105));
-    const bottom = h * 0.73;
-    const field = game.fields[Math.max(0, Math.min(TARGET_INDEX, index))];
+    const rowGap = Math.min(88, Math.max(56, h * 0.082));
+    const bottom = h * 0.77;
+    const x = w * 0.5;
     return {
-      x: field.col * w,
+      x,
       y: bottom - index * rowGap,
       rowGap,
     };
   }
 
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+
   function currentPlayerPos(w, h, now) {
     if (!game.jumpAnim) return fieldWorld(game.playerIndex, w, h);
     const t = Math.min(1, (now - game.jumpAnim.start) / game.jumpAnim.duration);
-    const ease = 1 - Math.pow(1 - t, 3);
+    const ease = easeOutCubic(t);
     const from = fieldWorld(game.jumpAnim.from, w, h);
     const to = fieldWorld(game.jumpAnim.to, w, h);
-    const arc = Math.sin(Math.PI * ease) * Math.min(72, h * 0.09);
+    const jumpHeight = Math.sin(Math.PI * ease) * Math.min(72, h * 0.10) * (game.jumpAnim.stepCount === 2 ? 1.14 : 1);
     return {
-      x: from.x + (to.x - from.x) * ease,
-      y: from.y + (to.y - from.y) * ease - arc,
+      x: lerp(from.x, to.x, ease),
+      y: lerp(from.y, to.y, ease) - jumpHeight,
       rowGap: from.rowGap,
     };
   }
 
-  function setMessage(text, ms = 1200) {
-    game.message = text;
-    game.messageUntil = performance.now() + ms;
-    updateHud();
+  function currentBeetlePos(w, h, now) {
+    if (!game.beetleHop) return fieldWorld(game.beetleIndex, w, h);
+    const t = Math.min(1, (now - game.beetleHop.start) / game.beetleHop.duration);
+    const ease = easeOutCubic(t);
+    const from = fieldWorld(game.beetleHop.from, w, h);
+    const to = fieldWorld(game.beetleHop.to, w, h);
+    const hopHeight = Math.sin(Math.PI * ease) * Math.min(38, h * 0.055);
+    return {
+      x: lerp(from.x, to.x, ease),
+      y: lerp(from.y, to.y, ease) - hopHeight,
+      rowGap: from.rowGap,
+    };
   }
 
-  function addParticles(index, color) {
+  function addParticles(index, colors) {
     const w = window.innerWidth;
     const h = window.innerHeight;
     const pos = fieldWorld(index, w, h);
-    for (let i = 0; i < 10; i += 1) {
+    const colorList = Array.isArray(colors) ? colors : [colors];
+    for (let i = 0; i < 14; i += 1) {
+      const color = colorList[i % colorList.length];
       game.particles.push({
         x: pos.x / w,
         y: (pos.y - game.camera) / h,
-        vx: (Math.random() - 0.5) * 0.28,
-        vy: (Math.random() - 0.75) * 0.24,
+        vx: (Math.random() - 0.5) * 0.26,
+        vy: (Math.random() - 0.85) * 0.24,
         age: 0,
-        life: 0.45 + Math.random() * 0.28,
+        life: 0.42 + Math.random() * 0.34,
+        size: 3 + Math.random() * 6,
         color,
       });
     }
@@ -279,30 +340,29 @@
     field.visited = true;
     const now = performance.now();
 
-    if (field.type === 'gas') {
-      game.stunUntil = Math.max(game.stunUntil, now + 1000);
-      game.jumpLockUntil = Math.max(game.jumpLockUntil, now + 1000);
-      setMessage('Gestankwolke: 1 Sekunde betäubt!', 1000);
-      addParticles(index, '#9bd65b');
+    if (field.type === 'cloud') {
+      game.stunUntil = Math.max(game.stunUntil, now + 2000);
+      game.jumpLockUntil = Math.max(game.jumpLockUntil, now + 2000);
+      setMessage('Gestankwolke: 2 Sekunden betäubt!', 2000);
+      addParticles(index, ['#a6cc54', '#79963a', '#d7e78d']);
       return;
     }
 
-    if (field.type === 'swamp') {
-      setMessage('Stinkender Sumpf: 1 Feld zurück!', 1200);
-      addParticles(index, '#7b5b2a');
+    if (field.type === 'slime') {
+      game.slowJumpsLeft = 3;
+      setMessage('Klebrige Blüte: 3 Sprünge langsamer!', 1500);
+      addParticles(index, ['#8cc64d', '#5a9a2f', '#d7e78d']);
+      return;
+    }
+
+    if (field.type === 'rotten') {
+      setMessage('Vergammelte Blüte: 1 Feld zurück!', 1350);
+      addParticles(index, ['#7d5638', '#b38666', '#4f3829']);
       setTimeout(() => {
         if (!game.running || game.jumpAnim) return;
         const backTo = Math.max(0, game.playerIndex - 1);
-        startJumpTo(backTo, 300, false);
-      }, 220);
-      return;
-    }
-
-    if (field.type === 'bonus') {
-      game.beetleIndex = Math.max(-4, game.beetleIndex - 1);
-      game.beetleMeter = 0;
-      setMessage('Duftblume: Käfer gebremst!', 1100);
-      addParticles(index, '#e88adb');
+        startJumpTo(backTo, 340, false, 1);
+      }, 230);
       return;
     }
 
@@ -311,23 +371,40 @@
     }
   }
 
-  function startJumpTo(target, duration = 360, applyEffect = true) {
+  function startJumpTo(target, duration = 340, applyEffect = true, stepCount = 1) {
     const from = game.playerIndex;
     const to = Math.max(0, Math.min(TARGET_INDEX, target));
-    game.jumpAnim = { from, to, start: performance.now(), duration, applyEffect };
-    game.jumpLockUntil = performance.now() + duration + 40;
+    game.jumpAnim = { from, to, start: performance.now(), duration, applyEffect, stepCount };
+    game.jumpLockUntil = performance.now() + duration + 50;
   }
 
   function requestJump(count) {
     const now = performance.now();
     if (!game.running || game.jumpAnim || now < game.stunUntil || now < game.jumpLockUntil) return;
-    startJumpTo(game.playerIndex + count);
+    const slowMultiplier = game.slowJumpsLeft > 0 ? 1.5 : 1;
+    const duration = (count === 2 ? 420 : 320) * slowMultiplier;
+    if (game.slowJumpsLeft > 0) game.slowJumpsLeft -= 1;
+    startJumpTo(game.playerIndex + count, duration, true, count);
+    updateHud(now);
+  }
+
+  function updateBeetle(now) {
+    if (now < game.beetleStartAt) return;
+    while (now >= game.beetleNextStepAt && game.running) {
+      const from = game.beetleIndex;
+      const to = from + 1;
+      game.beetleIndex = to;
+      game.beetleHop = { from, to, start: game.beetleNextStepAt, duration: BEETLE_HOP_MS };
+      game.beetleNextStepAt += BEETLE_STEP_MS;
+    }
+    if (game.beetleHop && now >= game.beetleHop.start + game.beetleHop.duration) {
+      game.beetleHop = null;
+    }
   }
 
   function update(dt, now) {
     if (game.message && now > game.messageUntil) {
       game.message = '';
-      updateHud();
     }
 
     if (game.jumpAnim) {
@@ -338,30 +415,17 @@
         game.playerIndex = to;
         game.jumpAnim = null;
         if (shouldApply) applyFieldEffect(to);
-        updateHud();
       }
     }
 
-    game.beetleMeter += dt * game.beetleSpeed;
-    if (game.beetleMeter >= 1) {
-      const steps = Math.floor(game.beetleMeter);
-      game.beetleMeter -= steps;
-      game.beetleIndex += steps;
-      // Käfer wird im späteren Spielverlauf langsam aggressiver
-      game.beetleSpeed = Math.min(0.86, 0.64 + game.playerIndex * 0.007);
-      updateHud();
+    updateBeetle(now);
+
+    if (Math.floor(game.beetleIndex) >= game.playerIndex && !game.finished) {
+      endGame(false);
+      return;
     }
 
-    if (game.beetleIndex >= game.playerIndex) {
-      game.lives -= 1;
-      game.beetleIndex = game.playerIndex - 4;
-      game.beetleMeter = 0;
-      setMessage('Der Käfer hat zugeschnappt!', 1100);
-      updateHud();
-      if (game.lives <= 0) endGame(false);
-    }
-
-    game.particles.forEach(p => {
+    game.particles.forEach((p) => {
       p.age += dt;
       p.x += p.vx * dt;
       p.y += p.vy * dt;
@@ -369,6 +433,8 @@
     for (let i = game.particles.length - 1; i >= 0; i -= 1) {
       if (game.particles[i].age >= game.particles[i].life) game.particles.splice(i, 1);
     }
+
+    updateHud(now);
   }
 
   function drawCoverImage(img, x, y, w, h) {
@@ -380,114 +446,90 @@
     return true;
   }
 
+  function drawSprite(img, x, y, w, h) {
+    if (!img.complete || !img.naturalWidth) return;
+    ctx.drawImage(img, x - w / 2, y - h / 2, w, h);
+  }
+
   function drawBackground(w, h) {
     if (!drawCoverImage(images.background, 0, 0, w, h)) {
       const g = ctx.createLinearGradient(0, 0, 0, h);
-      g.addColorStop(0, '#63ba5f');
+      g.addColorStop(0, '#82d07b');
       g.addColorStop(1, '#244f27');
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, w, h);
     }
-    ctx.fillStyle = 'rgba(32, 82, 30, 0.30)';
+    ctx.fillStyle = 'rgba(32, 82, 30, 0.18)';
     ctx.fillRect(0, 0, w, h);
   }
 
-  function drawField(field, x, y, r) {
+  function fieldImage(type) {
+    switch (type) {
+      case 'slime': return images.flowerSlime;
+      case 'rotten': return images.flowerRotten;
+      case 'cloud': return images.cloudStink;
+      case 'goal': return images.flowerGold;
+      case 'start':
+      case 'normal':
+      default: return images.flowerNormal;
+    }
+  }
+
+  function drawField(field, x, y, size) {
+    const img = fieldImage(field.type);
     ctx.save();
     ctx.translate(x, y);
-    const type = field.type;
-    if (type === 'swamp') {
-      ctx.fillStyle = '#6b5128';
-      ctx.strokeStyle = '#382516';
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.ellipse(0, 0, r * 1.1, r * 0.72, 0, 0, Math.PI * 2);
-      ctx.fill(); ctx.stroke();
-      ctx.fillStyle = 'rgba(132, 92, 43, .75)';
-      ctx.beginPath(); ctx.arc(-r * 0.35, -r * 0.05, r * 0.18, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.arc(r * 0.35, r * 0.1, r * 0.14, 0, Math.PI * 2); ctx.fill();
-    } else if (type === 'gas') {
-      drawFlowerBase(r, '#b2d96b', '#6a9b36');
-      ctx.fillStyle = 'rgba(92, 157, 54, .74)';
-      for (let i = 0; i < 3; i += 1) {
-        ctx.beginPath();
-        ctx.arc((i - 1) * r * 0.36, -r * (0.25 + i * 0.05), r * 0.32, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    } else if (type === 'bonus') {
-      drawFlowerBase(r, '#ff9eea', '#f5df79');
-      ctx.fillStyle = '#fff7ba';
-      ctx.beginPath(); ctx.arc(0, 0, r * 0.36, 0, Math.PI * 2); ctx.fill();
-    } else if (type === 'goal') {
-      drawFlowerBase(r * 1.18, '#fff2a1', '#f27abd');
-      ctx.fillStyle = '#fff';
-      ctx.font = `${Math.round(r * 0.75)}px system-ui`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('✦', 0, 0);
-    } else {
-      drawFlowerBase(r, '#f7f0fb', '#ff9fc5');
-    }
 
-    if (field.visited && type !== 'start') {
-      ctx.globalAlpha = 0.34;
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath(); ctx.arc(0, 0, r * 0.88, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = 0.18;
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.ellipse(0, size * 0.30, size * 0.34, size * 0.14, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    const scale = field.type === 'cloud' ? 1.00 : (field.type === 'goal' ? 1.18 : 1.08);
+    drawSprite(img, 0, 0, size * scale, size * scale * (img.naturalHeight && img.naturalWidth ? img.naturalHeight / img.naturalWidth : 1));
+
+    if (field.visited && field.type !== 'start') {
+      ctx.globalAlpha = 0.22;
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, size * 0.28, size * 0.28, 0, 0, Math.PI * 2);
+      ctx.fill();
     }
     ctx.restore();
   }
 
-  function drawFlowerBase(r, center, petal) {
-    ctx.strokeStyle = 'rgba(44, 52, 24, .45)';
-    ctx.lineWidth = 3;
-    for (let i = 0; i < 8; i += 1) {
-      const a = (Math.PI * 2 * i) / 8;
-      ctx.fillStyle = petal;
-      ctx.beginPath();
-      ctx.ellipse(Math.cos(a) * r * 0.5, Math.sin(a) * r * 0.42, r * 0.36, r * 0.22, a, 0, Math.PI * 2);
-      ctx.fill(); ctx.stroke();
-    }
-    ctx.fillStyle = center;
-    ctx.beginPath(); ctx.arc(0, 0, r * 0.45, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  function drawPathLine(x1, y1, x2, y2, width) {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,.30)';
+    ctx.lineWidth = width;
+    ctx.lineCap = 'round';
+    ctx.setLineDash([10, 12]);
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+    ctx.restore();
   }
 
-  function drawKnight(x, y, size) {
+  function drawKnight(x, y, size, now) {
     ctx.save();
-    ctx.translate(x, y);
-    ctx.shadowColor = 'rgba(0,0,0,.35)';
+    ctx.translate(x, y + Math.sin(now / 120) * 1.5);
+    ctx.shadowColor = 'rgba(0,0,0,.32)';
     ctx.shadowBlur = 10;
     ctx.shadowOffsetY = 6;
-    if (images.knight.complete && images.knight.naturalWidth) {
-      const ratio = images.knight.naturalWidth / images.knight.naturalHeight;
-      const h = size;
-      const w = h * ratio;
-      ctx.drawImage(images.knight, -w / 2, -h * 0.82, w, h);
-    } else {
-      ctx.fillStyle = '#d9d9d9';
-      ctx.beginPath(); ctx.arc(0, -size * .42, size * .22, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#d82324';
-      ctx.fillRect(-size * .22, -size * .18, size * .44, size * .44);
-    }
+    drawSprite(images.knight, 0, -size * 0.02, size, size * (images.knight.naturalHeight && images.knight.naturalWidth ? images.knight.naturalHeight / images.knight.naturalWidth : 1));
     ctx.restore();
   }
 
-  function drawBeetle(x, y, size) {
+  function drawBeetle(x, y, size, now) {
     ctx.save();
-    ctx.translate(x, y);
-    ctx.fillStyle = '#362116';
-    ctx.strokeStyle = '#120b08';
-    ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.ellipse(0, 0, size * .42, size * .32, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = '#5a3521';
-    ctx.beginPath(); ctx.arc(0, -size * .28, size * .24, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-    ctx.strokeStyle = '#120b08';
-    for (let i = -1; i <= 1; i += 1) {
-      ctx.beginPath(); ctx.moveTo(-size * .28, i * size * .12); ctx.lineTo(-size * .56, i * size * .2); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(size * .28, i * size * .12); ctx.lineTo(size * .56, i * size * .2); ctx.stroke();
-    }
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath(); ctx.arc(-size * .08, -size * .34, size * .045, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.arc(size * .08, -size * .34, size * .045, 0, Math.PI * 2); ctx.fill();
+    ctx.translate(x, y + Math.sin(now / 140) * 1.2);
+    ctx.shadowColor = 'rgba(0,0,0,.28)';
+    ctx.shadowBlur = 8;
+    ctx.shadowOffsetY = 5;
+    drawSprite(images.beetle, 0, 0, size, size * (images.beetle.naturalHeight && images.beetle.naturalWidth ? images.beetle.naturalHeight / images.beetle.naturalWidth : 1));
     ctx.restore();
   }
 
@@ -498,7 +540,7 @@
       ctx.globalAlpha = a;
       ctx.fillStyle = p.color;
       ctx.beginPath();
-      ctx.arc(p.x * w, p.y * h, Math.max(2, w * 0.008 * a), 0, Math.PI * 2);
+      ctx.arc(p.x * w, p.y * h, p.size * a, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
     }
@@ -512,43 +554,38 @@
     drawBackground(w, h);
 
     const playerPos = currentPlayerPos(w, h, now);
-    const desiredCamera = playerPos.y - h * 0.56;
-    game.camera += (desiredCamera - game.camera) * 0.12;
+    const desiredCamera = playerPos.y - h * 0.57;
+    game.camera += (desiredCamera - game.camera) * 0.10;
 
-    const r = Math.min(42, Math.max(28, Math.min(w, h) * 0.055));
+    const flowerSize = Math.min(100, Math.max(72, Math.min(w, h) * 0.18));
+
     for (let i = 0; i < game.fields.length; i += 1) {
       const pos = fieldWorld(i, w, h);
       const sy = pos.y - game.camera;
-      if (sy < -90 || sy > h + 120) continue;
-      // Verbindungslinien
+      if (sy < -140 || sy > h + 160) continue;
       if (i > 0) {
         const prev = fieldWorld(i - 1, w, h);
-        ctx.save();
-        ctx.strokeStyle = 'rgba(255,255,255,.42)';
-        ctx.lineWidth = 6;
-        ctx.setLineDash([12, 12]);
-        ctx.beginPath(); ctx.moveTo(prev.x, prev.y - game.camera); ctx.lineTo(pos.x, sy); ctx.stroke();
-        ctx.restore();
+        drawPathLine(prev.x, prev.y - game.camera, pos.x, sy, 6);
       }
-      drawField(game.fields[i], pos.x, sy, r);
+      drawField(game.fields[i], pos.x, sy, flowerSize);
     }
 
-    const beetleBase = fieldWorld(Math.max(0, Math.min(TARGET_INDEX, Math.floor(game.beetleIndex))), w, h);
-    const beetleY = beetleBase.y - game.camera + (game.beetleIndex < 0 ? Math.abs(game.beetleIndex) * r * 0.7 : 0);
-    if (beetleY > -90 && beetleY < h + 130) drawBeetle(beetleBase.x, beetleY + r * 0.2, r * 1.35);
+    const beetlePos = currentBeetlePos(w, h, now);
+    const beetleY = beetlePos.y - game.camera;
+    if (beetleY > -160 && beetleY < h + 180) drawBeetle(beetlePos.x, beetleY + flowerSize * 0.03, flowerSize * 0.60, now);
 
-    drawKnight(playerPos.x, playerPos.y - game.camera, r * 2.45);
+    drawKnight(playerPos.x, playerPos.y - game.camera - flowerSize * 0.03, flowerSize * 0.70, now);
     drawParticles(w, h);
 
     if (now < game.stunUntil && game.running) {
       ctx.save();
-      ctx.fillStyle = 'rgba(84, 140, 54, .18)';
+      ctx.fillStyle = 'rgba(111, 137, 55, .18)';
       ctx.fillRect(0, 0, w, h);
       ctx.fillStyle = '#fff7c8';
       ctx.font = `900 ${Math.round(Math.min(30, w * 0.07))}px system-ui`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('Betäubt!', w / 2, h * 0.22);
+      ctx.fillText('Betäubt!', w / 2, h * 0.24);
       ctx.restore();
     }
   }
@@ -568,16 +605,28 @@
   }
 
   jumpOne.addEventListener('pointerdown', (event) => {
-    event.preventDefault(); addButtonPressFx(jumpOne); requestJump(1);
+    event.preventDefault();
+    addButtonPressFx(jumpOne);
+    requestJump(1);
   }, { passive: false });
+
   jumpTwo.addEventListener('pointerdown', (event) => {
-    event.preventDefault(); addButtonPressFx(jumpTwo); requestJump(2);
+    event.preventDefault();
+    addButtonPressFx(jumpTwo);
+    requestJump(2);
   }, { passive: false });
 
   window.addEventListener('keydown', (event) => {
-    if (event.key === '1' || event.key === 'ArrowLeft' || event.key.toLowerCase() === 'a') { event.preventDefault(); requestJump(1); }
-    if (event.key === '2' || event.key === 'ArrowRight' || event.key.toLowerCase() === 'd') { event.preventDefault(); requestJump(2); }
+    if (event.key === '1' || event.key === 'ArrowLeft' || event.key.toLowerCase() === 'a') {
+      event.preventDefault();
+      requestJump(1);
+    }
+    if (event.key === '2' || event.key === 'ArrowRight' || event.key.toLowerCase() === 'd') {
+      event.preventDefault();
+      requestJump(2);
+    }
   });
+
   window.addEventListener('resize', () => { resizeCanvas(); draw(); });
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) pauseMusic();
