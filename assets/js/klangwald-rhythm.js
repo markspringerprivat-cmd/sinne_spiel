@@ -15,15 +15,15 @@
   const background = new Image();
   background.src = '../assets/images/level-backgrounds/klangwald.png';
 
-  const BEATMAP = [{"time":0.766,"lane":3},{"time":1.416,"lane":3},{"time":2.043,"lane":2},{"time":2.694,"lane":1},{"time":3.692,"lane":0},{"time":4.342,"lane":1},{"time":5.294,"lane":0},{"time":5.944,"lane":1},{"time":6.594,"lane":2},{"time":7.57,"lane":1},{"time":8.545,"lane":3},{"time":9.195,"lane":3},{"time":9.845,"lane":2},{"time":10.472,"lane":1},{"time":11.447,"lane":0},{"time":12.098,"lane":1},{"time":13.073,"lane":0},{"time":14.048,"lane":2},{"time":15.999,"lane":3},{"time":16.649,"lane":3},{"time":17.276,"lane":2},{"time":17.926,"lane":2},{"time":19.226,"lane":0},{"time":19.876,"lane":1},{"time":20.852,"lane":0},{"time":21.502,"lane":1},{"time":22.129,"lane":2},{"time":23.127,"lane":0},{"time":24.404,"lane":3},{"time":25.054,"lane":2},{"time":25.704,"lane":2},{"time":27.005,"lane":0},{"time":27.655,"lane":1},{"time":28.63,"lane":0},{"time":29.28,"lane":2},{"time":29.931,"lane":1},{"time":31.231,"lane":2},{"time":31.858,"lane":3},{"time":32.206,"lane":0},{"time":32.833,"lane":1},{"time":33.483,"lane":3},{"time":34.783,"lane":1},{"time":35.759,"lane":2},{"time":36.734,"lane":0},{"time":37.384,"lane":2},{"time":38.359,"lane":0},{"time":39.335,"lane":0},{"time":39.962,"lane":3},{"time":40.612,"lane":3},{"time":41.262,"lane":3},{"time":41.889,"lane":3},{"time":42.237,"lane":3},{"time":42.887,"lane":3},{"time":43.514,"lane":1},{"time":44.513,"lane":0},{"time":45.163,"lane":1},{"time":46.115,"lane":0},{"time":46.463,"lane":1},{"time":47.113,"lane":2},{"time":48.065,"lane":0},{"time":49.064,"lane":3},{"time":49.691,"lane":3},{"time":50.341,"lane":2},{"time":50.991,"lane":2},{"time":52.291,"lane":0},{"time":53.267,"lane":1},{"time":55.194,"lane":2}];
+  const BEATMAP = [{"time":0.768,"lane":2},{"time":1.104,"lane":3},{"time":1.424,"lane":3},{"time":1.728,"lane":3},{"time":2.048,"lane":3},{"time":2.384,"lane":3},{"time":2.704,"lane":2},{"time":3.696,"lane":1},{"time":4.0,"lane":2},{"time":4.336,"lane":2},{"time":4.656,"lane":3},{"time":5.616,"lane":2},{"time":5.952,"lane":2},{"time":6.592,"lane":0},{"time":7.568,"lane":2},{"time":9.184,"lane":1},{"time":9.52,"lane":3},{"time":9.84,"lane":3},{"time":10.16,"lane":3},{"time":10.48,"lane":2},{"time":11.456,"lane":1},{"time":11.776,"lane":2},{"time":12.112,"lane":2},{"time":12.432,"lane":3},{"time":13.392,"lane":2},{"time":14.352,"lane":2},{"time":16.32,"lane":1},{"time":16.64,"lane":1},{"time":16.976,"lane":1},{"time":17.28,"lane":3},{"time":17.616,"lane":3},{"time":17.936,"lane":3},{"time":18.24,"lane":0},{"time":18.912,"lane":1},{"time":19.232,"lane":1},{"time":19.568,"lane":2},{"time":19.888,"lane":2},{"time":20.208,"lane":3},{"time":21.184,"lane":2},{"time":21.52,"lane":2},{"time":22.144,"lane":0},{"time":23.12,"lane":2},{"time":24.416,"lane":1},{"time":24.752,"lane":1},{"time":25.072,"lane":3},{"time":25.392,"lane":3},{"time":25.712,"lane":3},{"time":26.016,"lane":0},{"time":27.008,"lane":1},{"time":27.328,"lane":2},{"time":27.984,"lane":0},{"time":28.96,"lane":2},{"time":29.92,"lane":0},{"time":31.856,"lane":0},{"time":32.192,"lane":0},{"time":32.512,"lane":1},{"time":33.808,"lane":0},{"time":34.144,"lane":0},{"time":34.464,"lane":1},{"time":34.784,"lane":2},{"time":35.76,"lane":0},{"time":36.736,"lane":2},{"time":37.712,"lane":3},{"time":38.368,"lane":2},{"time":38.656,"lane":2},{"time":39.328,"lane":2},{"time":40.624,"lane":2},{"time":40.944,"lane":2},{"time":41.264,"lane":3},{"time":41.584,"lane":3},{"time":41.904,"lane":3},{"time":42.24,"lane":3},{"time":42.56,"lane":3},{"time":42.88,"lane":3},{"time":43.2,"lane":3},{"time":43.52,"lane":2},{"time":44.512,"lane":1},{"time":44.832,"lane":2},{"time":45.168,"lane":2},{"time":45.472,"lane":0},{"time":46.464,"lane":2},{"time":46.784,"lane":2},{"time":47.12,"lane":3},{"time":47.424,"lane":0},{"time":48.08,"lane":1},{"time":48.4,"lane":2},{"time":49.712,"lane":1},{"time":50.016,"lane":1},{"time":50.352,"lane":3},{"time":50.688,"lane":3},{"time":50.992,"lane":3},{"time":51.296,"lane":0},{"time":52.304,"lane":1},{"time":52.624,"lane":2},{"time":53.28,"lane":0},{"time":55.2,"lane":3}];
   const LANE_KEYS = ['a', 's', 'd', 'f'];
   const LANE_LABELS = ['A', 'S', 'D', 'F'];
   const LEAD_TIME = 2.15;
   const HIT_WINDOWS = {
-    perfect: 0.09,
-    good: 0.18,
-    ok: 0.28,
-    miss: 0.34
+    perfect: 0.11,
+    good: 0.22,
+    ok: 0.34,
+    miss: 0.42
   };
 
   const game = {
@@ -43,7 +43,8 @@
     lastHudUpdate: 0,
     feedback: [],
     laneFlash: [0, 0, 0, 0],
-    audioUnlocked: false
+    audioUnlocked: false,
+    lastLanePressAt: [0, 0, 0, 0]
   };
 
   function currentVolume() {
@@ -468,19 +469,37 @@
   }
 
   function pressLane(lane) {
+    const now = performance.now();
+    if (now - game.lastLanePressAt[lane] < 55) return;
+    game.lastLanePressAt[lane] = now;
+
     const button = keyButtons[lane];
     if (button) {
       button.classList.add('active');
-      window.setTimeout(() => button.classList.remove('active'), 110);
+      window.clearTimeout(button._rhythmActiveTimer);
+      button._rhythmActiveTimer = window.setTimeout(() => button.classList.remove('active'), 120);
     }
     hitLane(lane);
   }
 
   keyButtons.forEach((button) => {
     const lane = Number(button.dataset.lane);
-    button.addEventListener('pointerdown', (event) => {
+
+    const handlePress = (event) => {
       event.preventDefault();
+      event.stopPropagation();
+      if (event.pointerId && button.setPointerCapture) {
+        try { button.setPointerCapture(event.pointerId); } catch {}
+      }
       pressLane(lane);
+    };
+
+    button.addEventListener('pointerdown', handlePress, { passive: false });
+    button.addEventListener('touchstart', handlePress, { passive: false });
+    button.addEventListener('mousedown', handlePress);
+    button.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
     });
   });
 
