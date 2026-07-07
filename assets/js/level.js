@@ -7,6 +7,7 @@ const levelPopupTitle = document.getElementById('levelPopupTitle');
 const levelPopupText = document.getElementById('levelPopupText');
 const levelPopupClose = document.getElementById('levelPopupClose');
 const levelMusic = document.getElementById('levelMusic');
+const levelMusicLoop = window.createCrossfadeLoop ? window.createCrossfadeLoop(levelMusic, { fadeSeconds: 1.35 }) : null;
 const backButton = document.querySelector('.level-back-button');
 
 const STORAGE_VOLUME = 'sinnesmagie-volume';
@@ -129,13 +130,22 @@ function awardFragment(quizId) {
 
 function startLevelMusic() {
   if (!levelMusic) return;
-  levelMusic.volume = currentVolume();
-  levelMusic.play().catch(() => {});
+  if (levelMusicLoop) {
+    levelMusicLoop.setVolume(currentVolume());
+    levelMusicLoop.play();
+  } else {
+    levelMusic.volume = currentVolume();
+    levelMusic.play().catch(() => {});
+  }
 }
 
 function pauseLevelMusic() {
   if (!levelMusic) return;
-  levelMusic.pause();
+  if (levelMusicLoop) {
+    levelMusicLoop.pause();
+  } else {
+    levelMusic.pause();
+  }
 }
 
 function parsePercent(value, fallback = 0) {
@@ -249,6 +259,19 @@ async function handleLevelOne() {
 
   const progress = getAreaProgress();
   if (!progress.level1Completed) {
+    const minigameUrl = levelMarkers[0].dataset.minigameUrl;
+    if (minigameUrl) {
+      showLevelPopup(
+        levelMarkers[0].dataset.title || 'Minispiel',
+        `${levelMarkers[0].dataset.text || 'Hier startet das Minispiel.'} Danach wird der zweite Punkt freigeschaltet.`,
+        'Minispiel starten',
+        () => {
+          window.location.href = minigameUrl;
+        }
+      );
+      return;
+    }
+
     showLevelPopup(
       levelMarkers[0].dataset.title || 'Minispiel',
       `${levelMarkers[0].dataset.text || 'Hier startet das Minispiel.'} Wenn du hier fertig bist, wird der zweite Punkt freigeschaltet.`,

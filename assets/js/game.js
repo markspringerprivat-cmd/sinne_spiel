@@ -5,6 +5,7 @@ const lockButtons = document.querySelectorAll('[data-lock-button]');
 const mapStage = document.querySelector('.map-stage');
 
 const backgroundMusic = document.getElementById('backgroundMusic');
+const backgroundMusicLoop = window.createCrossfadeLoop ? window.createCrossfadeLoop(backgroundMusic, { fadeSeconds: 1.35 }) : null;
 const volumeSlider = document.getElementById('volumeSlider');
 
 const introModal = document.getElementById('introModal');
@@ -150,14 +151,22 @@ function currentVolume() {
 
 function applyVolume(value) {
   const volume = Math.min(1, Math.max(0, Number(value)));
-  backgroundMusic.volume = volume;
+  if (backgroundMusicLoop) {
+    backgroundMusicLoop.setVolume(volume);
+  } else if (backgroundMusic) {
+    backgroundMusic.volume = volume;
+  }
   localStorage.setItem(STORAGE_VOLUME, String(volume));
   volumeSlider.value = String(Math.round(volume * 100));
 }
 
 function startMusic() {
   applyVolume(Number(volumeSlider.value) / 100);
-  backgroundMusic.play().catch(() => {});
+  if (backgroundMusicLoop) {
+    backgroundMusicLoop.play();
+  } else if (backgroundMusic) {
+    backgroundMusic.play().catch(() => {});
+  }
 }
 
 function ensureFragmentOrbitLayer() {

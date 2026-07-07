@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Loren-Minispiel | Tastminen</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <style>
+    :root {
+      --mine-ui: rgba(255, 248, 222, 0.92);
+      --mine-brown: #4a2b16;
+      --mine-gold: #f5b22d;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: #160f13;
+      touch-action: none;
+      overscroll-behavior: none;
+    }
+
+    body.mine-minigame-page {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #2f2417;
+    }
+
+    .mine-game-shell {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background: radial-gradient(circle at center, rgba(120, 82, 44, 0.45), rgba(9, 7, 8, 0.95));
+    }
+
+    #mineCanvas {
+      width: 100vw;
+      height: 100vh;
+      display: block;
+      background: #211812;
+    }
+
+    .mine-hud {
+      position: fixed;
+      top: max(14px, env(safe-area-inset-top));
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(92vw, 620px);
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+      z-index: 5;
+      pointer-events: none;
+    }
+
+    .mine-hud-card {
+      padding: 10px 14px;
+      border: 3px solid rgba(86, 50, 20, 0.7);
+      border-radius: 18px;
+      background: var(--mine-ui);
+      box-shadow: 0 8px 0 rgba(60, 31, 10, 0.28), 0 10px 22px rgba(0, 0, 0, 0.24);
+      font-weight: 900;
+    }
+
+    .mine-progress-track {
+      height: 14px;
+      margin-top: 7px;
+      border-radius: 999px;
+      background: rgba(74, 43, 22, 0.22);
+      overflow: hidden;
+    }
+
+    #mineProgressFill {
+      height: 100%;
+      width: 0%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #ffd15a, #ff8e22);
+      transition: width 0.18s linear;
+    }
+
+    #mineHearts {
+      min-width: 92px;
+      text-align: center;
+      color: #d92727;
+      letter-spacing: 2px;
+      font-size: clamp(22px, 6vw, 34px);
+      line-height: 1;
+    }
+
+    .mine-controls-hint {
+      position: fixed;
+      left: 50%;
+      bottom: max(12px, env(safe-area-inset-bottom));
+      transform: translateX(-50%);
+      z-index: 4;
+      width: min(90vw, 560px);
+      padding: 9px 14px;
+      border-radius: 999px;
+      background: rgba(255, 248, 222, 0.82);
+      color: #4a2b16;
+      font-weight: 800;
+      font-size: clamp(13px, 3.2vw, 16px);
+      text-align: center;
+      box-shadow: 0 5px 14px rgba(0,0,0,0.24);
+      pointer-events: none;
+    }
+
+    .mine-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      display: grid;
+      place-items: center;
+      background: rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(3px);
+      padding: 18px;
+    }
+
+    .mine-overlay.hidden {
+      display: none !important;
+    }
+
+    .mine-popup {
+      position: relative;
+      width: min(88vw, 480px);
+      min-height: 430px;
+      display: grid;
+      place-items: center;
+      padding: 54px 42px 58px;
+      text-align: center;
+      color: #432b16;
+      isolation: isolate;
+      animation: minePopupIn 0.35s ease both;
+    }
+
+    .mine-popup::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background: url('../assets/images/ui/parchment_popup.png') center / 100% 100% no-repeat;
+      filter: drop-shadow(0 18px 24px rgba(0,0,0,0.35));
+    }
+
+    .mine-popup h1,
+    .mine-popup h2 {
+      margin: 0 0 14px;
+      font-size: clamp(30px, 7vw, 46px);
+      line-height: 1.05;
+    }
+
+    .mine-popup p {
+      margin: 10px auto;
+      max-width: 340px;
+      font-size: clamp(17px, 4vw, 22px);
+      font-weight: 800;
+      line-height: 1.35;
+    }
+
+    .mine-popup .small-note {
+      font-size: clamp(14px, 3.4vw, 17px);
+      font-weight: 750;
+      opacity: 0.86;
+    }
+
+    .mine-popup-actions {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .mine-button {
+      border: 0;
+      border-radius: 999px;
+      padding: 14px 24px;
+      font: inherit;
+      font-size: clamp(16px, 4vw, 21px);
+      font-weight: 950;
+      color: #372511;
+      background: linear-gradient(#ffe47c, #f5a82b);
+      box-shadow: 0 8px 0 #a65d16, 0 12px 18px rgba(0,0,0,0.22);
+      cursor: pointer;
+    }
+
+    .mine-button:active {
+      transform: translateY(5px);
+      box-shadow: 0 3px 0 #a65d16, 0 8px 12px rgba(0,0,0,0.18);
+    }
+
+    .mine-button.secondary {
+      background: #eef2ff;
+      box-shadow: 0 7px 0 #b7c2dd, 0 12px 18px rgba(0,0,0,0.18);
+    }
+
+    @keyframes minePopupIn {
+      from { opacity: 0; transform: translateY(28px) scale(0.96); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+  </style>
+</head>
+<body class="mine-minigame-page">
+  <audio id="mineMusic" src="../assets/audio/cave.mp3" preload="auto"></audio>
+
+  <main class="mine-game-shell" aria-label="Loren-Minispiel in den Tastminen">
+    <canvas id="mineCanvas" aria-label="Minenlore weicht stacheligen Diamanten aus"></canvas>
+  </main>
+
+  <div class="mine-hud" aria-live="polite">
+    <div class="mine-hud-card">
+      <div id="mineTimerText">Zeit: 60 s</div>
+      <div class="mine-progress-track" aria-hidden="true"><div id="mineProgressFill"></div></div>
+    </div>
+    <div id="mineHearts" class="mine-hud-card" aria-label="Lebenspunkte">♥♥♥</div>
+  </div>
+
+  <div class="mine-controls-hint">Mit Pfeiltasten, A/D oder Wischen die Lore nach links und rechts steuern.</div>
+
+  <div id="mineOverlay" class="mine-overlay" role="dialog" aria-modal="true">
+    <section id="minePopup" class="mine-popup"></section>
+  </div>
+
+  <script src="../assets/js/audio-crossfade.js"></script>
+  <script src="../assets/js/tastminen-lore.js"></script>
+</body>
+</html>
