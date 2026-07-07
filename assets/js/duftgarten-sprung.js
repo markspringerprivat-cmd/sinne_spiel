@@ -40,15 +40,19 @@
   images.knight.src = '../assets/images/minigame/duftgarten/knight_top.png';
   images.beetle.src = '../assets/images/minigame/duftgarten/beetle_stink.png';
 
+  const hazardPattern = [
+    3, 7, 11, 16, 21, 26, 31, 36, 41, 46, 52, 57, 62, 67, 72, 77, 83, 88, 93, 97,
+  ];
+  const hazardTypes = ['slime', 'cloud', 'rotten', 'slime', 'cloud'];
+
   function fieldTypeForIndex(index) {
     if (index === 0) return 'start';
     if (index === TARGET_INDEX) return 'goal';
 
-    // Feste, gut lesbare Abfolge über 100 Felder:
-    // genug normale Blumen, dazwischen Fallen und Bremsfelder.
-    if (index % 17 === 0 || index % 23 === 0) return 'cloud';
-    if (index % 13 === 0 || index % 29 === 0) return 'rotten';
-    if (index % 9 === 0 || index % 14 === 0 || index % 31 === 0) return 'slime';
+    // Kein schädliches Feld liegt direkt vor oder hinter einem anderen schädlichen Feld.
+    // Dadurch ist immer mindestens ein normales Ausweichfeld erreichbar.
+    const hazardSlot = hazardPattern.indexOf(index);
+    if (hazardSlot !== -1) return hazardTypes[hazardSlot % hazardTypes.length];
     return 'normal';
   }
 
@@ -62,7 +66,8 @@
     jumpAnim: null,
     jumpLockUntil: 0,
     stunUntil: 0,
-    slowJumpsLeft: 0,
+    slowUntil: 0,
+    rottenAnim: null,
     beetleStartAt: 0,
     beetleNextStepAt: 0,
     beetleIndex: -3,
@@ -145,7 +150,8 @@
     game.jumpAnim = null;
     game.jumpLockUntil = 0;
     game.stunUntil = 0;
-    game.slowJumpsLeft = 0;
+    game.slowUntil = 0;
+    game.rottenAnim = null;
     game.beetleStartAt = now + BEETLE_HEADSTART_MS;
     game.beetleNextStepAt = now + BEETLE_HEADSTART_MS;
     game.beetleIndex = -3;
@@ -169,8 +175,8 @@
           <p>Der Ritter springt im Duftgarten nur nach vorne – immer 1 oder 2 Felder weit. Insgesamt warten 100 Felder. Hinter ihm kommt ein stinkender Käfer näher.</p>
           <ul>
             <li><strong>Normale pinke Blüte:</strong> sicherer Stand.</li>
-            <li><strong>Vergammelte Blüte:</strong> wirft dich 1 Feld zurück.</li>
-            <li><strong>Blüte mit grünen Flecken:</strong> die nächsten 3 Sprünge sind 50 % langsamer.</li>
+            <li><strong>Vergammelte Blüte:</strong> lässt den Ritter schrumpfen und wirft ihn 1 Feld zurück.</li>
+            <li><strong>Blüte mit grünen Flecken:</strong> macht alle Sprünge 3 Sekunden lang 50 % langsamer.</li>
             <li><strong>Gestankwolke:</strong> 2 Sekunden betäubt.</li>
             <li><strong>Goldene Blüte:</strong> Ziel erreicht!</li>
           </ul>
@@ -248,8 +254,9 @@
 
     if (game.message) {
       statusText.textContent = game.message;
-    } else if (game.slowJumpsLeft > 0) {
-      statusText.textContent = `Verlangsamt: noch ${game.slowJumpsLeft} Sprünge`; 
+    } else if (now < game.slowUntil) {
+      const sec = Math.max(0, (game.slowUntil - now) / 1000).toFixed(1);
+      statusText.textContent = `Verlangsamt: noch ${sec} s`; 
     } else {
       statusText.textContent = 'Ziel: Die goldene Blüte erreichen';
     }
@@ -340,20 +347,18 @@
     }
 
     if (field.type === 'slime') {
-      game.slowJumpsLeft = 3;
-      setMessage('Klebrige Blüte: 3 Sprünge langsamer!', 1500);
+      game.slowUntil = Math.max(game.slowUntil, now + 3000);
+      setMessage('Klebrige Blüte: 3 Sekunden langsamer!', 1800);
       addParticles(index, ['#8cc64d', '#5a9a2f', '#d7e78d']);
       return;
     }
 
     if (field.type === 'rotten') {
-      setMessage('Vergammelte Blüte: 1 Feld zurück!', 1350);
+      const backTo = Math.max(0, game.playerIndex - 1);
+      game.rottenAnim = { start: now, duration: 1000, from: game.playerIndex, backTo };
+      game.jumpLockUntil = Math.max(game.jumpLockUntil, now + 1100);
+      setMessage('Vergammelte Blüte: Du wirst zurückgeworfen!', 1500);
       addParticles(index, ['#7d5638', '#b38666', '#4f3829']);
-      setTimeout(() => {
-        if (!game.running || game.jumpAnim) return;
-        const backTo = Math.max(0, game.playerIndex - 1);
-        startJumpTo(backTo, 340, false, 1);
-      }, 230);
       return;
     }
 
@@ -371,10 +376,9 @@
 
   function requestJump(count) {
     const now = performance.now();
-    if (!game.running || game.jumpAnim || now < game.stunUntil || now < game.jumpLockUntil) return;
-    const slowMultiplier = game.slowJumpsLeft > 0 ? 1.5 : 1;
+    if (!game.running || game.jumpAnim || game.rottenAnim || now < game.stunUntil || now < game.jumpLockUntil) return;
+    const slowMultiplier = now < game.slowUntil ? 1.5 : 1;
     const duration = (count === 2 ? 420 : 320) * slowMultiplier;
-    if (game.slowJumpsLeft > 0) game.slowJumpsLeft -= 1;
     startJumpTo(game.playerIndex + count, duration, true, count);
     updateHud(now);
   }
@@ -420,6 +424,16 @@
         game.playerIndex = to;
         game.jumpAnim = null;
         if (shouldApply) applyFieldEffect(to);
+      }
+    }
+
+    if (game.rottenAnim) {
+      const t = (now - game.rottenAnim.start) / game.rottenAnim.duration;
+      if (t >= 1) {
+        game.playerIndex = game.rottenAnim.backTo;
+        game.rottenAnim = null;
+        game.jumpLockUntil = now + 180;
+        addParticles(game.playerIndex, ['#f0d5a8', '#8f6a3f']);
       }
     }
 
@@ -579,7 +593,14 @@
     const beetleY = beetlePos.y - game.camera;
     if (beetleY > -160 && beetleY < h + 180) drawBeetle(beetlePos.x, beetleY + flowerSize * 0.03, flowerSize * 0.60, now);
 
-    drawKnight(playerPos.x, playerPos.y - game.camera - flowerSize * 0.03, flowerSize * 0.70, now);
+    let knightScale = 1;
+    if (game.rottenAnim) {
+      const t = Math.max(0, Math.min(1, (now - game.rottenAnim.start) / game.rottenAnim.duration));
+      knightScale = Math.max(0, 1 - t);
+    }
+    if (knightScale > 0.02) {
+      drawKnight(playerPos.x, playerPos.y - game.camera - flowerSize * 0.03, flowerSize * 0.70 * knightScale, now);
+    }
     drawParticles(w, h);
 
     if (now < game.stunUntil && game.running) {
