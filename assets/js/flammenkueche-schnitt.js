@@ -260,6 +260,7 @@
       remove: false,
       resolved: false,
       missedPenaltyApplied: false,
+      hasEnteredScreen: false,
     });
   }
 
@@ -348,7 +349,14 @@
       obj.y += obj.vy * dt;
       obj.vy += obj.gravity * dt;
       obj.rot += obj.spin * dt;
-      const completelyBelowScreen = obj.y - obj.radius > h + 10;
+      // Objekte starten unterhalb des Bildschirms und fliegen zuerst hinein.
+      // Deshalb darf ein Objekt erst als „verpasst“ zählen, nachdem es sichtbar im Spielfeld war
+      // und anschließend wieder vollständig unten herausfällt.
+      if (!obj.hasEnteredScreen && obj.y + obj.radius < h - 8) {
+        obj.hasEnteredScreen = true;
+      }
+
+      const completelyBelowScreen = obj.hasEnteredScreen && obj.y - obj.radius > h + 10;
       if (!obj.resolved && !obj.sliced && !obj.remove && completelyBelowScreen && !obj.missedPenaltyApplied) {
         obj.resolved = true;
         obj.missedPenaltyApplied = true;
@@ -356,7 +364,7 @@
           loseLife(MISS_DAMAGE, 'Gemüse verpasst! -¼ Leben', '#ffcf5d');
         }
       }
-      if (obj.sliced || completelyBelowScreen || obj.y > h + obj.radius + 180 || obj.x < -obj.radius - 180 || obj.x > w + obj.radius + 180) {
+      if (obj.sliced || completelyBelowScreen || obj.y > h + obj.radius + 220 || obj.x < -obj.radius - 180 || obj.x > w + obj.radius + 180) {
         obj.remove = true;
       }
     }
