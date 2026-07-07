@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Flammenküchen-Schnippelchaos | Die verlorene Sinnesmagie</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <style>
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      touch-action: none;
+      overscroll-behavior: none;
+      background: #170b07;
+    }
+
+    body.flame-slice-page {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #fff2d8;
+    }
+
+    .flame-slice-shell {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at 50% 65%, rgba(255, 125, 28, 0.34), rgba(31, 8, 3, 0.96));
+    }
+
+    #sliceCanvas {
+      width: 100vw;
+      height: 100vh;
+      display: block;
+      cursor: crosshair;
+    }
+
+    .slice-hud {
+      position: fixed;
+      top: max(12px, env(safe-area-inset-top));
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 5;
+      display: grid;
+      grid-template-columns: auto auto auto;
+      gap: 10px;
+      align-items: center;
+      width: min(94vw, 760px);
+      pointer-events: none;
+    }
+
+    .slice-hud-card {
+      min-width: 0;
+      padding: 9px 12px;
+      border: 3px solid rgba(105, 35, 9, 0.82);
+      border-radius: 18px;
+      background: rgba(255, 241, 207, 0.92);
+      color: #4b210c;
+      font-weight: 950;
+      text-align: center;
+      box-shadow: 0 7px 0 rgba(102, 34, 8, 0.35), 0 12px 20px rgba(0,0,0,0.26);
+      font-size: clamp(14px, 3.5vw, 20px);
+    }
+
+    .slice-hud-wide {
+      grid-column: 1 / -1;
+      height: 12px;
+      padding: 0;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(255, 241, 207, 0.68);
+    }
+
+    #sliceProgressFill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #ffd34d, #ff7b23, #e6321c);
+      border-radius: inherit;
+      transition: width 0.16s linear;
+    }
+
+    .slice-instruction {
+      position: fixed;
+      left: 50%;
+      bottom: max(12px, env(safe-area-inset-bottom));
+      transform: translateX(-50%);
+      z-index: 4;
+      width: min(92vw, 620px);
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(255, 241, 207, 0.86);
+      color: #55230c;
+      font-weight: 900;
+      font-size: clamp(13px, 3.2vw, 16px);
+      text-align: center;
+      box-shadow: 0 5px 14px rgba(0,0,0,0.26);
+      pointer-events: none;
+    }
+
+    .slice-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      background: rgba(0, 0, 0, 0.48);
+      backdrop-filter: blur(3px);
+    }
+
+    .slice-overlay.hidden {
+      display: none !important;
+    }
+
+    .slice-popup {
+      position: relative;
+      width: min(90vw, 520px);
+      min-height: 420px;
+      display: grid;
+      place-items: center;
+      padding: 54px 42px 58px;
+      text-align: center;
+      color: #432b16;
+      isolation: isolate;
+      animation: slicePopupIn 0.32s ease both;
+    }
+
+    .slice-popup::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background: url('../assets/images/ui/parchment_popup.png') center / 100% 100% no-repeat;
+      filter: drop-shadow(0 18px 24px rgba(0,0,0,0.36));
+    }
+
+    .slice-popup h1,
+    .slice-popup h2 {
+      margin: 0 0 14px;
+      font-size: clamp(29px, 7vw, 46px);
+      line-height: 1.05;
+    }
+
+    .slice-popup p {
+      margin: 10px auto;
+      max-width: 380px;
+      font-size: clamp(16px, 4vw, 21px);
+      font-weight: 820;
+      line-height: 1.35;
+    }
+
+    .slice-popup .small-note {
+      font-size: clamp(13px, 3.4vw, 16px);
+      opacity: 0.86;
+    }
+
+    .slice-popup-actions {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .slice-button {
+      border: 0;
+      border-radius: 999px;
+      padding: 14px 24px;
+      font: inherit;
+      font-size: clamp(16px, 4vw, 21px);
+      font-weight: 950;
+      color: #372511;
+      background: linear-gradient(#ffe47c, #f5a82b);
+      box-shadow: 0 8px 0 #a65d16, 0 12px 18px rgba(0,0,0,0.22);
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    .slice-button:active {
+      transform: translateY(5px);
+      box-shadow: 0 3px 0 #a65d16, 0 8px 12px rgba(0,0,0,0.18);
+    }
+
+    .slice-button.secondary {
+      background: #eef2ff;
+      box-shadow: 0 7px 0 #b7c2dd, 0 12px 18px rgba(0,0,0,0.18);
+    }
+
+    @keyframes slicePopupIn {
+      from { opacity: 0; transform: translateY(28px) scale(0.96); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+  </style>
+</head>
+<body class="flame-slice-page">
+  <audio id="sliceMusic" src="../assets/audio/volcano.mp3" preload="auto"></audio>
+
+  <main class="flame-slice-shell" aria-label="Flammenküchen-Schnippelchaos">
+    <canvas id="sliceCanvas" aria-label="Gemüse schneiden und eklige Dinge vermeiden"></canvas>
+  </main>
+
+  <div class="slice-hud" aria-live="polite">
+    <div id="sliceScore" class="slice-hud-card">Punkte: 0</div>
+    <div id="sliceTimer" class="slice-hud-card">Zeit: 60 s</div>
+    <div id="sliceBad" class="slice-hud-card">Ekel: 0/3</div>
+    <div class="slice-hud-wide" aria-hidden="true"><div id="sliceProgressFill"></div></div>
+  </div>
+
+  <div class="slice-instruction">Wische durch Gemüse. Eklige Sachen nicht treffen. Drei eklige Treffer = verloren.</div>
+
+  <div id="sliceOverlay" class="slice-overlay" role="dialog" aria-modal="true">
+    <section id="slicePopup" class="slice-popup"></section>
+  </div>
+
+  <script src="../assets/js/audio-crossfade.js"></script>
+  <script src="../assets/js/flammenkueche-schnitt.js"></script>
+</body>
+</html>
