@@ -14,7 +14,12 @@
   const progressFill = document.getElementById('mineProgressFill');
   const heartsText = document.getElementById('mineHearts');
   const musicElement = document.getElementById('mineMusic');
+  const driveElement = document.getElementById('mineDrive');
+  const switchSound = document.getElementById('mineSwitchSound');
+  const turboSound = document.getElementById('mineTurboSound');
+  const glassBreakSound = document.getElementById('mineGlassBreak');
   const musicLoop = window.createCrossfadeLoop ? window.createCrossfadeLoop(musicElement, { fadeSeconds: 1.35 }) : null;
+  const driveLoop = window.createCrossfadeLoop ? window.createCrossfadeLoop(driveElement, { fadeSeconds: 0.25 }) : null;
 
   const images = {
     background: new Image(),
@@ -60,22 +65,76 @@
     return Number.isFinite(saved) ? Math.min(1, Math.max(0, saved)) : 0.5;
   }
 
-  function startMusic() {
-    if (!musicElement) return;
-    const volume = currentVolume();
-    if (musicLoop) {
-      musicLoop.setVolume(volume);
-      musicLoop.play();
+  function setAudioVolume(element, factor = 1) {
+    if (!element) return;
+    element.volume = Math.min(1, Math.max(0, currentVolume() * factor));
+  }
+
+  function playOneShot(element, factor = 0.45) {
+    if (!element) return;
+    try {
+      element.pause();
+      element.currentTime = 0;
+      setAudioVolume(element, factor);
+      element.play().catch(() => {});
+    } catch {}
+  }
+
+  function startLoopAudio(element, loopController, factor = 1) {
+    if (!element) return;
+    const volume = currentVolume() * factor;
+    if (loopController) {
+      loopController.setVolume(volume);
+      loopController.play();
     } else {
-      musicElement.volume = volume;
-      musicElement.loop = true;
-      musicElement.play().catch(() => {});
+      element.volume = Math.min(1, Math.max(0, volume));
+      element.loop = true;
+      element.play().catch(() => {});
     }
   }
 
+  function pauseLoopAudio(element, loopController) {
+    if (loopController) loopController.pause();
+    else if (element) element.pause();
+  }
+
+  function startMusic() {
+    startLoopAudio(musicElement, musicLoop, 0.72);
+    startLoopAudio(driveElement, driveLoop, 0.42);
+  }
+
   function pauseMusic() {
-    if (musicLoop) musicLoop.pause();
-    else if (musicElement) musicElement.pause();
+    pauseLoopAudio(musicElement, musicLoop);
+    pauseLoopAudio(driveElement, driveLoop);
+    if (turboSound) {
+      turboSound.pause();
+      turboSound.currentTime = 0;
+    }
+  }
+
+  function startTurboSound() {
+    if (!turboSound) return;
+    try {
+      turboSound.pause();
+      turboSound.currentTime = 0;
+      turboSound.loop = true;
+      setAudioVolume(turboSound, 0.58);
+      turboSound.play().catch(() => {});
+    } catch {}
+  }
+
+  function updateTurboSound(now) {
+    if (!turboSound) return;
+    const remainingMs = game.turboUntil - now;
+    if (remainingMs <= 0) {
+      if (!turboSound.paused) {
+        turboSound.pause();
+        turboSound.currentTime = 0;
+      }
+      return;
+    }
+    const fadeFactor = Math.min(1, Math.max(0, remainingMs / 1000));
+    setAudioVolume(turboSound, 0.58 * fadeFactor);
   }
 
   function readProgress() {
@@ -109,6 +168,21 @@
 
   function isTurboActive(now = performance.now()) {
     return now < game.turboUntil;
+  }
+
+  function railProgressFromY(y) {
+    return Math.min(1.08, Math.max(-0.08, y));
+  }
+
+  function laneWorldX(lane, y) {
+    const t = railProgressFromY(y);
+    const topX = 0.5 + (LANES[lane] - 0.5) * 0.26;
+    const bottomX = LANES[lane];
+    return topX + (bottomX - topX) * t;
+  }
+
+  function syncObjectToRail(item) {
+    item.x = laneWorldX(item.lane, item.y);
   }
 
   function resetState() {
@@ -221,7 +295,11 @@
 
   function setLane(direction) {
     if (!game.running) return;
-    game.targetLane = Math.max(0, Math.min(LANES.length - 1, game.targetLane + direction));
+    const nextLane = Math.max(0, Math.min(LANES.length - 1, game.targetLane + direction));
+    if (nextLane !== game.targetLane) {
+      game.targetLane = nextLane;
+      playOneShot(switchSound, 0.26);
+    }
   }
 
   function chooseDistinctLanes(count) {
@@ -250,7 +328,7 @@
       game.obstacles.push({
         type: 'crystal',
         lane,
-        x: LANES[lane],
+        x: laneWorldX(lane, -0.2 - index * 0.12),
         y: -0.2 - index * 0.12,
         size: 0.092,
         rotation: (Math.random() - 0.5) * 0.22,
@@ -267,7 +345,7 @@
     const lane = Math.floor(Math.random() * LANES.length);
     game.powerups.push({
       lane,
-      x: LANES[lane],
+      x: laneWorldX(lane, -0.18),
       y: -0.18,
       size: 0.072,
       rotation: 0,
@@ -292,6 +370,7 @@
   }
 
   function shatterCrystal(obstacle) {
+    playOneShot(glassBreakSound, 0.62);
     obstacle.hit = true;
     game.bursts.push({
       x: obstacle.x,
@@ -323,12 +402,14 @@
 
     game.obstacles.forEach((obstacle) => {
       obstacle.y += obstacle.speed * dt * (isTurboActive(now) ? 1.15 : 1);
+      syncObjectToRail(obstacle);
       obstacle.rotation += obstacle.spin * dt;
     });
     game.obstacles = game.obstacles.filter((obstacle) => obstacle.y < 1.22 && !obstacle.hit);
 
     game.powerups.forEach((powerup) => {
       powerup.y += powerup.speed * dt * (isTurboActive(now) ? 1.1 : 1);
+      syncObjectToRail(powerup);
       powerup.rotation += dt * 1.8;
       powerup.bob += dt * 5;
     });
@@ -346,6 +427,7 @@
 
     checkCollisions(now);
     updateHud();
+    updateTurboSound(now);
 
     if (game.elapsed >= GAME_DURATION && game.hearts > 0) endGame(true);
   }
@@ -360,6 +442,7 @@
       if (dx < 0.085 && dy < 0.075) {
         game.powerups.splice(i, 1);
         game.turboUntil = now + TURBO_DURATION * 1000;
+        startTurboSound();
         addSpark(game.playerX, playerY, '#5ed2ff', 22);
       }
     }
@@ -374,6 +457,7 @@
           continue;
         }
         if (now < game.invulnerableUntil) return;
+        playOneShot(glassBreakSound, 0.62);
         obstacle.hit = true;
         game.hearts -= 1;
         game.invulnerableUntil = now + 1050;
@@ -488,7 +572,11 @@
     }
     ctx.shadowOffsetY = 10;
 
-    drawSprite(activeImg, x, y, size);
+    const maxTilt = Math.PI / 12;
+    const normalizedLaneOffset = Math.max(-1, Math.min(1, (0.5 - game.playerX) / (0.5 - LANES[0])));
+    ctx.translate(x, y);
+    ctx.rotate(normalizedLaneOffset * maxTilt);
+    drawSprite(activeImg, 0, 0, size);
     ctx.restore();
   }
 
