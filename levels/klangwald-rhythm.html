@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Klangwald-Minispiel | Die verlorene Sinnesmagie</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <style>
+    :root {
+      --klang-card: rgba(255, 249, 223, 0.93);
+      --klang-brown: #3d2b18;
+      --klang-gold: #f6bf42;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: #112314;
+      touch-action: none;
+      overscroll-behavior: none;
+    }
+
+    body.klang-rhythm-page {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #2c2417;
+    }
+
+    .rhythm-shell {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background: radial-gradient(circle at center, rgba(46, 94, 55, 0.55), rgba(6, 18, 10, 0.95));
+    }
+
+    #rhythmCanvas {
+      width: 100vw;
+      height: 100vh;
+      display: block;
+      background: #142818;
+    }
+
+    .rhythm-hud {
+      position: fixed;
+      top: max(12px, env(safe-area-inset-top));
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 5;
+      width: min(94vw, 700px);
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      pointer-events: none;
+    }
+
+    .rhythm-hud-card {
+      padding: 9px 13px;
+      border: 3px solid rgba(64, 47, 21, 0.58);
+      border-radius: 18px;
+      background: var(--klang-card);
+      box-shadow: 0 7px 0 rgba(43, 28, 11, 0.25), 0 12px 22px rgba(0,0,0,0.22);
+      font-weight: 950;
+    }
+
+    #rhythmScoreText {
+      font-size: clamp(14px, 3.6vw, 19px);
+      line-height: 1.25;
+    }
+
+    .rhythm-energy-track {
+      height: 13px;
+      margin-top: 7px;
+      border-radius: 999px;
+      background: rgba(58, 40, 20, 0.22);
+      overflow: hidden;
+    }
+
+    #rhythmEnergyFill {
+      height: 100%;
+      width: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #76e184, #f7d65a);
+      transition: width 0.12s linear;
+    }
+
+    #rhythmCombo {
+      min-width: 88px;
+      text-align: center;
+      font-size: clamp(18px, 5vw, 30px);
+      color: #3e7d2d;
+    }
+
+    .rhythm-buttons {
+      position: fixed;
+      left: 50%;
+      bottom: max(12px, env(safe-area-inset-bottom));
+      transform: translateX(-50%);
+      z-index: 6;
+      width: min(94vw, 660px);
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 9px;
+    }
+
+    .rhythm-key {
+      border: 0;
+      border-radius: 18px;
+      padding: 13px 0 12px;
+      color: #2a2013;
+      font: inherit;
+      font-weight: 1000;
+      font-size: clamp(20px, 6vw, 34px);
+      background: linear-gradient(#fff7af, #e6b548);
+      box-shadow: 0 7px 0 #8b6423, 0 12px 18px rgba(0,0,0,0.22);
+      touch-action: manipulation;
+    }
+
+    .rhythm-key.active {
+      transform: translateY(5px);
+      box-shadow: 0 2px 0 #8b6423, 0 7px 10px rgba(0,0,0,0.18);
+      filter: brightness(1.12);
+    }
+
+    .rhythm-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 12;
+      display: grid;
+      place-items: center;
+      background: rgba(0, 0, 0, 0.48);
+      backdrop-filter: blur(3px);
+      padding: 18px;
+    }
+
+    .rhythm-overlay.hidden {
+      display: none !important;
+    }
+
+    .rhythm-popup {
+      position: relative;
+      width: min(90vw, 520px);
+      min-height: 430px;
+      display: grid;
+      place-items: center;
+      padding: 54px 42px 58px;
+      text-align: center;
+      color: #432b16;
+      isolation: isolate;
+      animation: rhythmPopupIn 0.3s ease both;
+    }
+
+    .rhythm-popup::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background: url('../assets/images/ui/parchment_popup.png') center / 100% 100% no-repeat;
+      filter: drop-shadow(0 18px 24px rgba(0,0,0,0.35));
+    }
+
+    .rhythm-popup h1,
+    .rhythm-popup h2 {
+      margin: 0 0 14px;
+      font-size: clamp(30px, 7vw, 46px);
+      line-height: 1.05;
+    }
+
+    .rhythm-popup p {
+      margin: 9px auto;
+      max-width: 370px;
+      font-size: clamp(16px, 4vw, 21px);
+      font-weight: 820;
+      line-height: 1.35;
+    }
+
+    .rhythm-popup .small-note {
+      font-size: clamp(14px, 3.4vw, 17px);
+      opacity: 0.88;
+    }
+
+    .rhythm-popup-actions {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .rhythm-button {
+      border: 0;
+      border-radius: 999px;
+      padding: 14px 24px;
+      font: inherit;
+      font-size: clamp(16px, 4vw, 21px);
+      font-weight: 950;
+      color: #342611;
+      background: linear-gradient(#ffe47c, #f5a82b);
+      box-shadow: 0 8px 0 #a65d16, 0 12px 18px rgba(0,0,0,0.22);
+      cursor: pointer;
+    }
+
+    .rhythm-button.secondary {
+      background: #eef2ff;
+      box-shadow: 0 7px 0 #b7c2dd, 0 12px 18px rgba(0,0,0,0.18);
+    }
+
+    .rhythm-button:active {
+      transform: translateY(5px);
+      box-shadow: 0 3px 0 #a65d16, 0 8px 12px rgba(0,0,0,0.18);
+    }
+
+    @keyframes rhythmPopupIn {
+      from { opacity: 0; transform: translateY(28px) scale(0.96); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+  </style>
+</head>
+<body class="klang-rhythm-page">
+  <audio id="rhythmMusic" src="../assets/audio/fuer_elise_musicbox.mp3" preload="auto"></audio>
+
+  <main class="rhythm-shell" aria-label="Klangwald-Rhythmusspiel">
+    <canvas id="rhythmCanvas" aria-label="Drücke die Töne im richtigen Moment"></canvas>
+  </main>
+
+  <div class="rhythm-hud" aria-live="polite">
+    <div class="rhythm-hud-card">
+      <div id="rhythmScoreText">Treffer: 0 · Verpasst: 0</div>
+      <div class="rhythm-energy-track" aria-hidden="true"><div id="rhythmEnergyFill"></div></div>
+    </div>
+    <div id="rhythmCombo" class="rhythm-hud-card">0×</div>
+  </div>
+
+  <div class="rhythm-buttons" aria-label="Klangtasten">
+    <button class="rhythm-key" data-lane="0" type="button">A</button>
+    <button class="rhythm-key" data-lane="1" type="button">S</button>
+    <button class="rhythm-key" data-lane="2" type="button">D</button>
+    <button class="rhythm-key" data-lane="3" type="button">F</button>
+  </div>
+
+  <div id="rhythmOverlay" class="rhythm-overlay" role="dialog" aria-modal="true">
+    <section id="rhythmPopup" class="rhythm-popup"></section>
+  </div>
+
+  <script src="../assets/js/klangwald-rhythm.js"></script>
+</body>
+</html>
