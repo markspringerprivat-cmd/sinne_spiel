@@ -5,6 +5,8 @@
   const MAX_LIVES = 5;
   const MISS_DAMAGE = 0.25;
   const BAD_DAMAGE = 1;
+  const MAX_OBJECTS = 6;
+  const MAX_PARTICLES = 42;
 
   const canvas = document.getElementById('sliceCanvas');
   const ctx = canvas.getContext('2d', { alpha: false });
@@ -23,6 +25,8 @@
 
   const background = new Image();
   background.src = '../assets/images/battle-backgrounds/flammenkueche.png';
+
+  const iconSpriteCache = new Map();
 
   const goodItems = [
     { label: 'Paprika', kind: 'paprika', color: '#e53631', radiusFactor: 0.118, points: 1 },
@@ -134,6 +138,7 @@
     canvas.style.width = `${w}px`;
     canvas.style.height = `${h}px`;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    iconSpriteCache.clear();
   }
 
   function showPopup(type) {
@@ -255,23 +260,26 @@
     const w = window.innerWidth;
     const h = window.innerHeight;
     const elapsedRatio = Math.min(1, game.elapsed / GAME_DURATION);
-    const isBad = Math.random() < (0.24 + elapsedRatio * 0.08);
+    const isBad = Math.random() < (0.31 + elapsedRatio * 0.08);
     const template = isBad
       ? badItems[Math.floor(Math.random() * badItems.length)]
       : goodItems[Math.floor(Math.random() * goodItems.length)];
 
     const fromLeft = Math.random() < 0.5;
-    const startX = fromLeft ? randomBetween(-90, w * 0.22) : randomBetween(w * 0.78, w + 90);
-    const startY = h + randomBetween(60, 130);
-    const targetX = randomBetween(w * 0.16, w * 0.84);
-    const apexY = randomBetween(h * 0.11, h * 0.43);
-    const timeToApex = randomBetween(0.95, 1.22);
+    const startX = fromLeft ? randomBetween(-120, w * 0.18) : randomBetween(w * 0.82, w + 120);
+    const startY = h + randomBetween(70, 160);
+    const targetX = randomBetween(w * 0.12, w * 0.88);
+    // Einige Objekte fliegen sehr hoch, andere mittelhoch.
+    // Die alte Formel erreichte den Apex nicht wirklich; diese Parabel nutzt den ganzen Bildschirm.
+    const highFlight = Math.random() < 0.42;
+    const apexY = highFlight ? randomBetween(h * 0.015, h * 0.18) : randomBetween(h * 0.20, h * 0.58);
+    const timeToApex = randomBetween(1.05, 1.48);
+    const gravity = (2 * (startY - apexY)) / (timeToApex * timeToApex);
+    const vy = -gravity * timeToApex;
     const vx = (targetX - startX) / timeToApex;
-    const vy = (apexY - startY) / timeToApex;
-    const gravity = Math.abs(vy) / timeToApex;
     const minSide = Math.min(w, h);
     const radius = isBad
-      ? minSide * 0.095
+      ? minSide * 0.10
       : minSide * template.radiusFactor;
 
     game.objects.push({
@@ -297,8 +305,10 @@
     });
   }
 
-  function addParticles(x, y, color, count = 10) {
-    for (let i = 0; i < count; i += 1) {
+  function addParticles(x, y, color, count = 8) {
+    const available = Math.max(0, MAX_PARTICLES - game.particles.length);
+    const actualCount = Math.min(count, available);
+    for (let i = 0; i < actualCount; i += 1) {
       game.particles.push({
         x,
         y,
@@ -334,7 +344,7 @@
     obj.resolved = true;
     obj.missedPenaltyApplied = true;
     obj.remove = true;
-    addParticles(obj.x, obj.y, obj.color, obj.isBad ? 16 : 12);
+    addParticles(obj.x, obj.y, obj.color, obj.isBad ? 9 : 7);
     playCutSound();
 
     if (obj.isBad) {
@@ -366,14 +376,14 @@
   function update(dt, now) {
     game.elapsed = (now - game.startTime) / 1000;
 
-    const spawnEvery = Math.max(0.9, 1.2 - game.elapsed / 170);
+    const spawnEvery = Math.max(1.02, 1.34 - game.elapsed / 210);
     game.spawnTimer -= dt;
     if (game.spawnTimer <= 0) {
-      if (game.objects.length < 9) createObject();
-      if (game.elapsed > 28 && game.objects.length < 8 && Math.random() < 0.10) {
-        setTimeout(() => { if (game.running && game.objects.length < 9) createObject(); }, 170);
+      if (game.objects.length < MAX_OBJECTS) createObject();
+      if (game.elapsed > 34 && game.objects.length < MAX_OBJECTS - 1 && Math.random() < 0.06) {
+        setTimeout(() => { if (game.running && game.objects.length < MAX_OBJECTS) createObject(); }, 190);
       }
-      game.spawnTimer = spawnEvery + randomBetween(0.04, 0.26);
+      game.spawnTimer = spawnEvery + randomBetween(0.08, 0.32);
     }
 
     const h = window.innerHeight;
@@ -455,58 +465,66 @@
     ctx.restore();
   }
 
+  function symbolFor(kind) {
+    return {
+      paprika: '🫑',
+      onion: '🧅',
+      carrot: '🥕',
+      tomato: '🍅',
+      beetle: '🐞',
+      sock: '🧦',
+      toadstool: '🍄',
+    }[kind] || '🥕';
+  }
+
+  function spriteScaleFor(kind) {
+    return {
+      paprika: 1.72,
+      onion: 1.68,
+      carrot: 1.76,
+      tomato: 1.72,
+      beetle: 1.72,
+      sock: 1.76,
+      toadstool: 1.72,
+    }[kind] || 1.7;
+  }
+
+  function getIconSprite(kind, radius) {
+    const roundedRadius = Math.max(18, Math.round(radius));
+    const key = `${kind}:${roundedRadius}`;
+    if (iconSpriteCache.has(key)) return iconSpriteCache.get(key);
+
+    const c = document.createElement('canvas');
+    const size = Math.ceil(roundedRadius * 2.65);
+    c.width = size;
+    c.height = size;
+    const g = c.getContext('2d');
+    const symbol = symbolFor(kind);
+    const fontSize = Math.round(roundedRadius * spriteScaleFor(kind));
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.font = `${fontSize}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", system-ui, sans-serif`;
+    g.globalAlpha = 0.28;
+    g.fillStyle = 'rgba(70, 24, 8, 0.95)';
+    g.fillText(symbol, size / 2 + 2, size / 2 + 3);
+    g.globalAlpha = 1;
+    g.fillText(symbol, size / 2, size / 2);
+
+    iconSpriteCache.set(key, c);
+    return c;
+  }
+
   function drawObject(obj) {
     ctx.save();
     ctx.translate(obj.x, obj.y);
     ctx.rotate(obj.rot);
 
-    // Optisch fliegen nur noch die Emoji-Objekte.
-    // Der unsichtbare Radius bleibt als zuverlässige Hitbox erhalten.
-    ctx.shadowColor = obj.isBad ? 'rgba(70, 18, 9, 0.72)' : 'rgba(80, 28, 6, 0.58)';
-    ctx.shadowBlur = Math.max(8, obj.radius * 0.16);
-    ctx.shadowOffsetY = Math.max(3, obj.radius * 0.07);
-
-    if (obj.isBad) drawBadIcon(obj.kind, obj.radius);
-    else drawGoodIcon(obj.kind, obj.radius);
+    // Emojis werden nicht mehr jedes Frame als Text gerendert.
+    // Sie liegen als vorberechnete kleine Canvas-Sprites im Cache und werden nur noch gezeichnet.
+    const sprite = getIconSprite(obj.kind, obj.radius);
+    ctx.drawImage(sprite, -sprite.width / 2, -sprite.height / 2, sprite.width, sprite.height);
 
     ctx.restore();
-  }
-
-  function drawEmojiIcon(symbol, r, options = {}) {
-    const fontSize = Math.round(r * (options.scale || 1.55));
-    const y = r * (options.yOffset || 0.03);
-    ctx.save();
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.font = `${fontSize}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", system-ui, sans-serif`;
-    // kleine dunkle Kontur/Schattenpunkte, damit die Emojis auf hellem Hintergrund lesbar bleiben
-    ctx.globalAlpha = 0.32;
-    ctx.fillStyle = 'rgba(70, 24, 8, 0.95)';
-    ctx.fillText(symbol, 2, y + 3);
-    ctx.globalAlpha = 1;
-    ctx.fillText(symbol, 0, y);
-    ctx.restore();
-  }
-
-  function drawGoodIcon(kind, r) {
-    const map = {
-      paprika: { symbol: '🫑', scale: 1.75, yOffset: 0.03 },
-      onion: { symbol: '🧅', scale: 1.72, yOffset: 0.03 },
-      carrot: { symbol: '🥕', scale: 1.75, yOffset: 0.02 },
-      tomato: { symbol: '🍅', scale: 1.76, yOffset: 0.03 },
-    };
-    const icon = map[kind] || { symbol: '🥕', scale: 1.15, yOffset: 0.04 };
-    drawEmojiIcon(icon.symbol, r, icon);
-  }
-
-  function drawBadIcon(kind, r) {
-    const map = {
-      beetle: { symbol: '🐞', scale: 1.75, yOffset: 0.03 },
-      sock: { symbol: '🧦', scale: 1.75, yOffset: 0.02 },
-      toadstool: { symbol: '🍄', scale: 1.76, yOffset: 0.03 },
-    };
-    const icon = map[kind] || { symbol: '🍄', scale: 1.15, yOffset: 0.05 };
-    drawEmojiIcon(icon.symbol, r, icon);
   }
 
   function drawParticles() {
