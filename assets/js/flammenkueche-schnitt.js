@@ -2,7 +2,9 @@
   const STORAGE_VOLUME = 'sinnesmagie-volume';
   const STORAGE_LEVEL_PROGRESS = 'sinnesmagie-level-progress';
   const GAME_DURATION = 60;
-  const BAD_LIMIT = 3;
+  const MAX_LIVES = 5;
+  const MISS_DAMAGE = 0.25;
+  const BAD_DAMAGE = 1;
 
   const canvas = document.getElementById('sliceCanvas');
   const ctx = canvas.getContext('2d', { alpha: false });
@@ -19,21 +21,16 @@
   background.src = '../assets/images/battle-backgrounds/flammenkueche.png';
 
   const goodItems = [
-    { label: 'Tomate', emoji: '🍅', color: '#f34838' },
-    { label: 'Paprika', emoji: '🫑', color: '#49b84a' },
-    { label: 'Karotte', emoji: '🥕', color: '#f28a20' },
-    { label: 'Pilz', emoji: '🍄', color: '#d98b5b' },
-    { label: 'Kartoffel', emoji: '🥔', color: '#c99751' },
-    { label: 'Zwiebel', emoji: '🧅', color: '#e9c9dd' },
-    { label: 'Kräuter', emoji: '🌿', color: '#4ec15b' },
+    { label: 'Paprika', kind: 'paprika', color: '#e53631', radiusFactor: 0.118, points: 1 },
+    { label: 'Zwiebel', kind: 'onion', color: '#e9c9dd', radiusFactor: 0.105, points: 2 },
+    { label: 'Karotte', kind: 'carrot', color: '#f28a20', radiusFactor: 0.090, points: 3 },
+    { label: 'Tomate', kind: 'tomato', color: '#f34838', radiusFactor: 0.075, points: 5 },
   ];
 
   const badItems = [
-    { label: 'Schleim', emoji: '🟢', color: '#66d14d' },
-    { label: 'Müll', emoji: '🗑️', color: '#707070' },
-    { label: 'Socke', emoji: '🧦', color: '#8b6fbb' },
-    { label: 'Käfer', emoji: '🪲', color: '#3e8f57' },
-    { label: 'Gift', emoji: '☠️', color: '#6acb5a' },
+    { label: 'Käfer', kind: 'beetle', color: '#3e8f57' },
+    { label: 'Socke', kind: 'sock', color: '#8b6fbb' },
+    { label: 'Fliegenpilz', kind: 'toadstool', color: '#d83b2e' },
   ];
 
   const game = {
@@ -44,6 +41,7 @@
     elapsed: 0,
     score: 0,
     combo: 0,
+    lives: MAX_LIVES,
     badHits: 0,
     spawnTimer: 0.4,
     objects: [],
@@ -53,6 +51,7 @@
     lastHudUpdate: 0,
     feedback: '',
     feedbackUntil: 0,
+    feedbackColor: '#ffe36d',
   };
 
   function currentVolume() {
@@ -112,9 +111,14 @@
       popup.innerHTML = `
         <div>
           <h1>Flammenküchen-Schnippelchaos</h1>
-          <p>Schneide gutes Gemüse mit einer Wischbewegung.</p>
-          <p>Eklige Sachen müssen vorbeifliegen. Bei drei ekligen Treffern ist die Runde verloren.</p>
-          <p class="small-note">Halte Finger oder Maus gedrückt und wische durch die Zutaten.</p>
+          <p>Schneide Gemüse mit einer Wischbewegung. Ungenießbare Sachen dürfen nicht getroffen werden.</p>
+          <p class="small-note"><strong>Punkte nach Größe:</strong><br>
+            Paprika: groß, 1 Punkt · Zwiebel: groß, 2 Punkte · Karotte: mittel, 3 Punkte · Tomate: klein, 5 Punkte
+          </p>
+          <p class="small-note"><strong>Leben:</strong><br>
+            Du hast 5 Leben. Verpasstes Gemüse kostet ¼ Leben. Ungenießbar getroffen kostet 1 Leben.
+          </p>
+          <p class="small-note"><strong>Ungenießbar:</strong> Käfer, Socke und Fliegenpilz. Alle sind gleich groß.</p>
           <div class="slice-popup-actions">
             <button id="startSliceGame" class="slice-button" type="button">Starten</button>
             <button id="leaveSliceGame" class="slice-button secondary" type="button">Zurück</button>
@@ -146,8 +150,8 @@
     popup.innerHTML = `
       <div>
         <h2>Verloren!</h2>
-        <p>Du hast drei eklige Sachen erwischt.</p>
-        <p class="small-note">Schneide nur Gemüse und lass Schleim, Müll und andere eklige Dinge vorbeifliegen.</p>
+        <p>Du hast keine Leben mehr übrig.</p>
+        <p class="small-note">Schneide Gemüse und lass Käfer, Socke und Fliegenpilz vorbeifliegen.</p>
         <div class="slice-popup-actions">
           <button id="retrySliceGame" class="slice-button" type="button">Nochmal spielen</button>
           <button id="returnToFlame" class="slice-button secondary" type="button">Zurück</button>
@@ -171,6 +175,7 @@
     game.elapsed = 0;
     game.score = 0;
     game.combo = 0;
+    game.lives = MAX_LIVES;
     game.badHits = 0;
     game.spawnTimer = 0.45;
     game.objects.length = 0;
@@ -195,6 +200,10 @@
     setTimeout(() => showPopup(won ? 'won' : 'lost'), 360);
   }
 
+  function formatLives(value) {
+    return Math.max(0, value).toFixed(2).replace('.', ',');
+  }
+
   function updateHud(force = false) {
     const now = performance.now();
     if (!force && now - game.lastHudUpdate < 160) return;
@@ -202,7 +211,7 @@
     const remaining = Math.max(0, Math.ceil(GAME_DURATION - game.elapsed));
     scoreEl.textContent = `Punkte: ${game.score}`;
     timerEl.textContent = `Zeit: ${remaining} s`;
-    badEl.textContent = `Ekel: ${game.badHits}/${BAD_LIMIT}`;
+    badEl.textContent = `Leben: ${formatLives(game.lives)}/${MAX_LIVES}`;
     progressFill.style.width = `${Math.min(100, (game.elapsed / GAME_DURATION) * 100)}%`;
   }
 
@@ -214,20 +223,23 @@
     const w = window.innerWidth;
     const h = window.innerHeight;
     const elapsedRatio = Math.min(1, game.elapsed / GAME_DURATION);
-    const isBad = Math.random() < (0.16 + elapsedRatio * 0.05);
+    const isBad = Math.random() < (0.15 + elapsedRatio * 0.04);
     const template = isBad
       ? badItems[Math.floor(Math.random() * badItems.length)]
       : goodItems[Math.floor(Math.random() * goodItems.length)];
 
     const fromLeft = Math.random() < 0.5;
-    const startX = fromLeft ? randomBetween(-60, w * 0.25) : randomBetween(w * 0.75, w + 60);
-    const startY = h + randomBetween(38, 120);
-    const targetX = randomBetween(w * 0.2, w * 0.8);
-    const timeToApex = randomBetween(0.72, 0.95);
+    const startX = fromLeft ? randomBetween(-90, w * 0.22) : randomBetween(w * 0.78, w + 90);
+    const startY = h + randomBetween(55, 150);
+    const targetX = randomBetween(w * 0.18, w * 0.82);
+    const timeToApex = randomBetween(0.78, 1.05);
     const vx = (targetX - startX) / (timeToApex * 1.15);
-    const vy = -randomBetween(h * 0.82, h * 1.02) * (1 + elapsedRatio * 0.06);
-    const gravity = h * randomBetween(0.88, 1.02);
-    const radius = Math.min(w, h) * randomBetween(0.04, 0.052);
+    const vy = -randomBetween(h * 0.82, h * 1.0) * (1 + elapsedRatio * 0.04);
+    const gravity = h * randomBetween(0.84, 0.98);
+    const minSide = Math.min(w, h);
+    const radius = isBad
+      ? minSide * 0.095
+      : minSide * template.radiusFactor;
 
     game.objects.push({
       x: startX,
@@ -236,14 +248,17 @@
       vy,
       gravity,
       radius,
-      rot: randomBetween(-0.35, 0.35),
-      spin: randomBetween(-2.2, 2.2),
+      rot: randomBetween(-0.28, 0.28),
+      spin: randomBetween(-1.7, 1.7),
       isBad,
       sliced: false,
-      emoji: template.emoji,
+      kind: template.kind,
       color: template.color,
       label: template.label,
+      points: template.points || 0,
       age: 0,
+      remove: false,
+      missedPenaltyApplied: false,
     });
   }
 
@@ -259,6 +274,7 @@
         color,
         age: 0,
         life: randomBetween(0.32, 0.58),
+        remove: false,
       });
     }
   }
@@ -266,30 +282,34 @@
   function markFeedback(text, color) {
     game.feedback = text;
     game.feedbackColor = color;
-    game.feedbackUntil = performance.now() + 650;
+    game.feedbackUntil = performance.now() + 720;
+  }
+
+  function loseLife(amount, message, color = '#ffb14f') {
+    game.lives = Math.max(0, Math.round((game.lives - amount) * 100) / 100);
+    game.combo = 0;
+    markFeedback(message, color);
+    updateHud(true);
+    if (game.lives <= 0) endGame(false);
   }
 
   function sliceObject(obj) {
-    if (obj.sliced) return;
+    if (obj.sliced || obj.remove) return;
     obj.sliced = true;
+    obj.remove = true;
     addParticles(obj.x, obj.y, obj.color, obj.isBad ? 16 : 12);
 
     if (obj.isBad) {
       game.badHits += 1;
-      game.combo = 0;
-      markFeedback('Ekelig erwischt!', '#78e05a');
+      loseLife(BAD_DAMAGE, 'Ungenießbar erwischt! -1 Leben', '#98ec65');
       if (navigator.vibrate) navigator.vibrate(70);
-      if (game.badHits >= BAD_LIMIT) {
-        updateHud(true);
-        endGame(false);
-      }
       return;
     }
 
     game.combo += 1;
-    const comboBonus = game.combo >= 8 ? 3 : game.combo >= 4 ? 2 : 1;
-    game.score += 1 + comboBonus;
-    markFeedback(game.combo >= 4 ? `Combo x${game.combo}` : 'Geschnitten!', '#ffe36d');
+    const comboBonus = game.combo >= 8 ? 3 : game.combo >= 4 ? 2 : 0;
+    game.score += obj.points + comboBonus;
+    markFeedback(game.combo >= 4 ? `${obj.label}: +${obj.points + comboBonus} · Combo x${game.combo}` : `${obj.label}: +${obj.points}`, '#ffe36d');
   }
 
   function compactArray(arr) {
@@ -307,26 +327,32 @@
   function update(dt, now) {
     game.elapsed = (now - game.startTime) / 1000;
 
-    const spawnEvery = Math.max(0.74, 1.08 - game.elapsed / 120);
+    const spawnEvery = Math.max(0.86, 1.18 - game.elapsed / 150);
     game.spawnTimer -= dt;
     if (game.spawnTimer <= 0) {
       createObject();
-      if (game.elapsed > 24 && Math.random() < 0.18) {
-        setTimeout(() => { if (game.running) createObject(); }, 140);
+      if (game.elapsed > 28 && Math.random() < 0.13) {
+        setTimeout(() => { if (game.running) createObject(); }, 170);
       }
-      game.spawnTimer = spawnEvery + randomBetween(0.0, 0.24);
+      game.spawnTimer = spawnEvery + randomBetween(0.02, 0.25);
     }
 
     const h = window.innerHeight;
+    const w = window.innerWidth;
     for (const obj of game.objects) {
       obj.age += dt;
       obj.x += obj.vx * dt;
       obj.y += obj.vy * dt;
       obj.vy += obj.gravity * dt;
       obj.rot += obj.spin * dt;
-      if (obj.sliced || obj.y > h + 160 || obj.x < -180 || obj.x > window.innerWidth + 180) {
+      if (!obj.sliced && obj.y > h + obj.radius + 35 && !obj.missedPenaltyApplied) {
+        obj.missedPenaltyApplied = true;
+        if (!obj.isBad) {
+          loseLife(MISS_DAMAGE, 'Gemüse verpasst! -¼ Leben', '#ffcf5d');
+        }
+      }
+      if (obj.sliced || obj.y > h + obj.radius + 180 || obj.x < -obj.radius - 180 || obj.x > w + obj.radius + 180) {
         obj.remove = true;
-        if (!obj.sliced && !obj.isBad) game.combo = 0;
       }
     }
     compactArray(game.objects);
@@ -386,25 +412,165 @@
     ctx.translate(obj.x, obj.y);
     ctx.rotate(obj.rot);
 
-    ctx.fillStyle = obj.isBad ? 'rgba(103, 205, 69, 0.82)' : 'rgba(255, 235, 168, 0.82)';
-    ctx.strokeStyle = obj.isBad ? '#24551d' : '#7c2a12';
-    ctx.lineWidth = 3;
+    ctx.fillStyle = obj.isBad ? 'rgba(194, 236, 150, 0.9)' : 'rgba(255, 236, 173, 0.9)';
+    ctx.strokeStyle = obj.isBad ? '#285420' : '#7c2a12';
+    ctx.lineWidth = Math.max(3, obj.radius * 0.06);
     ctx.beginPath();
     ctx.arc(0, 0, obj.radius * 1.05, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
 
-    ctx.font = `${Math.round(obj.radius * 1.35)}px system-ui, Apple Color Emoji, Segoe UI Emoji`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(obj.emoji, 0, obj.radius * 0.02);
-
     if (obj.isBad) {
+      drawBadIcon(obj.kind, obj.radius);
       ctx.fillStyle = '#fff5a8';
-      ctx.font = `${Math.round(obj.radius * 0.54)}px system-ui, sans-serif`;
-      ctx.fillText('!', obj.radius * 0.72, -obj.radius * 0.76);
+      ctx.font = `900 ${Math.round(obj.radius * 0.45)}px system-ui, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('!', obj.radius * 0.72, -obj.radius * 0.72);
+    } else {
+      drawGoodIcon(obj.kind, obj.radius);
     }
+
     ctx.restore();
+  }
+
+  function drawGoodIcon(kind, r) {
+    if (kind === 'tomato') {
+      ctx.fillStyle = '#ed352c';
+      ctx.beginPath();
+      ctx.arc(0, 0, r * 0.58, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#2faa44';
+      for (let i = 0; i < 5; i += 1) {
+        ctx.save();
+        ctx.rotate((Math.PI * 2 / 5) * i);
+        ctx.beginPath();
+        ctx.ellipse(0, -r * 0.42, r * 0.12, r * 0.28, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    } else if (kind === 'carrot') {
+      ctx.fillStyle = '#f28a20';
+      ctx.beginPath();
+      ctx.moveTo(-r * 0.34, -r * 0.35);
+      ctx.lineTo(r * 0.52, -r * 0.05);
+      ctx.lineTo(-r * 0.28, r * 0.43);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(120, 55, 12, 0.45)';
+      ctx.lineWidth = r * 0.055;
+      for (let i = -1; i <= 1; i += 1) {
+        ctx.beginPath();
+        ctx.moveTo(-r * 0.06 + i * r * 0.09, -r * 0.17 + i * r * 0.1);
+        ctx.lineTo(r * 0.17 + i * r * 0.08, -r * 0.1 + i * r * 0.09);
+        ctx.stroke();
+      }
+      ctx.fillStyle = '#40b84a';
+      ctx.beginPath();
+      ctx.ellipse(-r * 0.43, -r * 0.38, r * 0.13, r * 0.34, -0.7, 0, Math.PI * 2);
+      ctx.ellipse(-r * 0.3, -r * 0.48, r * 0.12, r * 0.33, 0.2, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (kind === 'onion') {
+      const g = ctx.createRadialGradient(-r * 0.15, -r * 0.18, r * 0.08, 0, 0, r * 0.65);
+      g.addColorStop(0, '#fff7fb');
+      g.addColorStop(1, '#d7a2cf');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.ellipse(0, r * 0.05, r * 0.58, r * 0.66, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(113, 52, 111, 0.55)';
+      ctx.lineWidth = r * 0.045;
+      for (let i = -1; i <= 1; i += 1) {
+        ctx.beginPath();
+        ctx.moveTo(i * r * 0.18, -r * 0.48);
+        ctx.quadraticCurveTo(i * r * 0.12, r * 0.05, i * r * 0.08, r * 0.55);
+        ctx.stroke();
+      }
+      ctx.fillStyle = '#69b657';
+      ctx.beginPath();
+      ctx.ellipse(0, -r * 0.6, r * 0.12, r * 0.22, 0, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (kind === 'paprika') {
+      const g = ctx.createRadialGradient(-r * 0.2, -r * 0.25, r * 0.12, 0, 0, r * 0.72);
+      g.addColorStop(0, '#ff8275');
+      g.addColorStop(1, '#d92724');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.ellipse(-r * 0.22, r * 0.02, r * 0.37, r * 0.54, -0.15, 0, Math.PI * 2);
+      ctx.ellipse(r * 0.18, r * 0.03, r * 0.38, r * 0.55, 0.12, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#37a344';
+      ctx.beginPath();
+      ctx.roundRect ? ctx.roundRect(-r * 0.1, -r * 0.65, r * 0.2, r * 0.3, r * 0.08) : ctx.rect(-r * 0.1, -r * 0.65, r * 0.2, r * 0.3);
+      ctx.fill();
+    }
+  }
+
+  function drawBadIcon(kind, r) {
+    if (kind === 'beetle') {
+      ctx.fillStyle = '#294d2e';
+      ctx.beginPath();
+      ctx.ellipse(0, r * 0.08, r * 0.43, r * 0.58, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#1b2c1e';
+      ctx.lineWidth = r * 0.06;
+      ctx.beginPath();
+      ctx.moveTo(0, -r * 0.38);
+      ctx.lineTo(0, r * 0.54);
+      ctx.stroke();
+      for (let side of [-1, 1]) {
+        for (let y of [-0.22, 0.02, 0.26]) {
+          ctx.beginPath();
+          ctx.moveTo(side * r * 0.28, r * y);
+          ctx.lineTo(side * r * 0.62, r * (y - 0.1));
+          ctx.stroke();
+        }
+      }
+      ctx.fillStyle = '#96e274';
+      ctx.beginPath();
+      ctx.arc(-r * 0.15, -r * 0.22, r * 0.08, 0, Math.PI * 2);
+      ctx.arc(r * 0.15, -r * 0.22, r * 0.08, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (kind === 'sock') {
+      ctx.fillStyle = '#8d74c4';
+      ctx.beginPath();
+      ctx.moveTo(-r * 0.25, -r * 0.55);
+      ctx.lineTo(r * 0.24, -r * 0.55);
+      ctx.lineTo(r * 0.18, r * 0.12);
+      ctx.quadraticCurveTo(r * 0.5, r * 0.2, r * 0.46, r * 0.46);
+      ctx.quadraticCurveTo(r * 0.38, r * 0.72, r * 0.05, r * 0.6);
+      ctx.lineTo(-r * 0.18, r * 0.47);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = '#58438b';
+      ctx.lineWidth = r * 0.07;
+      ctx.stroke();
+      ctx.strokeStyle = '#ddd1ff';
+      ctx.lineWidth = r * 0.06;
+      for (let y of [-0.38, -0.18]) {
+        ctx.beginPath();
+        ctx.moveTo(-r * 0.21, r * y);
+        ctx.lineTo(r * 0.21, r * y);
+        ctx.stroke();
+      }
+    } else if (kind === 'toadstool') {
+      ctx.fillStyle = '#d8342b';
+      ctx.beginPath();
+      ctx.arc(0, -r * 0.08, r * 0.55, Math.PI, 0);
+      ctx.quadraticCurveTo(r * 0.48, r * 0.18, 0, r * 0.18);
+      ctx.quadraticCurveTo(-r * 0.48, r * 0.18, -r * 0.55, -r * 0.08);
+      ctx.fill();
+      ctx.fillStyle = '#fff6df';
+      for (let [x, y, s] of [[-0.28, -0.2, 0.1], [0.05, -0.32, 0.09], [0.28, -0.16, 0.08]]) {
+        ctx.beginPath();
+        ctx.arc(r * x, r * y, r * s, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.fillStyle = '#f0d5b9';
+      ctx.beginPath();
+      ctx.roundRect ? ctx.roundRect(-r * 0.17, r * 0.05, r * 0.34, r * 0.55, r * 0.12) : ctx.rect(-r * 0.17, r * 0.05, r * 0.34, r * 0.55);
+      ctx.fill();
+    }
   }
 
   function drawParticles() {
@@ -446,7 +612,7 @@
     ctx.globalAlpha = alpha;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.font = `900 ${Math.round(Math.min(w, h) * 0.06)}px system-ui, sans-serif`;
+    ctx.font = `900 ${Math.round(Math.min(w, h) * 0.052)}px system-ui, sans-serif`;
     ctx.lineWidth = 5;
     ctx.strokeStyle = 'rgba(61, 20, 8, 0.85)';
     ctx.fillStyle = game.feedbackColor || '#ffe36d';
@@ -484,9 +650,9 @@
   function testSliceSegment(a, b) {
     if (!game.running) return;
     for (const obj of game.objects) {
-      if (obj.sliced) continue;
+      if (obj.sliced || obj.remove) continue;
       const dist = distancePointToSegment(obj.x, obj.y, a.x, a.y, b.x, b.y);
-      if (dist <= obj.radius * 1.12) sliceObject(obj);
+      if (dist <= obj.radius * 1.08) sliceObject(obj);
     }
     updateHud(true);
   }

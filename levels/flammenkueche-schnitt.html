@@ -195,17 +195,17 @@
   <audio id="sliceMusic" src="../assets/audio/volcano.mp3" preload="auto"></audio>
 
   <main class="flame-slice-shell" aria-label="Flammenküchen-Schnippelchaos">
-    <canvas id="sliceCanvas" aria-label="Gemüse schneiden und eklige Dinge vermeiden"></canvas>
+    <canvas id="sliceCanvas" aria-label="Gemüse schneiden und Ungenießbares vermeiden"></canvas>
   </main>
 
   <div class="slice-hud" aria-live="polite">
     <div id="sliceScore" class="slice-hud-card">Punkte: 0</div>
     <div id="sliceTimer" class="slice-hud-card">Zeit: 60 s</div>
-    <div id="sliceBad" class="slice-hud-card">Ekel: 0/3</div>
+    <div id="sliceBad" class="slice-hud-card">Leben: 5,00/5</div>
     <div class="slice-hud-wide" aria-hidden="true"><div id="sliceProgressFill"></div></div>
   </div>
 
-  <div class="slice-instruction">Wische durch Gemüse. Eklige Sachen nicht treffen. Drei eklige Treffer = verloren.</div>
+  <div class="slice-instruction">Wische durch Gemüse. Ungenießbares nicht treffen. Verpasstes Gemüse kostet ¼ Leben.</div>
 
   <div id="sliceOverlay" class="slice-overlay" role="dialog" aria-modal="true">
     <section id="slicePopup" class="slice-popup"></section>
