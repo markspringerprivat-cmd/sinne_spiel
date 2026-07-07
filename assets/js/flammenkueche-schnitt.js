@@ -258,6 +258,7 @@
       points: template.points || 0,
       age: 0,
       remove: false,
+      resolved: false,
       missedPenaltyApplied: false,
     });
   }
@@ -294,8 +295,10 @@
   }
 
   function sliceObject(obj) {
-    if (obj.sliced || obj.remove) return;
+    if (obj.sliced || obj.remove || obj.resolved) return;
     obj.sliced = true;
+    obj.resolved = true;
+    obj.missedPenaltyApplied = true;
     obj.remove = true;
     addParticles(obj.x, obj.y, obj.color, obj.isBad ? 16 : 12);
 
@@ -345,13 +348,15 @@
       obj.y += obj.vy * dt;
       obj.vy += obj.gravity * dt;
       obj.rot += obj.spin * dt;
-      if (!obj.sliced && obj.y > h + obj.radius + 35 && !obj.missedPenaltyApplied) {
+      const completelyBelowScreen = obj.y - obj.radius > h + 10;
+      if (!obj.resolved && !obj.sliced && !obj.remove && completelyBelowScreen && !obj.missedPenaltyApplied) {
+        obj.resolved = true;
         obj.missedPenaltyApplied = true;
         if (!obj.isBad) {
           loseLife(MISS_DAMAGE, 'Gemüse verpasst! -¼ Leben', '#ffcf5d');
         }
       }
-      if (obj.sliced || obj.y > h + obj.radius + 180 || obj.x < -obj.radius - 180 || obj.x > w + obj.radius + 180) {
+      if (obj.sliced || completelyBelowScreen || obj.y > h + obj.radius + 180 || obj.x < -obj.radius - 180 || obj.x > w + obj.radius + 180) {
         obj.remove = true;
       }
     }
@@ -547,7 +552,7 @@
   function testSliceSegment(a, b) {
     if (!game.running) return;
     for (const obj of game.objects) {
-      if (obj.sliced || obj.remove) continue;
+      if (obj.sliced || obj.remove || obj.resolved) continue;
       const dist = distancePointToSegment(obj.x, obj.y, a.x, a.y, b.x, b.y);
       if (dist <= obj.radius * 1.08) sliceObject(obj);
     }
