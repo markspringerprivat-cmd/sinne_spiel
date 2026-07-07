@@ -15,6 +15,8 @@
   const badEl = document.getElementById('sliceBad');
   const progressFill = document.getElementById('sliceProgressFill');
   const musicElement = document.getElementById('sliceMusic');
+  const cutSoundElement = document.getElementById('sliceCutSound');
+  const cutSoundPool = [];
   const musicLoop = window.createCrossfadeLoop ? window.createCrossfadeLoop(musicElement, { fadeSeconds: 0.08 }) : null;
 
   const background = new Image();
@@ -74,6 +76,28 @@
   function pauseMusic() {
     if (musicLoop) musicLoop.pause();
     else if (musicElement) musicElement.pause();
+  }
+
+  function prepareCutSounds() {
+    if (!cutSoundElement || cutSoundPool.length) return;
+    for (let i = 0; i < 4; i += 1) {
+      const audio = i === 0 ? cutSoundElement : cutSoundElement.cloneNode(true);
+      audio.volume = currentVolume() * 0.72;
+      audio.preload = 'auto';
+      cutSoundPool.push(audio);
+    }
+  }
+
+  function playCutSound() {
+    prepareCutSounds();
+    const volume = currentVolume() * 0.72;
+    const sound = cutSoundPool.find((audio) => audio.paused || audio.ended) || cutSoundPool[0];
+    if (!sound) return;
+    try {
+      sound.volume = volume;
+      sound.currentTime = 0;
+      sound.play().catch(() => {});
+    } catch {}
   }
 
   function readProgress() {
@@ -188,6 +212,7 @@
     updateHud(true);
     hidePopup();
     startMusic();
+    prepareCutSounds();
     requestAnimationFrame(loop);
   }
 
@@ -302,6 +327,7 @@
     obj.missedPenaltyApplied = true;
     obj.remove = true;
     addParticles(obj.x, obj.y, obj.color, obj.isBad ? 16 : 12);
+    playCutSound();
 
     if (obj.isBad) {
       game.badHits += 1;
@@ -425,49 +451,40 @@
     ctx.translate(obj.x, obj.y);
     ctx.rotate(obj.rot);
 
-    ctx.fillStyle = obj.isBad ? 'rgba(194, 236, 150, 0.9)' : 'rgba(255, 236, 173, 0.9)';
-    ctx.strokeStyle = obj.isBad ? '#285420' : '#7c2a12';
-    ctx.lineWidth = Math.max(3, obj.radius * 0.06);
-    ctx.beginPath();
-    ctx.arc(0, 0, obj.radius * 1.05, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
+    // Optisch fliegen nur noch die Emoji-Objekte.
+    // Der unsichtbare Radius bleibt als zuverlässige Hitbox erhalten.
+    ctx.shadowColor = obj.isBad ? 'rgba(70, 18, 9, 0.72)' : 'rgba(80, 28, 6, 0.58)';
+    ctx.shadowBlur = Math.max(8, obj.radius * 0.16);
+    ctx.shadowOffsetY = Math.max(3, obj.radius * 0.07);
 
-    if (obj.isBad) {
-      drawBadIcon(obj.kind, obj.radius);
-      ctx.fillStyle = '#fff5a8';
-      ctx.font = `900 ${Math.round(obj.radius * 0.45)}px system-ui, sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('!', obj.radius * 0.72, -obj.radius * 0.72);
-    } else {
-      drawGoodIcon(obj.kind, obj.radius);
-    }
+    if (obj.isBad) drawBadIcon(obj.kind, obj.radius);
+    else drawGoodIcon(obj.kind, obj.radius);
 
     ctx.restore();
   }
 
   function drawEmojiIcon(symbol, r, options = {}) {
-    const fontSize = Math.round(r * (options.scale || 1.18));
+    const fontSize = Math.round(r * (options.scale || 1.55));
+    const y = r * (options.yOffset || 0.03);
     ctx.save();
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.font = `${fontSize}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", system-ui, sans-serif`;
-    ctx.lineWidth = Math.max(2, r * 0.05);
-    ctx.strokeStyle = 'rgba(72, 28, 10, 0.22)';
-    ctx.fillStyle = '#ffffff';
-    // leichte Kontur hinter dem Emoji, damit es auf hellen Kreisen klar lesbar bleibt
-    ctx.strokeText(symbol, 0, r * (options.yOffset || 0.04));
-    ctx.fillText(symbol, 0, r * (options.yOffset || 0.04));
+    // kleine dunkle Kontur/Schattenpunkte, damit die Emojis auf hellem Hintergrund lesbar bleiben
+    ctx.globalAlpha = 0.32;
+    ctx.fillStyle = 'rgba(70, 24, 8, 0.95)';
+    ctx.fillText(symbol, 2, y + 3);
+    ctx.globalAlpha = 1;
+    ctx.fillText(symbol, 0, y);
     ctx.restore();
   }
 
   function drawGoodIcon(kind, r) {
     const map = {
-      paprika: { symbol: '🫑', scale: 1.18, yOffset: 0.05 },
-      onion: { symbol: '🧅', scale: 1.14, yOffset: 0.05 },
-      carrot: { symbol: '🥕', scale: 1.17, yOffset: 0.04 },
-      tomato: { symbol: '🍅', scale: 1.16, yOffset: 0.05 },
+      paprika: { symbol: '🫑', scale: 1.75, yOffset: 0.03 },
+      onion: { symbol: '🧅', scale: 1.72, yOffset: 0.03 },
+      carrot: { symbol: '🥕', scale: 1.75, yOffset: 0.02 },
+      tomato: { symbol: '🍅', scale: 1.76, yOffset: 0.03 },
     };
     const icon = map[kind] || { symbol: '🥕', scale: 1.15, yOffset: 0.04 };
     drawEmojiIcon(icon.symbol, r, icon);
@@ -475,9 +492,9 @@
 
   function drawBadIcon(kind, r) {
     const map = {
-      beetle: { symbol: '🐞', scale: 1.17, yOffset: 0.04 },
-      sock: { symbol: '🧦', scale: 1.16, yOffset: 0.04 },
-      toadstool: { symbol: '🍄', scale: 1.18, yOffset: 0.05 },
+      beetle: { symbol: '🐞', scale: 1.75, yOffset: 0.03 },
+      sock: { symbol: '🧦', scale: 1.75, yOffset: 0.02 },
+      toadstool: { symbol: '🍄', scale: 1.76, yOffset: 0.03 },
     };
     const icon = map[kind] || { symbol: '🍄', scale: 1.15, yOffset: 0.05 };
     drawEmojiIcon(icon.symbol, r, icon);
