@@ -15,11 +15,10 @@
   const heartsText = document.getElementById('mineHearts');
   const musicElement = document.getElementById('mineMusic');
   const driveElement = document.getElementById('mineDrive');
-  const switchSound = document.getElementById('mineSwitchSound');
   const turboSound = document.getElementById('mineTurboSound');
   const glassBreakSound = document.getElementById('mineGlassBreak');
-  const musicLoop = window.createCrossfadeLoop ? window.createCrossfadeLoop(musicElement, { fadeSeconds: 1.35 }) : null;
-  const driveLoop = window.createCrossfadeLoop ? window.createCrossfadeLoop(driveElement, { fadeSeconds: 0.25 }) : null;
+  const musicLoop = window.createCrossfadeLoop ? window.createCrossfadeLoop(musicElement, { fadeSeconds: 0.18 }) : null;
+  const driveLoop = window.createCrossfadeLoop ? window.createCrossfadeLoop(driveElement, { fadeSeconds: 0.10 }) : null;
 
   const images = {
     background: new Image(),
@@ -58,6 +57,7 @@
     shakeUntil: 0,
     railOffset: 0,
     turboUntil: 0,
+    lastLaneInputAt: 0,
   };
 
   function currentVolume() {
@@ -207,6 +207,7 @@
     game.shakeUntil = 0;
     game.railOffset = 0;
     game.turboUntil = 0;
+    game.lastLaneInputAt = 0;
   }
 
   function showPopup(type) {
@@ -295,10 +296,12 @@
 
   function setLane(direction) {
     if (!game.running) return;
+    const now = performance.now();
+    if (now - game.lastLaneInputAt < 85) return;
     const nextLane = Math.max(0, Math.min(LANES.length - 1, game.targetLane + direction));
     if (nextLane !== game.targetLane) {
       game.targetLane = nextLane;
-      playOneShot(switchSound, 0.26);
+      game.lastLaneInputAt = now;
     }
   }
 

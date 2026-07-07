@@ -3,8 +3,8 @@
     constructor(audioElement, options = {}) {
       this.sourceElement = audioElement;
       this.src = audioElement ? audioElement.currentSrc || audioElement.src : '';
-      this.fadeSeconds = options.fadeSeconds || 1.35;
-      this.monitorMs = options.monitorMs || 120;
+      this.fadeSeconds = options.fadeSeconds || 0.18;
+      this.monitorMs = options.monitorMs || 70;
       this.volume = 0.5;
       this.isPlaying = false;
       this.isFading = false;
@@ -76,7 +76,7 @@
       if (!Number.isFinite(duration) || duration <= 0) return;
 
       const remaining = duration - current.currentTime;
-      if (remaining <= this.fadeSeconds + 0.18) {
+      if (remaining <= this.fadeSeconds + 0.035) {
         this.crossfadeToNext();
       }
     }

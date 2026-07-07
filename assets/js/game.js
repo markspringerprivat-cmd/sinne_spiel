@@ -5,7 +5,7 @@ const lockButtons = document.querySelectorAll('[data-lock-button]');
 const mapStage = document.querySelector('.map-stage');
 
 const backgroundMusic = document.getElementById('backgroundMusic');
-const backgroundMusicLoop = window.createCrossfadeLoop ? window.createCrossfadeLoop(backgroundMusic, { fadeSeconds: 1.35 }) : null;
+const backgroundMusicLoop = window.createCrossfadeLoop ? window.createCrossfadeLoop(backgroundMusic, { fadeSeconds: 0.18 }) : null;
 const volumeSlider = document.getElementById('volumeSlider');
 
 const introModal = document.getElementById('introModal');
