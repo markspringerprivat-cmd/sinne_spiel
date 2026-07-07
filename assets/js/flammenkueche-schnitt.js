@@ -434,143 +434,40 @@
     ctx.restore();
   }
 
+  function drawEmojiIcon(symbol, r, options = {}) {
+    const fontSize = Math.round(r * (options.scale || 1.18));
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = `${fontSize}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", system-ui, sans-serif`;
+    ctx.lineWidth = Math.max(2, r * 0.05);
+    ctx.strokeStyle = 'rgba(72, 28, 10, 0.22)';
+    ctx.fillStyle = '#ffffff';
+    // leichte Kontur hinter dem Emoji, damit es auf hellen Kreisen klar lesbar bleibt
+    ctx.strokeText(symbol, 0, r * (options.yOffset || 0.04));
+    ctx.fillText(symbol, 0, r * (options.yOffset || 0.04));
+    ctx.restore();
+  }
+
   function drawGoodIcon(kind, r) {
-    if (kind === 'tomato') {
-      ctx.fillStyle = '#ed352c';
-      ctx.beginPath();
-      ctx.arc(0, 0, r * 0.58, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#2faa44';
-      for (let i = 0; i < 5; i += 1) {
-        ctx.save();
-        ctx.rotate((Math.PI * 2 / 5) * i);
-        ctx.beginPath();
-        ctx.ellipse(0, -r * 0.42, r * 0.12, r * 0.28, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-      }
-    } else if (kind === 'carrot') {
-      ctx.fillStyle = '#f28a20';
-      ctx.beginPath();
-      ctx.moveTo(-r * 0.34, -r * 0.35);
-      ctx.lineTo(r * 0.52, -r * 0.05);
-      ctx.lineTo(-r * 0.28, r * 0.43);
-      ctx.closePath();
-      ctx.fill();
-      ctx.strokeStyle = 'rgba(120, 55, 12, 0.45)';
-      ctx.lineWidth = r * 0.055;
-      for (let i = -1; i <= 1; i += 1) {
-        ctx.beginPath();
-        ctx.moveTo(-r * 0.06 + i * r * 0.09, -r * 0.17 + i * r * 0.1);
-        ctx.lineTo(r * 0.17 + i * r * 0.08, -r * 0.1 + i * r * 0.09);
-        ctx.stroke();
-      }
-      ctx.fillStyle = '#40b84a';
-      ctx.beginPath();
-      ctx.ellipse(-r * 0.43, -r * 0.38, r * 0.13, r * 0.34, -0.7, 0, Math.PI * 2);
-      ctx.ellipse(-r * 0.3, -r * 0.48, r * 0.12, r * 0.33, 0.2, 0, Math.PI * 2);
-      ctx.fill();
-    } else if (kind === 'onion') {
-      const g = ctx.createRadialGradient(-r * 0.15, -r * 0.18, r * 0.08, 0, 0, r * 0.65);
-      g.addColorStop(0, '#fff7fb');
-      g.addColorStop(1, '#d7a2cf');
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.ellipse(0, r * 0.05, r * 0.58, r * 0.66, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = 'rgba(113, 52, 111, 0.55)';
-      ctx.lineWidth = r * 0.045;
-      for (let i = -1; i <= 1; i += 1) {
-        ctx.beginPath();
-        ctx.moveTo(i * r * 0.18, -r * 0.48);
-        ctx.quadraticCurveTo(i * r * 0.12, r * 0.05, i * r * 0.08, r * 0.55);
-        ctx.stroke();
-      }
-      ctx.fillStyle = '#69b657';
-      ctx.beginPath();
-      ctx.ellipse(0, -r * 0.6, r * 0.12, r * 0.22, 0, 0, Math.PI * 2);
-      ctx.fill();
-    } else if (kind === 'paprika') {
-      const g = ctx.createRadialGradient(-r * 0.2, -r * 0.25, r * 0.12, 0, 0, r * 0.72);
-      g.addColorStop(0, '#ff8275');
-      g.addColorStop(1, '#d92724');
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.ellipse(-r * 0.22, r * 0.02, r * 0.37, r * 0.54, -0.15, 0, Math.PI * 2);
-      ctx.ellipse(r * 0.18, r * 0.03, r * 0.38, r * 0.55, 0.12, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#37a344';
-      ctx.beginPath();
-      ctx.roundRect ? ctx.roundRect(-r * 0.1, -r * 0.65, r * 0.2, r * 0.3, r * 0.08) : ctx.rect(-r * 0.1, -r * 0.65, r * 0.2, r * 0.3);
-      ctx.fill();
-    }
+    const map = {
+      paprika: { symbol: '🫑', scale: 1.18, yOffset: 0.05 },
+      onion: { symbol: '🧅', scale: 1.14, yOffset: 0.05 },
+      carrot: { symbol: '🥕', scale: 1.17, yOffset: 0.04 },
+      tomato: { symbol: '🍅', scale: 1.16, yOffset: 0.05 },
+    };
+    const icon = map[kind] || { symbol: '🥕', scale: 1.15, yOffset: 0.04 };
+    drawEmojiIcon(icon.symbol, r, icon);
   }
 
   function drawBadIcon(kind, r) {
-    if (kind === 'beetle') {
-      ctx.fillStyle = '#294d2e';
-      ctx.beginPath();
-      ctx.ellipse(0, r * 0.08, r * 0.43, r * 0.58, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = '#1b2c1e';
-      ctx.lineWidth = r * 0.06;
-      ctx.beginPath();
-      ctx.moveTo(0, -r * 0.38);
-      ctx.lineTo(0, r * 0.54);
-      ctx.stroke();
-      for (let side of [-1, 1]) {
-        for (let y of [-0.22, 0.02, 0.26]) {
-          ctx.beginPath();
-          ctx.moveTo(side * r * 0.28, r * y);
-          ctx.lineTo(side * r * 0.62, r * (y - 0.1));
-          ctx.stroke();
-        }
-      }
-      ctx.fillStyle = '#96e274';
-      ctx.beginPath();
-      ctx.arc(-r * 0.15, -r * 0.22, r * 0.08, 0, Math.PI * 2);
-      ctx.arc(r * 0.15, -r * 0.22, r * 0.08, 0, Math.PI * 2);
-      ctx.fill();
-    } else if (kind === 'sock') {
-      ctx.fillStyle = '#8d74c4';
-      ctx.beginPath();
-      ctx.moveTo(-r * 0.25, -r * 0.55);
-      ctx.lineTo(r * 0.24, -r * 0.55);
-      ctx.lineTo(r * 0.18, r * 0.12);
-      ctx.quadraticCurveTo(r * 0.5, r * 0.2, r * 0.46, r * 0.46);
-      ctx.quadraticCurveTo(r * 0.38, r * 0.72, r * 0.05, r * 0.6);
-      ctx.lineTo(-r * 0.18, r * 0.47);
-      ctx.closePath();
-      ctx.fill();
-      ctx.strokeStyle = '#58438b';
-      ctx.lineWidth = r * 0.07;
-      ctx.stroke();
-      ctx.strokeStyle = '#ddd1ff';
-      ctx.lineWidth = r * 0.06;
-      for (let y of [-0.38, -0.18]) {
-        ctx.beginPath();
-        ctx.moveTo(-r * 0.21, r * y);
-        ctx.lineTo(r * 0.21, r * y);
-        ctx.stroke();
-      }
-    } else if (kind === 'toadstool') {
-      ctx.fillStyle = '#d8342b';
-      ctx.beginPath();
-      ctx.arc(0, -r * 0.08, r * 0.55, Math.PI, 0);
-      ctx.quadraticCurveTo(r * 0.48, r * 0.18, 0, r * 0.18);
-      ctx.quadraticCurveTo(-r * 0.48, r * 0.18, -r * 0.55, -r * 0.08);
-      ctx.fill();
-      ctx.fillStyle = '#fff6df';
-      for (let [x, y, s] of [[-0.28, -0.2, 0.1], [0.05, -0.32, 0.09], [0.28, -0.16, 0.08]]) {
-        ctx.beginPath();
-        ctx.arc(r * x, r * y, r * s, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.fillStyle = '#f0d5b9';
-      ctx.beginPath();
-      ctx.roundRect ? ctx.roundRect(-r * 0.17, r * 0.05, r * 0.34, r * 0.55, r * 0.12) : ctx.rect(-r * 0.17, r * 0.05, r * 0.34, r * 0.55);
-      ctx.fill();
-    }
+    const map = {
+      beetle: { symbol: '🐞', scale: 1.17, yOffset: 0.04 },
+      sock: { symbol: '🧦', scale: 1.16, yOffset: 0.04 },
+      toadstool: { symbol: '🍄', scale: 1.18, yOffset: 0.05 },
+    };
+    const icon = map[kind] || { symbol: '🍄', scale: 1.15, yOffset: 0.05 };
+    drawEmojiIcon(icon.symbol, r, icon);
   }
 
   function drawParticles() {
