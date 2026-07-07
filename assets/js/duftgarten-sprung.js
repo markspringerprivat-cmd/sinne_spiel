@@ -1,11 +1,12 @@
 (() => {
   const STORAGE_VOLUME = 'sinnesmagie-volume';
   const STORAGE_LEVEL_PROGRESS = 'sinnesmagie-level-progress';
-  const FIELD_COUNT = 20;
+  const FIELD_COUNT = 100;
   const PLAYER_START = 0;
   const TARGET_INDEX = FIELD_COUNT - 1;
   const BEETLE_HEADSTART_MS = 3000;
-  const BEETLE_STEP_MS = 1000;
+  const BEETLE_STEP_MS = 820;
+  const BEETLE_CATCHUP_STEP_MS = 160;
   const BEETLE_HOP_MS = 260;
 
   const canvas = document.getElementById('duftHopCanvas');
@@ -39,28 +40,18 @@
   images.knight.src = '../assets/images/minigame/duftgarten/knight_top.png';
   images.beetle.src = '../assets/images/minigame/duftgarten/beetle_stink.png';
 
-  const fieldPlan = [
-    'start',
-    'normal',
-    'slime',
-    'normal',
-    'cloud',
-    'normal',
-    'rotten',
-    'normal',
-    'slime',
-    'normal',
-    'cloud',
-    'normal',
-    'rotten',
-    'normal',
-    'slime',
-    'normal',
-    'cloud',
-    'normal',
-    'normal',
-    'goal',
-  ];
+  function fieldTypeForIndex(index) {
+    if (index === 0) return 'start';
+    if (index === TARGET_INDEX) return 'goal';
+
+    // Feste, gut lesbare Abfolge über 100 Felder:
+    // genug normale Blumen, dazwischen Fallen und Bremsfelder.
+    if (index % 17 === 0 || index % 23 === 0) return 'cloud';
+    if (index % 13 === 0 || index % 29 === 0) return 'rotten';
+    if (index % 9 === 0 || index % 14 === 0 || index % 31 === 0) return 'slime';
+    return 'normal';
+  }
+
 
   const game = {
     running: false,
@@ -137,9 +128,9 @@
   }
 
   function makeFields() {
-    return fieldPlan.map((type, index) => ({
+    return Array.from({ length: FIELD_COUNT }, (_, index) => ({
       index,
-      type,
+      type: fieldTypeForIndex(index),
       visited: index === 0,
     }));
   }
@@ -175,7 +166,7 @@
       popup.innerHTML = `
         <div>
           <h1>Blütensprung</h1>
-          <p>Der Ritter springt im Duftgarten nur nach vorne – immer 1 oder 2 Felder weit. Hinter ihm kommt ein stinkender Käfer näher.</p>
+          <p>Der Ritter springt im Duftgarten nur nach vorne – immer 1 oder 2 Felder weit. Insgesamt warten 100 Felder. Hinter ihm kommt ein stinkender Käfer näher.</p>
           <ul>
             <li><strong>Normale pinke Blüte:</strong> sicherer Stand.</li>
             <li><strong>Vergammelte Blüte:</strong> wirft dich 1 Feld zurück.</li>
@@ -183,7 +174,7 @@
             <li><strong>Gestankwolke:</strong> 2 Sekunden betäubt.</li>
             <li><strong>Goldene Blüte:</strong> Ziel erreicht!</li>
           </ul>
-          <p>Du hast 3 Sekunden Vorsprung. Danach springt der Käfer jede Sekunde 1 Feld weiter.</p>
+          <p>Du hast 3 Sekunden Vorsprung. Danach springt der Käfer schnell hinterher und holt sofort auf, wenn er mehr als 5 Felder zurückliegt.</p>
           <div class="duft-popup-actions">
             <button id="startDuftGame" class="duft-button" type="button">Starten</button>
             <button id="leaveDuftGame" class="duft-button secondary" type="button">Zurück</button>
@@ -273,7 +264,7 @@
   }
 
   function fieldWorld(index, w, h) {
-    const rowGap = Math.min(88, Math.max(56, h * 0.082));
+    const rowGap = Math.min(132, Math.max(92, h * 0.13));
     const bottom = h * 0.77;
     const x = w * 0.5;
     return {
@@ -390,13 +381,27 @@
 
   function updateBeetle(now) {
     if (now < game.beetleStartAt) return;
+
+    // Der Käfer soll den Ritter nie weit abhängen lassen:
+    // ab mehr als 5 Feldern Abstand schaltet er in einen sehr schnellen Aufholmodus.
+    const distance = game.playerIndex - game.beetleIndex;
+    if (distance > 5 && game.beetleNextStepAt > now + BEETLE_CATCHUP_STEP_MS) {
+      game.beetleNextStepAt = now + BEETLE_CATCHUP_STEP_MS;
+    }
+
     while (now >= game.beetleNextStepAt && game.running) {
       const from = game.beetleIndex;
-      const to = from + 1;
+      const to = Math.min(game.playerIndex, from + 1);
       game.beetleIndex = to;
       game.beetleHop = { from, to, start: game.beetleNextStepAt, duration: BEETLE_HOP_MS };
-      game.beetleNextStepAt += BEETLE_STEP_MS;
+
+      const nextDistance = game.playerIndex - game.beetleIndex;
+      const interval = nextDistance > 5 ? BEETLE_CATCHUP_STEP_MS : BEETLE_STEP_MS;
+      game.beetleNextStepAt += interval;
+
+      if (game.beetleIndex >= game.playerIndex) break;
     }
+
     if (game.beetleHop && now >= game.beetleHop.start + game.beetleHop.duration) {
       game.beetleHop = null;
     }
