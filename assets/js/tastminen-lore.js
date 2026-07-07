@@ -2,8 +2,9 @@
   const STORAGE_VOLUME = 'sinnesmagie-volume';
   const STORAGE_LEVEL_PROGRESS = 'sinnesmagie-level-progress';
   const GAME_DURATION = 60;
+  const TURBO_DURATION = 5;
   const LANES = [0.23, 0.5, 0.77];
-  const PLAYER_Y = 0.79;
+  const PLAYER_Y = 0.8;
 
   const canvas = document.getElementById('mineCanvas');
   const ctx = canvas.getContext('2d');
@@ -15,10 +16,20 @@
   const musicElement = document.getElementById('mineMusic');
   const musicLoop = window.createCrossfadeLoop ? window.createCrossfadeLoop(musicElement, { fadeSeconds: 1.35 }) : null;
 
-  const background = new Image();
-  background.src = '../assets/images/level-backgrounds/tastminen.png';
-  const knight = new Image();
-  knight.src = '../assets/images/characters/knight.png';
+  const images = {
+    background: new Image(),
+    cartNormal: new Image(),
+    cartTurbo: new Image(),
+    crystalIntact: new Image(),
+    crystalBroken: new Image(),
+    turboIcon: new Image(),
+  };
+  images.background.src = '../assets/images/minigame/mine_chasm_bg.png';
+  images.cartNormal.src = '../assets/images/minigame/cart_normal.png';
+  images.cartTurbo.src = '../assets/images/minigame/cart_turbo.png';
+  images.crystalIntact.src = '../assets/images/minigame/crystal_intact.png';
+  images.crystalBroken.src = '../assets/images/minigame/crystal_broken.png';
+  images.turboIcon.src = '../assets/images/minigame/turbo_icon.png';
 
   const game = {
     running: false,
@@ -32,17 +43,21 @@
     targetLane: 1,
     playerX: LANES[1],
     obstacles: [],
+    powerups: [],
+    bursts: [],
     particles: [],
     spawnTimer: 0,
+    waveIndex: 0,
+    nextPickupAt: 8,
     invulnerableUntil: 0,
     shakeUntil: 0,
-    railOffset: 0
+    railOffset: 0,
+    turboUntil: 0,
   };
 
   function currentVolume() {
     const saved = Number(localStorage.getItem(STORAGE_VOLUME));
-    if (Number.isFinite(saved)) return Math.min(1, Math.max(0, saved));
-    return 0.5;
+    return Number.isFinite(saved) ? Math.min(1, Math.max(0, saved)) : 0.5;
   }
 
   function startMusic() {
@@ -76,7 +91,7 @@
     const progress = readProgress();
     progress.tastminen = {
       level1Completed: true,
-      level2Completed: !!progress.tastminen?.level2Completed
+      level2Completed: !!progress.tastminen?.level2Completed,
     };
     localStorage.setItem(STORAGE_LEVEL_PROGRESS, JSON.stringify(progress));
   }
@@ -92,14 +107,42 @@
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 
+  function isTurboActive(now = performance.now()) {
+    return now < game.turboUntil;
+  }
+
+  function resetState() {
+    game.running = true;
+    game.finished = false;
+    game.won = false;
+    game.startTime = performance.now();
+    game.lastTime = game.startTime;
+    game.elapsed = 0;
+    game.hearts = 3;
+    game.lane = 1;
+    game.targetLane = 1;
+    game.playerX = LANES[1];
+    game.obstacles = [];
+    game.powerups = [];
+    game.bursts = [];
+    game.particles = [];
+    game.spawnTimer = 0.6;
+    game.waveIndex = 0;
+    game.nextPickupAt = 8 + Math.random() * 4;
+    game.invulnerableUntil = 0;
+    game.shakeUntil = 0;
+    game.railOffset = 0;
+    game.turboUntil = 0;
+  }
+
   function showPopup(type) {
     overlay.classList.remove('hidden');
     if (type === 'intro') {
       popup.innerHTML = `
         <div>
           <h1>Loren-Minispiel</h1>
-          <p>Der Ritter fährt mit der Lore durch die Tastminen.</p>
-          <p>Weiche den stacheligen Diamantformationen aus und halte etwa eine Minute durch.</p>
+          <p>Fahre mit dem Ritter durch die Tastminen und weiche den Kristallen aus.</p>
+          <p>Sammle Blitzsymbole ein, um 5 Sekunden Turbo zu aktivieren und Kristalle zu zerschmettern.</p>
           <p class="small-note">Steuerung: Pfeiltasten, A/D oder Wischen nach links und rechts.</p>
           <div class="mine-popup-actions">
             <button id="startMineGame" class="mine-button" type="button">Starten</button>
@@ -117,8 +160,8 @@
       popup.innerHTML = `
         <div>
           <h2>Geschafft!</h2>
-          <p>Du hast die Fahrt durch die Mine überstanden.</p>
-          <p>Level 1 ist erledigt. Jetzt ist der zweite Punkt in den Tastminen freigeschaltet.</p>
+          <p>Du hast die wilde Lorenfahrt gemeistert.</p>
+          <p>Level 1 in den Tastminen ist abgeschlossen.</p>
           <div class="mine-popup-actions">
             <button id="returnToMine" class="mine-button" type="button">Zurück zu den Tastminen</button>
           </div>
@@ -132,8 +175,8 @@
     popup.innerHTML = `
       <div>
         <h2>Getroffen!</h2>
-        <p>Die Lore wurde zu oft von den Diamantstacheln erwischt.</p>
-        <p class="small-note">Versuche, früher die Spur zu wechseln.</p>
+        <p>Die Lore wurde zu oft von den Kristallen erwischt.</p>
+        <p class="small-note">Versuche früher die Spur zu wechseln oder schnapp dir das Blitzsymbol.</p>
         <div class="mine-popup-actions">
           <button id="retryMineGame" class="mine-button" type="button">Nochmal spielen</button>
           <button id="returnToMine" class="mine-button secondary" type="button">Zurück</button>
@@ -150,22 +193,7 @@
   }
 
   function startGame() {
-    game.running = true;
-    game.finished = false;
-    game.won = false;
-    game.startTime = performance.now();
-    game.lastTime = game.startTime;
-    game.elapsed = 0;
-    game.hearts = 3;
-    game.lane = 1;
-    game.targetLane = 1;
-    game.playerX = LANES[1];
-    game.obstacles = [];
-    game.particles = [];
-    game.spawnTimer = 0.35;
-    game.invulnerableUntil = 0;
-    game.shakeUntil = 0;
-    game.railOffset = 0;
+    resetState();
     updateHud();
     hidePopup();
     startMusic();
@@ -183,7 +211,10 @@
 
   function updateHud() {
     const remaining = Math.max(0, Math.ceil(GAME_DURATION - game.elapsed));
-    timerText.textContent = `Zeit: ${remaining} s`;
+    const turboLeft = Math.max(0, (game.turboUntil - performance.now()) / 1000);
+    timerText.textContent = turboLeft > 0
+      ? `Zeit: ${remaining} s · Turbo: ${turboLeft.toFixed(1)} s`
+      : `Zeit: ${remaining} s`;
     progressFill.style.width = `${Math.min(100, (game.elapsed / GAME_DURATION) * 100)}%`;
     heartsText.textContent = `${game.hearts > 0 ? '♥'.repeat(game.hearts) : ''}${game.hearts < 3 ? '♡'.repeat(3 - game.hearts) : ''}`;
   }
@@ -193,77 +224,125 @@
     game.targetLane = Math.max(0, Math.min(LANES.length - 1, game.targetLane + direction));
   }
 
-  function spawnObstacle() {
-    const freeLaneChance = Math.random();
+  function chooseDistinctLanes(count) {
+    const lanes = [0, 1, 2];
+    for (let i = lanes.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [lanes[i], lanes[j]] = [lanes[j], lanes[i]];
+    }
+    return lanes.slice(0, count);
+  }
+
+  function crystalSpeed() {
+    const base = 0.34 + Math.min(0.16, game.elapsed / 150);
+    return base * (isTurboActive() ? 1.42 : 1);
+  }
+
+  function spawnWave() {
+    let count;
+    if (game.elapsed < 10) count = 1;
+    else if (game.elapsed >= 50) count = 2;
+    else count = game.waveIndex % 2 === 0 ? 1 : 2;
+
+    const lanes = chooseDistinctLanes(count);
+    const speed = crystalSpeed();
+    lanes.forEach((lane, index) => {
+      game.obstacles.push({
+        type: 'crystal',
+        lane,
+        x: LANES[lane],
+        y: -0.2 - index * 0.12,
+        size: 0.092,
+        rotation: (Math.random() - 0.5) * 0.22,
+        spin: (Math.random() - 0.5) * 0.22,
+        speed: speed + Math.random() * 0.025,
+        hit: false,
+      });
+    });
+    game.waveIndex += 1;
+  }
+
+  function maybeSpawnPowerup() {
+    if (game.elapsed < game.nextPickupAt || isTurboActive() || game.powerups.length > 0) return;
     const lane = Math.floor(Math.random() * LANES.length);
-    const size = 0.055 + Math.random() * 0.025;
-    game.obstacles.push({
+    game.powerups.push({
       lane,
       x: LANES[lane],
-      y: -0.12,
-      size,
-      rotation: Math.random() * Math.PI,
-      spin: (Math.random() - 0.5) * 2.8,
-      speed: 0.31 + Math.min(0.18, game.elapsed / 260),
-      hit: false
+      y: -0.18,
+      size: 0.072,
+      rotation: 0,
+      speed: 0.28,
+      bob: Math.random() * Math.PI * 2,
     });
+    game.nextPickupAt = game.elapsed + 8 + Math.random() * 7;
+  }
 
-    if (freeLaneChance > 0.72 && game.elapsed > 10) {
-      const secondLane = (lane + 1 + Math.floor(Math.random() * 2)) % LANES.length;
-      game.obstacles.push({
-        lane: secondLane,
-        x: LANES[secondLane],
-        y: -0.26,
-        size: size * 0.88,
-        rotation: Math.random() * Math.PI,
-        spin: (Math.random() - 0.5) * 2.6,
-        speed: 0.31 + Math.min(0.18, game.elapsed / 260),
-        hit: false
+  function addSpark(x, y, color = '#d9efff', amount = 12) {
+    for (let i = 0; i < amount; i += 1) {
+      game.particles.push({
+        x,
+        y,
+        vx: (Math.random() - 0.5) * 0.42,
+        vy: (Math.random() - 0.5) * 0.36 - 0.03,
+        life: 0.42 + Math.random() * 0.35,
+        age: 0,
+        color,
       });
     }
   }
 
-  function addSpark(x, y, color = '#d9efff') {
-    for (let i = 0; i < 12; i++) {
-      game.particles.push({
-        x,
-        y,
-        vx: (Math.random() - 0.5) * 0.34,
-        vy: (Math.random() - 0.5) * 0.28 - 0.05,
-        life: 0.45 + Math.random() * 0.35,
-        age: 0,
-        color
-      });
-    }
+  function shatterCrystal(obstacle) {
+    obstacle.hit = true;
+    game.bursts.push({
+      x: obstacle.x,
+      y: obstacle.y,
+      age: 0,
+      life: 0.42,
+      rotation: (Math.random() - 0.5) * 0.5,
+      scale: 0.8,
+    });
+    addSpark(obstacle.x, obstacle.y, '#c6b0ff', 18);
   }
 
   function update(dt, now) {
     game.elapsed = (now - game.startTime) / 1000;
-    game.railOffset += dt * 1.7;
+    game.railOffset += dt * (isTurboActive(now) ? 2.6 : 1.65);
 
     const targetX = LANES[game.targetLane];
-    game.playerX += (targetX - game.playerX) * Math.min(1, dt * 10);
+    game.playerX += (targetX - game.playerX) * Math.min(1, dt * 11.5);
     if (Math.abs(game.playerX - targetX) < 0.005) game.lane = game.targetLane;
 
+    const spawnEveryBase = game.elapsed < 10 ? 1.1 : game.elapsed < 50 ? 0.88 : 0.72;
+    const spawnEvery = spawnEveryBase * (isTurboActive(now) ? 0.7 : 1);
     game.spawnTimer -= dt;
-    const spawnEvery = Math.max(0.55, 1.05 - game.elapsed / 120);
     if (game.spawnTimer <= 0) {
-      spawnObstacle();
-      game.spawnTimer = spawnEvery + Math.random() * 0.32;
+      spawnWave();
+      game.spawnTimer = spawnEvery;
     }
+    maybeSpawnPowerup();
 
-    game.obstacles.forEach(obstacle => {
-      obstacle.y += obstacle.speed * dt;
+    game.obstacles.forEach((obstacle) => {
+      obstacle.y += obstacle.speed * dt * (isTurboActive(now) ? 1.15 : 1);
       obstacle.rotation += obstacle.spin * dt;
     });
-    game.obstacles = game.obstacles.filter(obstacle => obstacle.y < 1.12);
+    game.obstacles = game.obstacles.filter((obstacle) => obstacle.y < 1.22 && !obstacle.hit);
 
-    game.particles.forEach(p => {
+    game.powerups.forEach((powerup) => {
+      powerup.y += powerup.speed * dt * (isTurboActive(now) ? 1.1 : 1);
+      powerup.rotation += dt * 1.8;
+      powerup.bob += dt * 5;
+    });
+    game.powerups = game.powerups.filter((powerup) => powerup.y < 1.18);
+
+    game.bursts.forEach((burst) => { burst.age += dt; burst.scale += dt * 0.6; });
+    game.bursts = game.bursts.filter((burst) => burst.age < burst.life);
+
+    game.particles.forEach((p) => {
       p.age += dt;
       p.x += p.vx * dt;
       p.y += p.vy * dt;
     });
-    game.particles = game.particles.filter(p => p.age < p.life);
+    game.particles = game.particles.filter((p) => p.age < p.life);
 
     checkCollisions(now);
     updateHud();
@@ -272,19 +351,35 @@
   }
 
   function checkCollisions(now) {
-    if (now < game.invulnerableUntil) return;
     const playerY = PLAYER_Y;
+
+    for (let i = game.powerups.length - 1; i >= 0; i -= 1) {
+      const powerup = game.powerups[i];
+      const dx = Math.abs(powerup.x - game.playerX);
+      const dy = Math.abs(powerup.y - playerY);
+      if (dx < 0.085 && dy < 0.075) {
+        game.powerups.splice(i, 1);
+        game.turboUntil = now + TURBO_DURATION * 1000;
+        addSpark(game.playerX, playerY, '#5ed2ff', 22);
+      }
+    }
+
     for (const obstacle of game.obstacles) {
       if (obstacle.hit) continue;
       const dx = Math.abs(obstacle.x - game.playerX);
       const dy = Math.abs(obstacle.y - playerY);
-      if (dx < 0.095 && dy < 0.072) {
+      if (dx < 0.1 && dy < 0.082) {
+        if (isTurboActive(now)) {
+          shatterCrystal(obstacle);
+          continue;
+        }
+        if (now < game.invulnerableUntil) return;
         obstacle.hit = true;
         game.hearts -= 1;
         game.invulnerableUntil = now + 1050;
-        game.shakeUntil = now + 380;
-        addSpark(game.playerX, playerY, '#fff4b0');
-        if (navigator.vibrate) navigator.vibrate(80);
+        game.shakeUntil = now + 360;
+        addSpark(game.playerX, playerY, '#fff4b0', 16);
+        if (navigator.vibrate) navigator.vibrate(70);
         if (game.hearts <= 0) endGame(false);
         break;
       }
@@ -303,15 +398,17 @@
   }
 
   function drawBackground(w, h) {
-    if (!drawCoverImage(background, 0, 0, w, h)) {
+    if (!drawCoverImage(images.background, 0, 0, w, h)) {
       const g = ctx.createLinearGradient(0, 0, 0, h);
-      g.addColorStop(0, '#15121b');
-      g.addColorStop(0.44, '#3a2a20');
-      g.addColorStop(1, '#6a4424');
+      g.addColorStop(0, '#132744');
+      g.addColorStop(1, '#07101b');
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, w, h);
     }
-    ctx.fillStyle = 'rgba(0,0,0,0.28)';
+    const vignette = ctx.createLinearGradient(0, 0, 0, h);
+    vignette.addColorStop(0, 'rgba(0,0,0,0.18)');
+    vignette.addColorStop(1, 'rgba(2,5,12,0.38)');
+    ctx.fillStyle = vignette;
     ctx.fillRect(0, 0, w, h);
   }
 
@@ -320,27 +417,27 @@
   }
 
   function drawRails(w, h) {
-    const topY = h * -0.05;
-    const bottomY = h * 1.08;
+    const topY = h * -0.04;
+    const bottomY = h * 1.04;
     const centerBottom = w * 0.5;
     const centerTop = w * 0.5;
 
-    for (let i = 0; i < LANES.length; i++) {
-      const xTop = centerTop + (LANES[i] - 0.5) * w * 0.52;
+    for (let i = 0; i < LANES.length; i += 1) {
+      const xTop = centerTop + (LANES[i] - 0.5) * w * 0.26;
       const xBottom = laneX(i, w);
-      const railWidthTop = w * 0.012;
-      const railWidthBottom = w * 0.025;
+      const railWidthTop = w * 0.008;
+      const railWidthBottom = w * 0.016;
       drawRailLine(xTop - railWidthTop, topY, xBottom - railWidthBottom, bottomY);
       drawRailLine(xTop + railWidthTop, topY, xBottom + railWidthBottom, bottomY);
     }
 
-    for (let t = -0.15 + (game.railOffset % 0.12); t < 1.12; t += 0.12) {
+    for (let t = -0.12 + (game.railOffset % 0.14); t < 1.08; t += 0.14) {
       const y = topY + (bottomY - topY) * t;
-      const spread = w * (0.08 + t * 0.42);
+      const spread = w * (0.055 + t * 0.2);
       ctx.save();
-      ctx.globalAlpha = Math.max(0, Math.min(0.75, t));
-      ctx.strokeStyle = '#5a321c';
-      ctx.lineWidth = Math.max(3, w * 0.012 * t);
+      ctx.globalAlpha = Math.max(0.2, Math.min(0.72, t + 0.12));
+      ctx.strokeStyle = 'rgba(66, 41, 27, 0.95)';
+      ctx.lineWidth = Math.max(2, w * 0.008 + t * 3);
       ctx.beginPath();
       ctx.moveTo(centerBottom - spread, y);
       ctx.lineTo(centerBottom + spread, y);
@@ -351,17 +448,24 @@
 
   function drawRailLine(x1, y1, x2, y2) {
     ctx.save();
-    ctx.strokeStyle = '#2c1c16';
-    ctx.lineWidth = 9;
+    ctx.strokeStyle = '#281a12';
+    ctx.lineWidth = 7;
     ctx.lineCap = 'round';
     ctx.beginPath();
     ctx.moveTo(x1, y1);
     ctx.lineTo(x2, y2);
     ctx.stroke();
-    ctx.strokeStyle = '#9f6730';
-    ctx.lineWidth = 4;
+    ctx.strokeStyle = '#9f6a31';
+    ctx.lineWidth = 3;
     ctx.stroke();
     ctx.restore();
+  }
+
+  function drawSprite(img, x, y, targetH) {
+    if (!img.complete || !img.naturalWidth) return;
+    const ratio = img.naturalWidth / img.naturalHeight;
+    const w = targetH * ratio;
+    ctx.drawImage(img, x - w / 2, y - targetH / 2, w, targetH);
   }
 
   function drawMineCart(w, h, now) {
@@ -369,119 +473,68 @@
     const y = PLAYER_Y * h;
     const invulnerable = now < game.invulnerableUntil;
     const flicker = invulnerable && Math.floor(now / 90) % 2 === 0;
-    const size = Math.min(w, h) * 0.16;
+    const size = Math.min(w, h) * 0.26;
+    const activeImg = isTurboActive(now) ? images.cartTurbo : images.cartNormal;
 
     ctx.save();
     if (flicker) ctx.globalAlpha = 0.58;
-    if (now < game.shakeUntil) ctx.translate((Math.random() - 0.5) * 8, (Math.random() - 0.5) * 6);
-
-    ctx.translate(x, y);
-    ctx.shadowColor = 'rgba(0,0,0,0.45)';
-    ctx.shadowBlur = 16;
-    ctx.shadowOffsetY = 9;
-
-    // Lore
-    ctx.fillStyle = '#5b351d';
-    ctx.strokeStyle = '#1e130d';
-    ctx.lineWidth = 4;
-    roundRect(-size * 0.62, size * 0.08, size * 1.24, size * 0.48, size * 0.11, true, true);
-    ctx.fillStyle = '#8b5526';
-    roundRect(-size * 0.52, size * 0.02, size * 1.04, size * 0.24, size * 0.08, true, false);
-    ctx.fillStyle = '#2c1a12';
-    ctx.beginPath();
-    ctx.arc(-size * 0.42, size * 0.62, size * 0.12, 0, Math.PI * 2);
-    ctx.arc(size * 0.42, size * 0.62, size * 0.12, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Ritter in der Lore
-    if (knight.complete && knight.naturalWidth) {
-      const kH = size * 1.02;
-      const kW = kH * (knight.naturalWidth / knight.naturalHeight);
-      ctx.drawImage(knight, -kW / 2, -size * 0.78, kW, kH);
+    if (now < game.shakeUntil) ctx.translate((Math.random() - 0.5) * 7, (Math.random() - 0.5) * 5);
+    if (isTurboActive(now)) {
+      ctx.shadowColor = 'rgba(55, 195, 255, 0.9)';
+      ctx.shadowBlur = 22;
     } else {
-      ctx.fillStyle = '#d5d5d5';
-      ctx.beginPath();
-      ctx.arc(0, -size * 0.38, size * 0.22, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.shadowColor = 'rgba(0,0,0,0.38)';
+      ctx.shadowBlur = 16;
     }
+    ctx.shadowOffsetY = 10;
 
+    drawSprite(activeImg, x, y, size);
     ctx.restore();
   }
 
-  function roundRect(x, y, w, h, r, fill, stroke) {
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.lineTo(x + w - r, y);
-    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-    ctx.lineTo(x + w, y + h - r);
-    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-    ctx.lineTo(x + r, y + h);
-    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-    ctx.lineTo(x, y + r);
-    ctx.quadraticCurveTo(x, y, x + r, y);
-    if (fill) ctx.fill();
-    if (stroke) ctx.stroke();
-  }
-
   function drawObstacle(obstacle, w, h) {
-    const perspective = 0.45 + obstacle.y * 1.1;
-    const size = obstacle.size * Math.min(w, h) * perspective;
+    const perspective = 0.45 + obstacle.y * 0.92;
+    const size = obstacle.size * Math.min(w, h) * perspective * 1.05;
     const x = obstacle.x * w;
     const y = obstacle.y * h;
 
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate(obstacle.rotation);
-    ctx.shadowColor = 'rgba(75, 227, 255, 0.48)';
-    ctx.shadowBlur = size * 0.18;
-
-    drawCrystal(0, 0, size * 0.95, '#a8f4ff', '#3bc1f0');
-    drawCrystal(-size * 0.56, size * 0.18, size * 0.58, '#f1fbff', '#9e70ff');
-    drawCrystal(size * 0.52, size * 0.24, size * 0.54, '#fff2fe', '#d26cff');
-    drawSpike(-size * 0.15, -size * 0.08, size * 1.3);
-
+    ctx.shadowColor = 'rgba(92, 156, 255, 0.7)';
+    ctx.shadowBlur = size * 0.16;
+    drawSprite(images.crystalIntact, 0, 0, size * 1.34);
     ctx.restore();
   }
 
-  function drawCrystal(x, y, size, light, color) {
+  function drawPowerup(powerup, w, h) {
+    const perspective = 0.48 + powerup.y * 0.9;
+    const size = powerup.size * Math.min(w, h) * perspective;
+    const x = powerup.x * w;
+    const y = powerup.y * h + Math.sin(powerup.bob) * 5;
+
     ctx.save();
     ctx.translate(x, y);
-    ctx.fillStyle = color;
-    ctx.strokeStyle = 'rgba(30, 20, 42, 0.9)';
-    ctx.lineWidth = Math.max(2, size * 0.07);
-    ctx.beginPath();
-    ctx.moveTo(0, -size);
-    ctx.lineTo(size * 0.46, -size * 0.15);
-    ctx.lineTo(size * 0.32, size * 0.76);
-    ctx.lineTo(-size * 0.32, size * 0.76);
-    ctx.lineTo(-size * 0.46, -size * 0.15);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = light;
-    ctx.globalAlpha = 0.72;
-    ctx.beginPath();
-    ctx.moveTo(0, -size * 0.86);
-    ctx.lineTo(size * 0.17, -size * 0.08);
-    ctx.lineTo(0, size * 0.58);
-    ctx.lineTo(-size * 0.08, -size * 0.04);
-    ctx.closePath();
-    ctx.fill();
+    ctx.rotate(Math.sin(powerup.rotation) * 0.08);
+    ctx.shadowColor = 'rgba(55, 195, 255, 0.82)';
+    ctx.shadowBlur = size * 0.2;
+    drawSprite(images.turboIcon, 0, 0, size * 1.25);
     ctx.restore();
   }
 
-  function drawSpike(x, y, size) {
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.strokeStyle = 'rgba(20, 18, 22, 0.78)';
-    ctx.lineWidth = Math.max(3, size * 0.05);
-    for (let i = -2; i <= 2; i++) {
-      ctx.beginPath();
-      ctx.moveTo(i * size * 0.16, size * 0.36);
-      ctx.lineTo((i + 0.2) * size * 0.13, -size * 0.42);
-      ctx.stroke();
-    }
-    ctx.restore();
+  function drawBursts(w, h) {
+    game.bursts.forEach((burst) => {
+      const alpha = 1 - burst.age / burst.life;
+      const size = Math.min(w, h) * 0.17 * burst.scale;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.translate(burst.x * w, burst.y * h);
+      ctx.rotate(burst.rotation + burst.age * 2);
+      ctx.shadowColor = 'rgba(200, 160, 255, 0.8)';
+      ctx.shadowBlur = 18;
+      drawSprite(images.crystalBroken, 0, 0, size);
+      ctx.restore();
+    });
   }
 
   function drawParticles(w, h) {
@@ -491,10 +544,26 @@
       ctx.globalAlpha = alpha;
       ctx.fillStyle = p.color;
       ctx.beginPath();
-      ctx.arc(p.x * w, p.y * h, Math.max(2, w * 0.008 * alpha), 0, Math.PI * 2);
+      ctx.arc(p.x * w, p.y * h, Math.max(2, w * 0.006 * alpha), 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
     }
+  }
+
+  function drawTurboAura(w, h, now) {
+    if (!isTurboActive(now)) return;
+    const x = game.playerX * w;
+    const y = PLAYER_Y * h;
+    ctx.save();
+    ctx.globalAlpha = 0.18 + Math.sin(now / 120) * 0.04;
+    const g = ctx.createRadialGradient(x, y, 10, x, y, Math.min(w, h) * 0.16);
+    g.addColorStop(0, 'rgba(93, 212, 255, 0.85)');
+    g.addColorStop(1, 'rgba(93, 212, 255, 0)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.ellipse(x, y, Math.min(w, h) * 0.17, Math.min(w, h) * 0.1, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
   }
 
   function draw() {
@@ -504,8 +573,11 @@
     ctx.clearRect(0, 0, w, h);
     drawBackground(w, h);
     drawRails(w, h);
-    game.obstacles.forEach(obstacle => drawObstacle(obstacle, w, h));
+    game.obstacles.forEach((obstacle) => drawObstacle(obstacle, w, h));
+    game.powerups.forEach((powerup) => drawPowerup(powerup, w, h));
+    drawTurboAura(w, h, now);
     drawMineCart(w, h, now);
+    drawBursts(w, h);
     drawParticles(w, h);
   }
 
@@ -522,11 +594,12 @@
   }
 
   function handleKey(event) {
-    if (event.key === 'ArrowLeft' || event.key.toLowerCase() === 'a') {
+    const key = event.key.toLowerCase();
+    if (event.key === 'ArrowLeft' || key === 'a') {
       event.preventDefault();
       setLane(-1);
     }
-    if (event.key === 'ArrowRight' || event.key.toLowerCase() === 'd') {
+    if (event.key === 'ArrowRight' || key === 'd') {
       event.preventDefault();
       setLane(1);
     }
