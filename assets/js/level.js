@@ -7,7 +7,7 @@ const levelPopupTitle = document.getElementById('levelPopupTitle');
 const levelPopupText = document.getElementById('levelPopupText');
 const levelPopupClose = document.getElementById('levelPopupClose');
 const levelMusic = document.getElementById('levelMusic');
-const levelMusicLoop = window.createCrossfadeLoop ? window.createCrossfadeLoop(levelMusic, { fadeSeconds: 0.18 }) : null;
+const levelMusicLoop = window.createCrossfadeLoop ? window.createCrossfadeLoop(levelMusic, { fadeSeconds: 0.06 }) : null;
 const backButton = document.querySelector('.level-back-button');
 
 const STORAGE_VOLUME = 'sinnesmagie-volume';

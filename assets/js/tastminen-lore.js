@@ -14,11 +14,9 @@
   const progressFill = document.getElementById('mineProgressFill');
   const heartsText = document.getElementById('mineHearts');
   const musicElement = document.getElementById('mineMusic');
-  const driveElement = document.getElementById('mineDrive');
   const turboSound = document.getElementById('mineTurboSound');
   const glassBreakSound = document.getElementById('mineGlassBreak');
-  const musicLoop = window.createCrossfadeLoop ? window.createCrossfadeLoop(musicElement, { fadeSeconds: 0.18 }) : null;
-  const driveLoop = window.createCrossfadeLoop ? window.createCrossfadeLoop(driveElement, { fadeSeconds: 0.10 }) : null;
+  const musicLoop = window.createCrossfadeLoop ? window.createCrossfadeLoop(musicElement, { fadeSeconds: 0.06 }) : null;
 
   const images = {
     background: new Image(),
@@ -100,12 +98,10 @@
 
   function startMusic() {
     startLoopAudio(musicElement, musicLoop, 0.72);
-    startLoopAudio(driveElement, driveLoop, 0.42);
   }
 
   function pauseMusic() {
     pauseLoopAudio(musicElement, musicLoop);
-    pauseLoopAudio(driveElement, driveLoop);
     if (turboSound) {
       turboSound.pause();
       turboSound.currentTime = 0;
@@ -315,15 +311,14 @@
   }
 
   function crystalSpeed() {
-    const base = 0.34 + Math.min(0.16, game.elapsed / 150);
-    return base * (isTurboActive() ? 1.42 : 1);
+    // Einheitliche Geschwindigkeit für alle Kristalle; Turbo erhöht nur global leicht das Tempo.
+    return isTurboActive() ? 0.42 : 0.32;
   }
 
   function spawnWave() {
-    let count;
-    if (game.elapsed < 10) count = 1;
-    else if (game.elapsed >= 50) count = 2;
-    else count = game.waveIndex % 2 === 0 ? 1 : 2;
+    let count = 1;
+    if (game.elapsed >= 50) count = game.waveIndex % 2 === 0 ? 1 : 2;
+    else if (game.elapsed >= 20) count = game.waveIndex % 4 === 0 ? 2 : 1;
 
     const lanes = chooseDistinctLanes(count);
     const speed = crystalSpeed();
@@ -336,7 +331,7 @@
         size: 0.092,
         rotation: (Math.random() - 0.5) * 0.22,
         spin: (Math.random() - 0.5) * 0.22,
-        speed: speed + Math.random() * 0.025,
+        speed,
         hit: false,
       });
     });
@@ -394,8 +389,8 @@
     game.playerX += (targetX - game.playerX) * Math.min(1, dt * 11.5);
     if (Math.abs(game.playerX - targetX) < 0.005) game.lane = game.targetLane;
 
-    const spawnEveryBase = game.elapsed < 10 ? 1.1 : game.elapsed < 50 ? 0.88 : 0.72;
-    const spawnEvery = spawnEveryBase * (isTurboActive(now) ? 0.7 : 1);
+    const spawnEveryBase = game.elapsed < 20 ? 1.45 : game.elapsed < 50 ? 1.28 : 1.12;
+    const spawnEvery = spawnEveryBase;
     game.spawnTimer -= dt;
     if (game.spawnTimer <= 0) {
       spawnWave();
@@ -404,7 +399,7 @@
     maybeSpawnPowerup();
 
     game.obstacles.forEach((obstacle) => {
-      obstacle.y += obstacle.speed * dt * (isTurboActive(now) ? 1.15 : 1);
+      obstacle.y += obstacle.speed * dt;
       syncObjectToRail(obstacle);
       obstacle.rotation += obstacle.spin * dt;
     });
