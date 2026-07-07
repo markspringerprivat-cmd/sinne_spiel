@@ -14,10 +14,12 @@
   const timerEl = document.getElementById('sliceTimer');
   const badEl = document.getElementById('sliceBad');
   const progressFill = document.getElementById('sliceProgressFill');
-  const musicElement = document.getElementById('sliceMusic');
+  const musicElement = null; // Hintergrundmusik in diesem Minispiel bewusst deaktiviert.
   const cutSoundElement = document.getElementById('sliceCutSound');
+  const slimeSoundElement = document.getElementById('sliceSlimeSound');
   const cutSoundPool = [];
-  const musicLoop = window.createCrossfadeLoop ? window.createCrossfadeLoop(musicElement, { fadeSeconds: 0.08 }) : null;
+  const slimeSoundPool = [];
+  const musicLoop = null;
 
   const background = new Image();
   background.src = '../assets/images/battle-backgrounds/flammenkueche.png';
@@ -62,42 +64,47 @@
   }
 
   function startMusic() {
-    const volume = currentVolume() * 0.65;
-    if (musicLoop) {
-      musicLoop.setVolume(volume);
-      musicLoop.play();
-    } else if (musicElement) {
-      musicElement.volume = volume;
-      musicElement.loop = true;
-      musicElement.play().catch(() => {});
-    }
+    // Keine Hintergrundmusik: reduziert Audiolast und hält das Fruit-Ninja-Minispiel stabiler.
   }
 
   function pauseMusic() {
-    if (musicLoop) musicLoop.pause();
-    else if (musicElement) musicElement.pause();
+    // Keine Hintergrundmusik aktiv.
   }
 
-  function prepareCutSounds() {
-    if (!cutSoundElement || cutSoundPool.length) return;
-    for (let i = 0; i < 4; i += 1) {
-      const audio = i === 0 ? cutSoundElement : cutSoundElement.cloneNode(true);
-      audio.volume = currentVolume() * 0.72;
+  function prepareAudioPool(sourceElement, pool, size = 3, volumeFactor = 0.72) {
+    if (!sourceElement || pool.length) return;
+    for (let i = 0; i < size; i += 1) {
+      const audio = i === 0 ? sourceElement : sourceElement.cloneNode(true);
+      audio.volume = currentVolume() * volumeFactor;
       audio.preload = 'auto';
-      cutSoundPool.push(audio);
+      pool.push(audio);
     }
   }
 
-  function playCutSound() {
-    prepareCutSounds();
-    const volume = currentVolume() * 0.72;
-    const sound = cutSoundPool.find((audio) => audio.paused || audio.ended) || cutSoundPool[0];
+  function playPooledSound(pool, volumeFactor = 0.72) {
+    const volume = currentVolume() * volumeFactor;
+    const sound = pool.find((audio) => audio.paused || audio.ended) || pool[0];
     if (!sound) return;
     try {
       sound.volume = volume;
       sound.currentTime = 0;
       sound.play().catch(() => {});
     } catch {}
+  }
+
+  function prepareCutSounds() {
+    prepareAudioPool(cutSoundElement, cutSoundPool, 4, 0.7);
+    prepareAudioPool(slimeSoundElement, slimeSoundPool, 3, 0.78);
+  }
+
+  function playCutSound() {
+    prepareCutSounds();
+    playPooledSound(cutSoundPool, 0.7);
+  }
+
+  function playSlimeSound() {
+    prepareCutSounds();
+    playPooledSound(slimeSoundPool, 0.78);
   }
 
   function readProgress() {
@@ -248,19 +255,20 @@
     const w = window.innerWidth;
     const h = window.innerHeight;
     const elapsedRatio = Math.min(1, game.elapsed / GAME_DURATION);
-    const isBad = Math.random() < (0.15 + elapsedRatio * 0.04);
+    const isBad = Math.random() < (0.24 + elapsedRatio * 0.08);
     const template = isBad
       ? badItems[Math.floor(Math.random() * badItems.length)]
       : goodItems[Math.floor(Math.random() * goodItems.length)];
 
     const fromLeft = Math.random() < 0.5;
     const startX = fromLeft ? randomBetween(-90, w * 0.22) : randomBetween(w * 0.78, w + 90);
-    const startY = h + randomBetween(55, 150);
-    const targetX = randomBetween(w * 0.18, w * 0.82);
-    const timeToApex = randomBetween(0.78, 1.05);
-    const vx = (targetX - startX) / (timeToApex * 1.15);
-    const vy = -randomBetween(h * 0.82, h * 1.0) * (1 + elapsedRatio * 0.04);
-    const gravity = h * randomBetween(0.84, 0.98);
+    const startY = h + randomBetween(60, 130);
+    const targetX = randomBetween(w * 0.16, w * 0.84);
+    const apexY = randomBetween(h * 0.11, h * 0.43);
+    const timeToApex = randomBetween(0.95, 1.22);
+    const vx = (targetX - startX) / timeToApex;
+    const vy = (apexY - startY) / timeToApex;
+    const gravity = Math.abs(vy) / timeToApex;
     const minSide = Math.min(w, h);
     const radius = isBad
       ? minSide * 0.095
@@ -330,6 +338,7 @@
     playCutSound();
 
     if (obj.isBad) {
+      playSlimeSound();
       game.badHits += 1;
       loseLife(BAD_DAMAGE, 'Ungenießbar erwischt! -1 Leben', '#98ec65');
       if (navigator.vibrate) navigator.vibrate(70);
@@ -357,14 +366,14 @@
   function update(dt, now) {
     game.elapsed = (now - game.startTime) / 1000;
 
-    const spawnEvery = Math.max(0.86, 1.18 - game.elapsed / 150);
+    const spawnEvery = Math.max(0.9, 1.2 - game.elapsed / 170);
     game.spawnTimer -= dt;
     if (game.spawnTimer <= 0) {
-      createObject();
-      if (game.elapsed > 28 && Math.random() < 0.13) {
-        setTimeout(() => { if (game.running) createObject(); }, 170);
+      if (game.objects.length < 9) createObject();
+      if (game.elapsed > 28 && game.objects.length < 8 && Math.random() < 0.10) {
+        setTimeout(() => { if (game.running && game.objects.length < 9) createObject(); }, 170);
       }
-      game.spawnTimer = spawnEvery + randomBetween(0.02, 0.25);
+      game.spawnTimer = spawnEvery + randomBetween(0.04, 0.26);
     }
 
     const h = window.innerHeight;
