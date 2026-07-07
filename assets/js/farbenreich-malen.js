@@ -1,0 +1,513 @@
+(() => {
+  const STORAGE_VOLUME = 'sinnesmagie-volume';
+  const STORAGE_LEVEL_PROGRESS = 'sinnesmagie-level-progress';
+  const MEMORIZE_SECONDS = 5;
+  const DRAW_SECONDS = 20;
+  const TOTAL_ROUNDS = 4;
+  const HIT_RADIUS = 26;
+
+  const COLOR_VALUES = {
+    blue: '#2388ff',
+    red: '#ff3d45',
+    yellow: '#ffd63b',
+    green: '#31c95b'
+  };
+
+  const canvas = document.getElementById('paintCanvas');
+  const ctx = canvas.getContext('2d');
+  const overlay = document.getElementById('paintOverlay');
+  const popup = document.getElementById('paintPopup');
+  const roundText = document.getElementById('paintRound');
+  const timerText = document.getElementById('paintTimer');
+  const livesText = document.getElementById('paintLives');
+  const scoreText = document.getElementById('paintScore');
+  const statusText = document.getElementById('paintStatus');
+  const clearButton = document.getElementById('paintClear');
+  const colorButtons = [...document.querySelectorAll('.paint-color')];
+  const musicElement = document.getElementById('paintMusic');
+  const musicLoop = window.createCrossfadeLoop ? window.createCrossfadeLoop(musicElement, { fadeSeconds: 0.025 }) : null;
+
+  const patterns = [
+    {
+      name: 'Buntes Haus',
+      lines: [
+        { color: 'red', points: [[0.27,0.52],[0.5,0.3],[0.73,0.52],[0.27,0.52]] },
+        { color: 'blue', points: [[0.32,0.52],[0.32,0.75],[0.68,0.75],[0.68,0.52],[0.32,0.52]] },
+        { color: 'yellow', points: [[0.45,0.75],[0.45,0.62],[0.55,0.62],[0.55,0.75]] },
+        { color: 'green', points: [[0.36,0.58],[0.43,0.58],[0.43,0.65],[0.36,0.65],[0.36,0.58],[0.57,0.58],[0.64,0.58],[0.64,0.65],[0.57,0.65],[0.57,0.58]] }
+      ]
+    },
+    {
+      name: 'Zauberbaum',
+      lines: [
+        { color: 'green', points: [[0.5,0.2],[0.33,0.42],[0.42,0.42],[0.28,0.58],[0.44,0.58],[0.36,0.72],[0.64,0.72],[0.56,0.58],[0.72,0.58],[0.58,0.42],[0.67,0.42],[0.5,0.2]] },
+        { color: 'red', points: [[0.46,0.72],[0.46,0.84],[0.54,0.84],[0.54,0.72]] },
+        { color: 'yellow', points: [[0.41,0.39],[0.44,0.36],[0.47,0.39],[0.44,0.42],[0.41,0.39],[0.56,0.52],[0.59,0.49],[0.62,0.52],[0.59,0.55],[0.56,0.52]] },
+        { color: 'blue', points: [[0.5,0.2],[0.5,0.12],[0.54,0.16],[0.5,0.2],[0.46,0.16],[0.5,0.12]] }
+      ]
+    },
+    {
+      name: 'Regenbogen-Blume',
+      lines: [
+        { color: 'yellow', points: [[0.5,0.45],[0.54,0.49],[0.5,0.53],[0.46,0.49],[0.5,0.45]] },
+        { color: 'red', points: [[0.5,0.45],[0.5,0.28],[0.57,0.34],[0.5,0.45],[0.64,0.44],[0.58,0.52],[0.5,0.45]] },
+        { color: 'blue', points: [[0.5,0.45],[0.36,0.44],[0.42,0.52],[0.5,0.45],[0.5,0.62],[0.43,0.56],[0.5,0.45]] },
+        { color: 'green', points: [[0.5,0.53],[0.5,0.82],[0.42,0.72],[0.5,0.67],[0.58,0.72],[0.5,0.82]] }
+      ]
+    },
+    {
+      name: 'Farbenstern',
+      lines: [
+        { color: 'yellow', points: [[0.5,0.18],[0.55,0.38],[0.76,0.38],[0.59,0.51],[0.65,0.73],[0.5,0.6],[0.35,0.73],[0.41,0.51],[0.24,0.38],[0.45,0.38],[0.5,0.18]] },
+        { color: 'red', points: [[0.5,0.27],[0.56,0.47],[0.5,0.55],[0.44,0.47],[0.5,0.27]] },
+        { color: 'blue', points: [[0.3,0.82],[0.7,0.82],[0.66,0.88],[0.34,0.88],[0.3,0.82]] },
+        { color: 'green', points: [[0.2,0.2],[0.28,0.2],[0.28,0.28],[0.2,0.28],[0.2,0.2],[0.72,0.2],[0.8,0.2],[0.8,0.28],[0.72,0.28],[0.72,0.2]] }
+      ]
+    }
+  ];
+
+  const game = {
+    phase: 'idle',
+    round: 0,
+    points: 0,
+    lives: 3,
+    selectedColor: 'blue',
+    phaseStartedAt: 0,
+    timeLeft: MEMORIZE_SECONDS,
+    strokes: [],
+    currentStroke: null,
+    targetSamples: [],
+    resultOverlay: null,
+    timerFrame: 0,
+    lastHudTime: 0
+  };
+
+  function currentVolume() {
+    const saved = Number(localStorage.getItem(STORAGE_VOLUME));
+    return Number.isFinite(saved) ? Math.min(1, Math.max(0, saved)) : 0.5;
+  }
+
+  function startMusic() {
+    if (!musicElement) return;
+    const volume = currentVolume() * 0.65;
+    if (musicLoop) {
+      musicLoop.setVolume(volume);
+      musicLoop.play();
+    } else {
+      musicElement.volume = volume;
+      musicElement.loop = true;
+      musicElement.play().catch(() => {});
+    }
+  }
+
+  function pauseMusic() {
+    if (musicLoop) musicLoop.pause();
+    else if (musicElement) musicElement.pause();
+  }
+
+  function readProgress() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_LEVEL_PROGRESS) || '{}');
+      return saved && typeof saved === 'object' ? saved : {};
+    } catch {
+      return {};
+    }
+  }
+
+  function completeColorLevelOne() {
+    const progress = readProgress();
+    progress.farbenreich = {
+      level1Completed: true,
+      level2Completed: !!progress.farbenreich?.level2Completed
+    };
+    localStorage.setItem(STORAGE_LEVEL_PROGRESS, JSON.stringify(progress));
+  }
+
+  function resizeCanvas() {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.35);
+    canvas.width = Math.max(320, Math.round(rect.width * dpr));
+    canvas.height = Math.max(320, Math.round(rect.height * dpr));
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    draw();
+  }
+
+  function boardSize() {
+    return { w: canvas.clientWidth, h: canvas.clientHeight };
+  }
+
+  function showPopup(type, data = {}) {
+    overlay.classList.remove('hidden');
+    if (type === 'intro') {
+      popup.innerHTML = `
+        <div>
+          <h1>Farben-Memory</h1>
+          <p>Du siehst 5 Sekunden lang ein farbiges Muster.</p>
+          <p>Danach zeichnest du es mit Blau, Rot, Gelb und Grün möglichst genau nach.</p>
+          <p>Ab 50 Prozent gibt es einen Punkt, darunter verlierst du ein Leben.</p>
+          <div class="paint-actions">
+            <button id="startPaintGame" class="paint-button" type="button">Starten</button>
+            <button id="leavePaintGame" class="paint-button secondary" type="button">Zurück</button>
+          </div>
+        </div>`;
+      document.getElementById('startPaintGame').addEventListener('click', startGame);
+      document.getElementById('leavePaintGame').addEventListener('click', () => { window.location.href = 'farbenreich.html'; });
+      return;
+    }
+
+    if (type === 'round') {
+      popup.innerHTML = `
+        <div>
+          <h2>Runde ${data.round} Ergebnis</h2>
+          <p>Genauigkeit: <strong>${data.percent}%</strong></p>
+          <p>${data.success ? 'Gut getroffen. Du bekommst einen Punkt.' : 'Unter 50 Prozent. Du verlierst ein Leben.'}</p>
+          <div class="paint-actions">
+            <button id="nextPaintRound" class="paint-button" type="button">Weiter</button>
+          </div>
+        </div>`;
+      document.getElementById('nextPaintRound').addEventListener('click', () => {
+        overlay.classList.add('hidden');
+        if (game.lives <= 0 || game.round >= TOTAL_ROUNDS) finishGame();
+        else beginRound();
+      });
+      return;
+    }
+
+    if (type === 'won') {
+      popup.innerHTML = `
+        <div>
+          <h2>Geschafft!</h2>
+          <p>Du hast ${game.points} von ${TOTAL_ROUNDS} Mustern ausreichend genau nachgezeichnet.</p>
+          <p>Level 1 im Farbenreich ist abgeschlossen.</p>
+          <div class="paint-actions">
+            <button id="returnColorMap" class="paint-button" type="button">Zurück zum Farbenreich</button>
+          </div>
+        </div>`;
+      document.getElementById('returnColorMap').addEventListener('click', () => { window.location.href = 'farbenreich.html'; });
+      return;
+    }
+
+    popup.innerHTML = `
+      <div>
+        <h2>Verloren</h2>
+        <p>Du hast alle Leben verloren.</p>
+        <p>Versuche, zuerst die Farben grob an die richtigen Stellen zu setzen.</p>
+        <div class="paint-actions">
+          <button id="retryPaintGame" class="paint-button" type="button">Nochmal spielen</button>
+          <button id="returnColorMap" class="paint-button secondary" type="button">Zurück</button>
+        </div>
+      </div>`;
+    document.getElementById('retryPaintGame').addEventListener('click', startGame);
+    document.getElementById('returnColorMap').addEventListener('click', () => { window.location.href = 'farbenreich.html'; });
+  }
+
+  function updateHud(force = false) {
+    const now = performance.now();
+    if (!force && now - game.lastHudTime < 120) return;
+    game.lastHudTime = now;
+    roundText.textContent = `Runde ${Math.min(game.round + 1, TOTAL_ROUNDS)} / ${TOTAL_ROUNDS}`;
+    const label = game.phase === 'memorize' ? 'Merken' : game.phase === 'draw' ? 'Zeichnen' : 'Zeit';
+    timerText.textContent = `${label}: ${Math.max(0, Math.ceil(game.timeLeft))} s`;
+    livesText.textContent = `${game.lives > 0 ? '♥'.repeat(game.lives) : ''}${game.lives < 3 ? '♡'.repeat(3 - game.lives) : ''}`;
+    scoreText.textContent = `Punkte: ${game.points}`;
+  }
+
+  function startGame() {
+    overlay.classList.add('hidden');
+    game.phase = 'idle';
+    game.round = 0;
+    game.points = 0;
+    game.lives = 3;
+    game.strokes = [];
+    game.currentStroke = null;
+    game.resultOverlay = null;
+    startMusic();
+    beginRound();
+  }
+
+  function beginRound() {
+    game.phase = 'memorize';
+    game.phaseStartedAt = performance.now();
+    game.timeLeft = MEMORIZE_SECONDS;
+    game.strokes = [];
+    game.currentStroke = null;
+    game.resultOverlay = null;
+    game.targetSamples = buildTargetSamples(patterns[game.round]);
+    statusText.textContent = `Merke dir das Muster: ${patterns[game.round].name}`;
+    updateHud(true);
+    cancelAnimationFrame(game.timerFrame);
+    game.timerFrame = requestAnimationFrame(tick);
+    draw();
+  }
+
+  function beginDrawingPhase() {
+    game.phase = 'draw';
+    game.phaseStartedAt = performance.now();
+    game.timeLeft = DRAW_SECONDS;
+    statusText.textContent = 'Zeichne das Muster jetzt aus dem Gedächtnis nach.';
+    updateHud(true);
+    draw();
+  }
+
+  function tick(now) {
+    if (game.phase !== 'memorize' && game.phase !== 'draw') return;
+    const limit = game.phase === 'memorize' ? MEMORIZE_SECONDS : DRAW_SECONDS;
+    game.timeLeft = limit - (now - game.phaseStartedAt) / 1000;
+    if (game.timeLeft <= 0) {
+      if (game.phase === 'memorize') beginDrawingPhase();
+      else evaluateRound();
+      return;
+    }
+    updateHud();
+    game.timerFrame = requestAnimationFrame(tick);
+  }
+
+  function finishGame() {
+    pauseMusic();
+    game.phase = 'finished';
+    if (game.lives > 0) {
+      completeColorLevelOne();
+      showPopup('won');
+    } else {
+      showPopup('lost');
+    }
+  }
+
+  function evaluateRound() {
+    game.phase = 'result';
+    cancelAnimationFrame(game.timerFrame);
+    const percent = scoreRound();
+    const success = percent >= 50;
+    if (success) game.points += 1;
+    else game.lives -= 1;
+    game.resultOverlay = { percent, success };
+    statusText.textContent = success ? `Runde geschafft: ${percent}%` : `Zu ungenau: ${percent}%`;
+    updateHud(true);
+    draw();
+    game.round += 1;
+    setTimeout(() => showPopup('round', { round: game.round, percent, success }), 650);
+  }
+
+  function sampleLine(a, b, color, out) {
+    const { w, h } = boardSize();
+    const x1 = a[0] * w;
+    const y1 = a[1] * h;
+    const x2 = b[0] * w;
+    const y2 = b[1] * h;
+    const dist = Math.hypot(x2 - x1, y2 - y1);
+    const steps = Math.max(5, Math.ceil(dist / 12));
+    for (let i = 0; i <= steps; i += 1) {
+      const t = i / steps;
+      out.push({ x: x1 + (x2 - x1) * t, y: y1 + (y2 - y1) * t, color });
+    }
+  }
+
+  function buildTargetSamples(pattern) {
+    const samples = [];
+    pattern.lines.forEach(line => {
+      for (let i = 1; i < line.points.length; i += 1) {
+        sampleLine(line.points[i - 1], line.points[i], line.color, samples);
+      }
+    });
+    return samples;
+  }
+
+  function userSamples() {
+    const samples = [];
+    game.strokes.forEach(stroke => {
+      for (let i = 0; i < stroke.points.length; i += 1) {
+        const p = stroke.points[i];
+        samples.push({ x: p.x, y: p.y, color: stroke.color });
+      }
+    });
+    return samples;
+  }
+
+  function scoreRound() {
+    const user = userSamples();
+    if (!user.length || !game.targetSamples.length) return 0;
+    let matched = 0;
+    let closeWrongColor = 0;
+
+    game.targetSamples.forEach(target => {
+      let bestSame = Infinity;
+      let bestAny = Infinity;
+      for (const p of user) {
+        const d = Math.hypot(p.x - target.x, p.y - target.y);
+        if (d < bestAny) bestAny = d;
+        if (p.color === target.color && d < bestSame) bestSame = d;
+      }
+      if (bestSame <= HIT_RADIUS) matched += Math.max(0.35, 1 - bestSame / HIT_RADIUS * 0.65);
+      else if (bestAny <= HIT_RADIUS) closeWrongColor += 0.25;
+    });
+
+    const base = (matched / game.targetSamples.length) * 100;
+    const colorNearBonus = Math.min(8, (closeWrongColor / game.targetSamples.length) * 100);
+    return Math.max(0, Math.min(100, Math.round(base + colorNearBonus)));
+  }
+
+  function canvasPoint(event) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: Math.max(0, Math.min(rect.width, event.clientX - rect.left)),
+      y: Math.max(0, Math.min(rect.height, event.clientY - rect.top))
+    };
+  }
+
+  function startStroke(event) {
+    if (game.phase !== 'draw') return;
+    event.preventDefault();
+    canvas.setPointerCapture?.(event.pointerId);
+    const p = canvasPoint(event);
+    game.currentStroke = { color: game.selectedColor, points: [p] };
+    game.strokes.push(game.currentStroke);
+    draw();
+  }
+
+  function moveStroke(event) {
+    if (game.phase !== 'draw' || !game.currentStroke) return;
+    event.preventDefault();
+    const p = canvasPoint(event);
+    const last = game.currentStroke.points[game.currentStroke.points.length - 1];
+    if (!last || Math.hypot(last.x - p.x, last.y - p.y) >= 3) {
+      game.currentStroke.points.push(p);
+      draw();
+    }
+  }
+
+  function endStroke(event) {
+    if (event) canvas.releasePointerCapture?.(event.pointerId);
+    game.currentStroke = null;
+  }
+
+  function setColor(color) {
+    if (!COLOR_VALUES[color]) return;
+    game.selectedColor = color;
+    colorButtons.forEach(button => button.classList.toggle('active', button.dataset.color === color));
+  }
+
+  function clearLastStroke() {
+    if (game.phase !== 'draw') return;
+    game.strokes.pop();
+    game.currentStroke = null;
+    draw();
+  }
+
+  function drawSoftPaper(w, h) {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = 'rgba(255, 250, 232, 0.92)';
+    ctx.fillRect(0, 0, w, h);
+    ctx.save();
+    ctx.globalAlpha = 0.12;
+    for (let x = 40; x < w; x += 80) {
+      ctx.strokeStyle = '#f59d35';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x + 80, h);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawPattern(pattern, alpha = 1, dashed = false) {
+    const { w, h } = boardSize();
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = Math.max(10, Math.min(w, h) * 0.025);
+    if (dashed) ctx.setLineDash([12, 14]);
+
+    pattern.lines.forEach(line => {
+      ctx.strokeStyle = COLOR_VALUES[line.color];
+      ctx.beginPath();
+      line.points.forEach((p, index) => {
+        const x = p[0] * w;
+        const y = p[1] * h;
+        if (index === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    });
+    ctx.restore();
+  }
+
+  function drawUserStrokes() {
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = Math.max(12, Math.min(canvas.clientWidth, canvas.clientHeight) * 0.028);
+    game.strokes.forEach(stroke => {
+      if (!stroke.points.length) return;
+      ctx.strokeStyle = COLOR_VALUES[stroke.color];
+      ctx.beginPath();
+      stroke.points.forEach((p, index) => {
+        if (index === 0) ctx.moveTo(p.x, p.y);
+        else ctx.lineTo(p.x, p.y);
+      });
+      ctx.stroke();
+    });
+    ctx.restore();
+  }
+
+  function drawResultOverlay() {
+    if (!game.resultOverlay) return;
+    drawPattern(patterns[Math.max(0, game.round)], 0.28, true);
+  }
+
+  function draw() {
+    const { w, h } = boardSize();
+    if (!w || !h) return;
+    drawSoftPaper(w, h);
+    if (game.phase === 'memorize') drawPattern(patterns[game.round], 1, false);
+    if (game.phase === 'draw') {
+      ctx.save();
+      ctx.globalAlpha = 0.14;
+      ctx.fillStyle = '#5c391a';
+      ctx.font = `900 ${Math.max(18, Math.min(w, h) * 0.038)}px system-ui, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText('Zeichne das gemerkte Muster hier nach', w / 2, h * 0.5);
+      ctx.restore();
+    }
+    drawUserStrokes();
+    drawResultOverlay();
+  }
+
+  colorButtons.forEach(button => {
+    button.addEventListener('pointerdown', event => {
+      event.preventDefault();
+      setColor(button.dataset.color);
+    });
+    button.addEventListener('click', () => setColor(button.dataset.color));
+  });
+
+  clearButton.addEventListener('pointerdown', event => {
+    event.preventDefault();
+    clearLastStroke();
+  });
+
+  canvas.addEventListener('pointerdown', startStroke);
+  canvas.addEventListener('pointermove', moveStroke);
+  canvas.addEventListener('pointerup', endStroke);
+  canvas.addEventListener('pointercancel', endStroke);
+  canvas.addEventListener('pointerleave', endStroke);
+
+  window.addEventListener('keydown', event => {
+    const key = event.key.toLowerCase();
+    const map = { '1': 'blue', '2': 'red', '3': 'yellow', '4': 'green', b: 'blue', r: 'red', g: 'green', y: 'yellow' };
+    if (map[key]) setColor(map[key]);
+    if (key === 'backspace' || key === 'z') clearLastStroke();
+  });
+
+  window.addEventListener('resize', resizeCanvas);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) pauseMusic();
+    else if (game.phase !== 'idle' && game.phase !== 'finished') startMusic();
+  });
+
+  resizeCanvas();
+  updateHud(true);
+  draw();
+  showPopup('intro');
+})();
