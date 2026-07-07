@@ -23,45 +23,49 @@
   const scoreText = document.getElementById('paintScore');
   const statusText = document.getElementById('paintStatus');
   const clearButton = document.getElementById('paintClear');
+  const finishButton = document.getElementById('paintFinish');
   const colorButtons = [...document.querySelectorAll('.paint-color')];
   const musicElement = document.getElementById('paintMusic');
   const musicLoop = window.createCrossfadeLoop ? window.createCrossfadeLoop(musicElement, { fadeSeconds: 0.025 }) : null;
 
+  function circlePoints(cx, cy, r, steps = 36) {
+    const points = [];
+    for (let i = 0; i <= steps; i += 1) {
+      const angle = (i / steps) * Math.PI * 2 - Math.PI / 2;
+      points.push([cx + Math.cos(angle) * r, cy + Math.sin(angle) * r]);
+    }
+    return points;
+  }
+
   const patterns = [
     {
-      name: 'Buntes Haus',
+      name: 'Viereck',
       lines: [
-        { color: 'red', points: [[0.27,0.52],[0.5,0.3],[0.73,0.52],[0.27,0.52]] },
-        { color: 'blue', points: [[0.32,0.52],[0.32,0.75],[0.68,0.75],[0.68,0.52],[0.32,0.52]] },
-        { color: 'yellow', points: [[0.45,0.75],[0.45,0.62],[0.55,0.62],[0.55,0.75]] },
-        { color: 'green', points: [[0.36,0.58],[0.43,0.58],[0.43,0.65],[0.36,0.65],[0.36,0.58],[0.57,0.58],[0.64,0.58],[0.64,0.65],[0.57,0.65],[0.57,0.58]] }
+        { color: 'blue', points: [[0.34,0.38],[0.66,0.38],[0.66,0.70],[0.34,0.70],[0.34,0.38]] }
       ]
     },
     {
-      name: 'Zauberbaum',
+      name: 'Viereck mit Dreieck',
       lines: [
-        { color: 'green', points: [[0.5,0.2],[0.33,0.42],[0.42,0.42],[0.28,0.58],[0.44,0.58],[0.36,0.72],[0.64,0.72],[0.56,0.58],[0.72,0.58],[0.58,0.42],[0.67,0.42],[0.5,0.2]] },
-        { color: 'red', points: [[0.46,0.72],[0.46,0.84],[0.54,0.84],[0.54,0.72]] },
-        { color: 'yellow', points: [[0.41,0.39],[0.44,0.36],[0.47,0.39],[0.44,0.42],[0.41,0.39],[0.56,0.52],[0.59,0.49],[0.62,0.52],[0.59,0.55],[0.56,0.52]] },
-        { color: 'blue', points: [[0.5,0.2],[0.5,0.12],[0.54,0.16],[0.5,0.2],[0.46,0.16],[0.5,0.12]] }
+        { color: 'blue', points: [[0.34,0.48],[0.66,0.48],[0.66,0.76],[0.34,0.76],[0.34,0.48]] },
+        { color: 'red', points: [[0.30,0.48],[0.50,0.25],[0.70,0.48],[0.30,0.48]] }
       ]
     },
     {
-      name: 'Regenbogen-Blume',
+      name: 'Viereck, Dreieck und Rechteck',
       lines: [
-        { color: 'yellow', points: [[0.5,0.45],[0.54,0.49],[0.5,0.53],[0.46,0.49],[0.5,0.45]] },
-        { color: 'red', points: [[0.5,0.45],[0.5,0.28],[0.57,0.34],[0.5,0.45],[0.64,0.44],[0.58,0.52],[0.5,0.45]] },
-        { color: 'blue', points: [[0.5,0.45],[0.36,0.44],[0.42,0.52],[0.5,0.45],[0.5,0.62],[0.43,0.56],[0.5,0.45]] },
-        { color: 'green', points: [[0.5,0.53],[0.5,0.82],[0.42,0.72],[0.5,0.67],[0.58,0.72],[0.5,0.82]] }
+        { color: 'blue', points: [[0.34,0.54],[0.66,0.54],[0.66,0.80],[0.34,0.80],[0.34,0.54]] },
+        { color: 'red', points: [[0.30,0.54],[0.50,0.35],[0.70,0.54],[0.30,0.54]] },
+        { color: 'green', points: [[0.40,0.22],[0.60,0.22],[0.60,0.35],[0.40,0.35],[0.40,0.22]] }
       ]
     },
     {
-      name: 'Farbenstern',
+      name: 'Viereck, Dreieck, Rechteck und Kreis',
       lines: [
-        { color: 'yellow', points: [[0.5,0.18],[0.55,0.38],[0.76,0.38],[0.59,0.51],[0.65,0.73],[0.5,0.6],[0.35,0.73],[0.41,0.51],[0.24,0.38],[0.45,0.38],[0.5,0.18]] },
-        { color: 'red', points: [[0.5,0.27],[0.56,0.47],[0.5,0.55],[0.44,0.47],[0.5,0.27]] },
-        { color: 'blue', points: [[0.3,0.82],[0.7,0.82],[0.66,0.88],[0.34,0.88],[0.3,0.82]] },
-        { color: 'green', points: [[0.2,0.2],[0.28,0.2],[0.28,0.28],[0.2,0.28],[0.2,0.2],[0.72,0.2],[0.8,0.2],[0.8,0.28],[0.72,0.28],[0.72,0.2]] }
+        { color: 'blue', points: [[0.34,0.60],[0.66,0.60],[0.66,0.84],[0.34,0.84],[0.34,0.60]] },
+        { color: 'red', points: [[0.30,0.60],[0.50,0.43],[0.70,0.60],[0.30,0.60]] },
+        { color: 'green', points: [[0.40,0.31],[0.60,0.31],[0.60,0.43],[0.40,0.43],[0.40,0.31]] },
+        { color: 'yellow', points: circlePoints(0.50, 0.20, 0.085, 40) }
       ]
     }
   ];
@@ -244,9 +248,11 @@
     game.phase = 'draw';
     game.phaseStartedAt = performance.now();
     game.timeLeft = DRAW_SECONDS;
-    statusText.textContent = 'Zeichne das Muster jetzt aus dem Gedächtnis nach.';
+    statusText.textContent = 'Zeichne das Muster jetzt aus dem Gedächtnis nach oder schließe die Runde manuell ab.';
     updateHud(true);
     draw();
+    cancelAnimationFrame(game.timerFrame);
+    game.timerFrame = requestAnimationFrame(tick);
   }
 
   function tick(now) {
@@ -274,6 +280,7 @@
   }
 
   function evaluateRound() {
+    if (game.phase === 'result' || game.phase === 'finished') return;
     game.phase = 'result';
     cancelAnimationFrame(game.timerFrame);
     const percent = scoreRound();
@@ -487,6 +494,16 @@
     clearLastStroke();
   });
 
+  finishButton.addEventListener('pointerdown', event => {
+    event.preventDefault();
+    if (game.phase === 'draw') evaluateRound();
+  });
+
+  finishButton.addEventListener('click', event => {
+    event.preventDefault();
+    if (game.phase === 'draw') evaluateRound();
+  });
+
   canvas.addEventListener('pointerdown', startStroke);
   canvas.addEventListener('pointermove', moveStroke);
   canvas.addEventListener('pointerup', endStroke);
@@ -498,6 +515,7 @@
     const map = { '1': 'blue', '2': 'red', '3': 'yellow', '4': 'green', b: 'blue', r: 'red', g: 'green', y: 'yellow' };
     if (map[key]) setColor(map[key]);
     if (key === 'backspace' || key === 'z') clearLastStroke();
+    if (key === 'enter' && game.phase === 'draw') evaluateRound();
   });
 
   window.addEventListener('resize', resizeCanvas);
