@@ -16,7 +16,7 @@
   const musicElement = document.getElementById('mineMusic');
   const turboSound = document.getElementById('mineTurboSound');
   const glassBreakSound = document.getElementById('mineGlassBreak');
-  const musicLoop = window.createCrossfadeLoop ? window.createCrossfadeLoop(musicElement, { fadeSeconds: 0.06 }) : null;
+  const musicLoop = window.createCrossfadeLoop ? window.createCrossfadeLoop(musicElement, { fadeSeconds: 0.025 }) : null;
 
   const images = {
     background: new Image(),
@@ -55,6 +55,10 @@
     shakeUntil: 0,
     railOffset: 0,
     turboUntil: 0,
+    lastHudUpdateAt: 0,
+    lastHudText: '',
+    lastHudProgress: -1,
+    lastHudHearts: '',
     lastLaneInputAt: 0,
   };
 
@@ -152,7 +156,7 @@
   }
 
   function resizeCanvas() {
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const dpr = 1;
     const w = Math.max(320, window.innerWidth);
     const h = Math.max(520, window.innerHeight);
     canvas.width = Math.round(w * dpr);
@@ -265,7 +269,7 @@
 
   function startGame() {
     resetState();
-    updateHud();
+    updateHud(true);
     hidePopup();
     startMusic();
     requestAnimationFrame(loop);
@@ -280,14 +284,31 @@
     setTimeout(() => showPopup(won ? 'won' : 'lost'), 420);
   }
 
-  function updateHud() {
+  function updateHud(force = false) {
+    const now = performance.now();
+    if (!force && now - game.lastHudUpdateAt < 220) return;
+    game.lastHudUpdateAt = now;
+
     const remaining = Math.max(0, Math.ceil(GAME_DURATION - game.elapsed));
-    const turboLeft = Math.max(0, (game.turboUntil - performance.now()) / 1000);
-    timerText.textContent = turboLeft > 0
-      ? `Zeit: ${remaining} s · Turbo: ${turboLeft.toFixed(1)} s`
+    const turboLeft = Math.max(0, (game.turboUntil - now) / 1000);
+    const timerValue = turboLeft > 0
+      ? `Zeit: ${remaining} s · Turbo: ${Math.ceil(turboLeft)} s`
       : `Zeit: ${remaining} s`;
-    progressFill.style.width = `${Math.min(100, (game.elapsed / GAME_DURATION) * 100)}%`;
-    heartsText.textContent = `${game.hearts > 0 ? '♥'.repeat(game.hearts) : ''}${game.hearts < 3 ? '♡'.repeat(3 - game.hearts) : ''}`;
+    const progressValue = Math.round(Math.min(100, (game.elapsed / GAME_DURATION) * 100));
+    const heartsValue = `${game.hearts > 0 ? '♥'.repeat(game.hearts) : ''}${game.hearts < 3 ? '♡'.repeat(3 - game.hearts) : ''}`;
+
+    if (timerValue !== game.lastHudText) {
+      timerText.textContent = timerValue;
+      game.lastHudText = timerValue;
+    }
+    if (progressValue !== game.lastHudProgress) {
+      progressFill.style.width = `${progressValue}%`;
+      game.lastHudProgress = progressValue;
+    }
+    if (heartsValue !== game.lastHudHearts) {
+      heartsText.textContent = heartsValue;
+      game.lastHudHearts = heartsValue;
+    }
   }
 
   function setLane(direction) {
@@ -311,14 +332,13 @@
   }
 
   function crystalSpeed() {
-    // Einheitliche Geschwindigkeit für alle Kristalle; Turbo erhöht nur global leicht das Tempo.
-    return isTurboActive() ? 0.42 : 0.32;
+    return 0.33;
   }
 
   function spawnWave() {
     let count = 1;
-    if (game.elapsed >= 50) count = game.waveIndex % 2 === 0 ? 1 : 2;
-    else if (game.elapsed >= 20) count = game.waveIndex % 4 === 0 ? 2 : 1;
+    if (game.elapsed >= 50) count = game.waveIndex % 4 === 0 ? 2 : 1;
+    else if (game.elapsed >= 25) count = game.waveIndex % 5 === 0 ? 2 : 1;
 
     const lanes = chooseDistinctLanes(count);
     const speed = crystalSpeed();
@@ -326,11 +346,11 @@
       game.obstacles.push({
         type: 'crystal',
         lane,
-        x: laneWorldX(lane, -0.2 - index * 0.12),
-        y: -0.2 - index * 0.12,
-        size: 0.092,
-        rotation: (Math.random() - 0.5) * 0.22,
-        spin: (Math.random() - 0.5) * 0.22,
+        x: laneWorldX(lane, -0.2 - index * 0.1),
+        y: -0.2 - index * 0.1,
+        size: 0.084,
+        rotation: (Math.random() - 0.5) * 0.14,
+        spin: 0,
         speed,
         hit: false,
       });
@@ -381,16 +401,27 @@
     addSpark(obstacle.x, obstacle.y, '#c6b0ff', 18);
   }
 
+  function compactActive(list, keepFn) {
+    let write = 0;
+    for (let read = 0; read < list.length; read += 1) {
+      const item = list[read];
+      if (keepFn(item)) {
+        list[write] = item;
+        write += 1;
+      }
+    }
+    list.length = write;
+  }
+
   function update(dt, now) {
     game.elapsed = (now - game.startTime) / 1000;
-    game.railOffset += dt * (isTurboActive(now) ? 2.6 : 1.65);
+    game.railOffset += dt * 0.85;
 
     const targetX = LANES[game.targetLane];
-    game.playerX += (targetX - game.playerX) * Math.min(1, dt * 11.5);
+    game.playerX += (targetX - game.playerX) * Math.min(1, dt * 10.5);
     if (Math.abs(game.playerX - targetX) < 0.005) game.lane = game.targetLane;
 
-    const spawnEveryBase = game.elapsed < 20 ? 1.45 : game.elapsed < 50 ? 1.28 : 1.12;
-    const spawnEvery = spawnEveryBase;
+    const spawnEvery = game.elapsed < 25 ? 1.75 : game.elapsed < 50 ? 1.58 : 1.48;
     game.spawnTimer -= dt;
     if (game.spawnTimer <= 0) {
       spawnWave();
@@ -398,30 +429,33 @@
     }
     maybeSpawnPowerup();
 
-    game.obstacles.forEach((obstacle) => {
+    for (const obstacle of game.obstacles) {
       obstacle.y += obstacle.speed * dt;
       syncObjectToRail(obstacle);
       obstacle.rotation += obstacle.spin * dt;
-    });
-    game.obstacles = game.obstacles.filter((obstacle) => obstacle.y < 1.22 && !obstacle.hit);
+    }
+    compactActive(game.obstacles, obstacle => obstacle.y < 1.22 && !obstacle.hit);
 
-    game.powerups.forEach((powerup) => {
-      powerup.y += powerup.speed * dt * (isTurboActive(now) ? 1.1 : 1);
+    for (const powerup of game.powerups) {
+      powerup.y += powerup.speed * dt;
       syncObjectToRail(powerup);
-      powerup.rotation += dt * 1.8;
-      powerup.bob += dt * 5;
-    });
-    game.powerups = game.powerups.filter((powerup) => powerup.y < 1.18);
+      powerup.rotation += dt * 1.2;
+      powerup.bob += dt * 3.2;
+    }
+    compactActive(game.powerups, powerup => powerup.y < 1.18);
 
-    game.bursts.forEach((burst) => { burst.age += dt; burst.scale += dt * 0.6; });
-    game.bursts = game.bursts.filter((burst) => burst.age < burst.life);
+    for (const burst of game.bursts) {
+      burst.age += dt;
+      burst.scale += dt * 0.45;
+    }
+    compactActive(game.bursts, burst => burst.age < burst.life);
 
-    game.particles.forEach((p) => {
+    for (const p of game.particles) {
       p.age += dt;
       p.x += p.vx * dt;
       p.y += p.vy * dt;
-    });
-    game.particles = game.particles.filter((p) => p.age < p.life);
+    }
+    compactActive(game.particles, p => p.age < p.life);
 
     checkCollisions(now);
     updateHud();
@@ -501,7 +535,6 @@
   function drawRails(w, h) {
     const topY = h * -0.04;
     const bottomY = h * 1.04;
-    const centerBottom = w * 0.5;
     const centerTop = w * 0.5;
 
     for (let i = 0; i < LANES.length; i += 1) {
@@ -512,33 +545,19 @@
       drawRailLine(xTop - railWidthTop, topY, xBottom - railWidthBottom, bottomY);
       drawRailLine(xTop + railWidthTop, topY, xBottom + railWidthBottom, bottomY);
     }
-
-    for (let t = -0.12 + (game.railOffset % 0.14); t < 1.08; t += 0.14) {
-      const y = topY + (bottomY - topY) * t;
-      const spread = w * (0.055 + t * 0.2);
-      ctx.save();
-      ctx.globalAlpha = Math.max(0.2, Math.min(0.72, t + 0.12));
-      ctx.strokeStyle = 'rgba(66, 41, 27, 0.95)';
-      ctx.lineWidth = Math.max(2, w * 0.008 + t * 3);
-      ctx.beginPath();
-      ctx.moveTo(centerBottom - spread, y);
-      ctx.lineTo(centerBottom + spread, y);
-      ctx.stroke();
-      ctx.restore();
-    }
   }
 
   function drawRailLine(x1, y1, x2, y2) {
     ctx.save();
     ctx.strokeStyle = '#281a12';
-    ctx.lineWidth = 7;
+    ctx.lineWidth = 5;
     ctx.lineCap = 'round';
     ctx.beginPath();
     ctx.moveTo(x1, y1);
     ctx.lineTo(x2, y2);
     ctx.stroke();
     ctx.strokeStyle = '#9f6a31';
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 2;
     ctx.stroke();
     ctx.restore();
   }
@@ -555,20 +574,12 @@
     const y = PLAYER_Y * h;
     const invulnerable = now < game.invulnerableUntil;
     const flicker = invulnerable && Math.floor(now / 90) % 2 === 0;
-    const size = Math.min(w, h) * 0.26;
+    const size = Math.min(w, h) * 0.255;
     const activeImg = isTurboActive(now) ? images.cartTurbo : images.cartNormal;
 
     ctx.save();
     if (flicker) ctx.globalAlpha = 0.58;
-    if (now < game.shakeUntil) ctx.translate((Math.random() - 0.5) * 7, (Math.random() - 0.5) * 5);
-    if (isTurboActive(now)) {
-      ctx.shadowColor = 'rgba(55, 195, 255, 0.9)';
-      ctx.shadowBlur = 22;
-    } else {
-      ctx.shadowColor = 'rgba(0,0,0,0.38)';
-      ctx.shadowBlur = 16;
-    }
-    ctx.shadowOffsetY = 10;
+    if (now < game.shakeUntil) ctx.translate((Math.random() - 0.5) * 5, (Math.random() - 0.5) * 4);
 
     const maxTilt = Math.PI / 12;
     const normalizedLaneOffset = Math.max(-1, Math.min(1, (0.5 - game.playerX) / (0.5 - LANES[0])));
@@ -579,48 +590,42 @@
   }
 
   function drawObstacle(obstacle, w, h) {
-    const perspective = 0.45 + obstacle.y * 0.92;
-    const size = obstacle.size * Math.min(w, h) * perspective * 1.05;
+    const perspective = 0.45 + obstacle.y * 0.88;
+    const size = obstacle.size * Math.min(w, h) * perspective;
     const x = obstacle.x * w;
     const y = obstacle.y * h;
 
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate(obstacle.rotation);
-    ctx.shadowColor = 'rgba(92, 156, 255, 0.7)';
-    ctx.shadowBlur = size * 0.16;
-    drawSprite(images.crystalIntact, 0, 0, size * 1.34);
+    drawSprite(images.crystalIntact, 0, 0, size * 1.25);
     ctx.restore();
   }
 
   function drawPowerup(powerup, w, h) {
-    const perspective = 0.48 + powerup.y * 0.9;
+    const perspective = 0.48 + powerup.y * 0.86;
     const size = powerup.size * Math.min(w, h) * perspective;
     const x = powerup.x * w;
-    const y = powerup.y * h + Math.sin(powerup.bob) * 5;
+    const y = powerup.y * h + Math.sin(powerup.bob) * 3;
 
     ctx.save();
     ctx.translate(x, y);
-    ctx.rotate(Math.sin(powerup.rotation) * 0.08);
-    ctx.shadowColor = 'rgba(55, 195, 255, 0.82)';
-    ctx.shadowBlur = size * 0.2;
-    drawSprite(images.turboIcon, 0, 0, size * 1.25);
+    ctx.rotate(Math.sin(powerup.rotation) * 0.05);
+    drawSprite(images.turboIcon, 0, 0, size * 1.15);
     ctx.restore();
   }
 
   function drawBursts(w, h) {
-    game.bursts.forEach((burst) => {
+    for (const burst of game.bursts) {
       const alpha = 1 - burst.age / burst.life;
-      const size = Math.min(w, h) * 0.17 * burst.scale;
+      const size = Math.min(w, h) * 0.14 * burst.scale;
       ctx.save();
       ctx.globalAlpha = alpha;
       ctx.translate(burst.x * w, burst.y * h);
-      ctx.rotate(burst.rotation + burst.age * 2);
-      ctx.shadowColor = 'rgba(200, 160, 255, 0.8)';
-      ctx.shadowBlur = 18;
+      ctx.rotate(burst.rotation + burst.age * 1.4);
       drawSprite(images.crystalBroken, 0, 0, size);
       ctx.restore();
-    });
+    }
   }
 
   function drawParticles(w, h) {
@@ -641,13 +646,10 @@
     const x = game.playerX * w;
     const y = PLAYER_Y * h;
     ctx.save();
-    ctx.globalAlpha = 0.18 + Math.sin(now / 120) * 0.04;
-    const g = ctx.createRadialGradient(x, y, 10, x, y, Math.min(w, h) * 0.16);
-    g.addColorStop(0, 'rgba(93, 212, 255, 0.85)');
-    g.addColorStop(1, 'rgba(93, 212, 255, 0)');
-    ctx.fillStyle = g;
+    ctx.globalAlpha = 0.16;
+    ctx.fillStyle = 'rgba(93, 212, 255, 0.55)';
     ctx.beginPath();
-    ctx.ellipse(x, y, Math.min(w, h) * 0.17, Math.min(w, h) * 0.1, 0, 0, Math.PI * 2);
+    ctx.ellipse(x, y, Math.min(w, h) * 0.14, Math.min(w, h) * 0.08, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   }
@@ -721,7 +723,7 @@
   });
 
   resizeCanvas();
-  updateHud();
+  updateHud(true);
   showPopup('intro');
   draw();
 })();

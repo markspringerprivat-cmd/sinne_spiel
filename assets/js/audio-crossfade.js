@@ -3,7 +3,7 @@
     constructor(audioElement, options = {}) {
       this.sourceElement = audioElement;
       this.src = audioElement ? audioElement.currentSrc || audioElement.src : '';
-      this.fadeSeconds = options.fadeSeconds || 0.06;
+      this.fadeSeconds = options.fadeSeconds || 0.025;
       this.monitorMs = options.monitorMs || 70;
       this.volume = 0.5;
       this.isPlaying = false;
