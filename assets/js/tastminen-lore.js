@@ -303,9 +303,8 @@
   }
 
   function laneWorldX(lane, y) {
-    const t = Math.min(1.08, Math.max(-0.08, y));
-    const topX = 0.5 + (LANES[lane] - 0.5) * 0.25;
-    return topX + (LANES[lane] - topX) * t;
+    // Exakt parallele Bahnen: keine perspektivische Verjüngung, damit die Darstellung stabil bleibt.
+    return LANES[lane];
   }
 
   function spawnRailGap() {
@@ -584,7 +583,7 @@
 
     if (game.state === 'race') {
       const raceElapsed = (now - game.stateStart) / 1000;
-      game.railOffset += dt * 0.92;
+      game.railOffset += dt * 0.38;
 
       const targetX = LANES[game.targetLane];
       game.playerX += (targetX - game.playerX) * Math.min(1, dt * 11);
@@ -714,23 +713,35 @@
     ctx.restore();
   }
 
+  function tieIntersectsGap(y) {
+    const tieHalf = 0.018;
+    for (const gap of game.gaps) {
+      const start = gap.y - gap.length / 2;
+      const end = gap.y + gap.length / 2;
+      if (y >= start - tieHalf && y <= end + tieHalf) return true;
+    }
+    if (game.state === 'build' && y >= 0.45 - tieHalf && y <= 1.08 + tieHalf) return true;
+    return false;
+  }
+
   function drawTies(w, h) {
     ctx.save();
-    const spacing = 0.105;
+    const spacing = 0.155;
     const offset = (game.railOffset % spacing);
-    for (let y = -0.08 + offset; y < 1.12; y += spacing) {
+    for (let y = -0.12 + offset; y < 1.14; y += spacing) {
+      if (tieIntersectsGap(y)) continue;
       const left = railPoint(0, y, w, h);
       const right = railPoint(2, y, w, h);
-      const tieH = 7 + y * 9;
+      const tieH = Math.max(6, Math.min(12, 8 + y * 3));
       ctx.strokeStyle = '#3a2113';
       ctx.lineWidth = tieH;
       ctx.lineCap = 'round';
       ctx.beginPath();
-      ctx.moveTo(left.x - w * 0.018, left.y);
-      ctx.lineTo(right.x + w * 0.018, right.y);
+      ctx.moveTo(left.x - w * 0.032, left.y);
+      ctx.lineTo(right.x + w * 0.032, right.y);
       ctx.stroke();
       ctx.strokeStyle = '#8c5b2e';
-      ctx.lineWidth = Math.max(2, tieH * 0.32);
+      ctx.lineWidth = Math.max(2, tieH * 0.30);
       ctx.stroke();
     }
     ctx.restore();
