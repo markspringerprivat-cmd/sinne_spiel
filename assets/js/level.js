@@ -33,33 +33,6 @@ const AREA_TITLES = {
   flammenkueche: 'Flammenküche'
 };
 
-const AREA_PATH_TEMPLATES = {
-  tastminen: {
-    red: [[19,82],[24,83],[37,79],[49,72],[58,64],[68,55],[77,49]],
-    purple: [[77,49],[68,47],[58,40],[47,31],[37,23],[28,18]],
-    blue: [[28,18],[27,31],[32,45],[42,60],[51,72],[38,79],[25,82],[19,82]]
-  },
-  farbenreich: {
-    red: [[20,82],[26,82],[39,76],[49,68],[56,59],[64,50],[75,41]],
-    purple: [[75,41],[65,39],[54,33],[43,25],[34,19],[29,17]],
-    blue: [[29,17],[31,30],[37,45],[47,60],[55,71],[43,78],[27,82],[20,82]]
-  },
-  klangwald: {
-    red: [[20,82],[27,82],[40,77],[49,69],[57,60],[65,54],[74,49]],
-    purple: [[74,49],[65,47],[55,40],[44,31],[35,22],[30,17]],
-    blue: [[30,17],[31,30],[37,45],[47,60],[56,72],[43,79],[27,82],[20,82]]
-  },
-  duftgarten: {
-    red: [[20,83],[27,83],[42,76],[52,66],[62,55],[73,46]],
-    purple: [[73,46],[65,44],[55,37],[44,29],[34,21],[27,18]],
-    blue: [[27,18],[30,31],[37,46],[48,61],[55,73],[43,80],[27,83],[20,83]]
-  },
-  flammenkueche: {
-    red: [[20,82],[27,82],[39,78],[50,72],[62,65],[72,60]],
-    purple: [[72,60],[64,55],[54,47],[43,35],[34,24],[28,18]],
-    blue: [[28,18],[31,32],[38,46],[49,60],[58,72],[45,80],[28,82],[20,82]]
-  }
-};
 const FRAGMENT_REWARDS = {
   farbenreich: { name: 'Kristall des Sehens', image: '../assets/images/fragments/red.png' },
   klangwald: { name: 'Kristall des Hörens', image: '../assets/images/fragments/blue.png' },
@@ -73,7 +46,6 @@ let activeQuiz = null;
 let quizTimer = null;
 let popupCloseHandler = null;
 let currentNode = 'start';
-let guideSvg = null;
 
 const sfxCorrect = new Audio('../assets/audio/richtig_1.mp3');
 const sfxWrong = new Audio('../assets/audio/falsch_3.mp3');
@@ -227,126 +199,21 @@ function initialNodeFromProgress() {
   return 'start';
 }
 
-function normalizePathTemplate(points, name) {
-  const n = getNodes();
-  const mapped = points.map(([x, y]) => ({ x, y }));
-  if (name === 'red') {
-    mapped[0] = n.start;
-    mapped[mapped.length - 1] = n.level1;
-  } else if (name === 'purple') {
-    mapped[0] = n.level1;
-    mapped[mapped.length - 1] = n.level2;
-  } else if (name === 'blue') {
-    mapped[0] = n.level2;
-    mapped[mapped.length - 1] = n.start;
+const JUMP_ASSETS = {
+  stand: '../assets/images/characters/knight.png',
+  right: {
+    jump: '../assets/images/characters/knight_right_jump.png',
+    fall: '../assets/images/characters/knight_right_fall.png'
+  },
+  left: {
+    jump: '../assets/images/characters/knight_left_jump.png',
+    fall: '../assets/images/characters/knight_left_fall.png'
   }
-  return mapped;
-}
+};
 
-function curvedPath(name) {
-  const template = AREA_PATH_TEMPLATES[currentArea]?.[name] || AREA_PATH_TEMPLATES.klangwald[name];
-  if (!template) return [stageStart()];
-  return normalizePathTemplate(template, name);
-}
-
-function cubicPoint(p1, c1, c2, p2, t) {
-  const mt = 1 - t;
-  const mt2 = mt * mt;
-  const t2 = t * t;
-  return {
-    x: mt2 * mt * p1.x + 3 * mt2 * t * c1.x + 3 * mt * t2 * c2.x + t2 * t * p2.x,
-    y: mt2 * mt * p1.y + 3 * mt2 * t * c1.y + 3 * mt * t2 * c2.y + t2 * t * p2.y
-  };
-}
-
-function catmullSegment(points, i) {
-  const p0 = points[i - 1] || points[i];
-  const p1 = points[i];
-  const p2 = points[i + 1];
-  const p3 = points[i + 2] || p2;
-  return {
-    p1,
-    p2,
-    c1: { x: p1.x + (p2.x - p0.x) / 6, y: p1.y + (p2.y - p0.y) / 6 },
-    c2: { x: p2.x - (p3.x - p1.x) / 6, y: p2.y - (p3.y - p1.y) / 6 }
-  };
-}
-
-function smoothSamples(points, samplesPerSegment = 26) {
-  if (!points || points.length < 2) return points ? points.slice() : [];
-  const samples = [points[0]];
-  for (let i = 0; i < points.length - 1; i += 1) {
-    const seg = catmullSegment(points, i);
-    for (let s = 1; s <= samplesPerSegment; s += 1) {
-      samples.push(cubicPoint(seg.p1, seg.c1, seg.c2, seg.p2, s / samplesPerSegment));
-    }
-  }
-  return samples;
-}
-
-function distance(a, b) {
-  const dx = a.x - b.x;
-  const dy = a.y - b.y;
-  return Math.hypot(dx, dy);
-}
-
-function pathLength(points) {
-  let len = 0;
-  for (let i = 1; i < points.length; i += 1) len += distance(points[i - 1], points[i]);
-  return len;
-}
-
-function reversePath(points) {
-  return points.slice().reverse();
-}
-
-function pathBetween(from, to) {
-  if (from === to) return [];
-  const red = curvedPath('red');
-  const purple = curvedPath('purple');
-  const blue = curvedPath('blue');
-  if (from === 'start' && to === 'level1') return red;
-  if (from === 'level1' && to === 'start') return reversePath(red);
-  if (from === 'level1' && to === 'level2') return purple;
-  if (from === 'level2' && to === 'level1') return reversePath(purple);
-  if (from === 'level2' && to === 'start') return blue;
-  if (from === 'start' && to === 'level2') return red.concat(purple.slice(1));
-  return [getNodes()[to]].filter(Boolean);
-}
-
-function pathToSvgData(points) {
-  if (!points || points.length === 0) return '';
-  if (points.length === 1) return `M ${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}`;
-  let d = `M ${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}`;
-  for (let i = 0; i < points.length - 1; i += 1) {
-    const seg = catmullSegment(points, i);
-    d += ` C ${seg.c1.x.toFixed(2)} ${seg.c1.y.toFixed(2)}, ${seg.c2.x.toFixed(2)} ${seg.c2.y.toFixed(2)}, ${seg.p2.x.toFixed(2)} ${seg.p2.y.toFixed(2)}`;
-  }
-  return d;
-}
-
-function showLevelPopup(title, text, buttonLabel = 'Weiter', onClose = null) {
-  levelPopupTitle.textContent = title || 'Level';
-  levelPopupText.textContent = text || 'Inhalt folgt später.';
-  levelPopupClose.textContent = buttonLabel;
-  popupCloseHandler = onClose;
-  levelPopup.classList.remove('hidden');
-}
-
-function closeLevelPopup() {
-  levelPopup.classList.add('hidden');
-  const handler = popupCloseHandler;
-  popupCloseHandler = null;
-  if (typeof handler === 'function') handler();
-  startLevelMusic();
-}
-
-function setMarkersDisabled(disabled) {
-  levelMarkers.forEach(marker => {
-    marker.disabled = disabled;
-    marker.classList.toggle('movement-disabled', disabled);
-  });
-  if (backButton) backButton.classList.toggle('movement-disabled', disabled);
+function setKnightSprite(src) {
+  if (!levelKnight || !src || levelKnight.getAttribute('src') === src) return;
+  levelKnight.setAttribute('src', src);
 }
 
 function setKnightPosition(point) {
@@ -354,85 +221,108 @@ function setKnightPosition(point) {
   levelKnight.style.top = `${point.y}%`;
 }
 
-function pointAtDistance(samples, targetDistance) {
-  if (!samples.length) return null;
-  if (targetDistance <= 0) return samples[0];
-  let traveled = 0;
-  for (let i = 1; i < samples.length; i += 1) {
-    const a = samples[i - 1];
-    const b = samples[i];
-    const segLen = distance(a, b);
-    if (traveled + segLen >= targetDistance) {
-      const t = segLen ? (targetDistance - traveled) / segLen : 0;
-      return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
-    }
-    traveled += segLen;
-  }
-  return samples[samples.length - 1];
+function pointForNode(node) {
+  const nodes = getNodes();
+  return nodes[node] || nodes.start || stageStart();
 }
 
-function moveKnightAlong(points) {
-  if (!points || points.length === 0) return Promise.resolve();
-  const samples = smoothSamples(points, 30);
-  const totalLength = pathLength(samples);
-  if (totalLength <= 0) return Promise.resolve();
+function nextJumpNode(from, to) {
+  if (from === to) return to;
+  if (from === 'start' && to === 'level1') return 'level1';
+  if (from === 'level1' && to === 'start') return 'start';
+  if (from === 'level1' && to === 'level2') return 'level2';
+  if (from === 'level2' && to === 'level1') return 'level1';
 
-  setMarkersDisabled(true);
+  // Es wird nicht direkt zwischen Eingang und Quiz gesprungen.
+  // Der Weg läuft immer über das Minispiel-Level.
+  if (from === 'start' && to === 'level2') return 'level1';
+  if (from === 'level2' && to === 'start') return 'level1';
+
+  return to;
+}
+
+function jumpDuration(fromPoint, toPoint) {
+  const dist = Math.hypot(toPoint.x - fromPoint.x, toPoint.y - fromPoint.y);
+  return Math.min(1250, Math.max(760, dist * 18));
+}
+
+function jumpArcHeight(fromPoint, toPoint) {
+  const dist = Math.hypot(toPoint.x - fromPoint.x, toPoint.y - fromPoint.y);
+  return Math.min(16, Math.max(7, dist * 0.22));
+}
+
+function moveKnightJump(fromNode, toNode) {
+  const fromPoint = pointForNode(fromNode);
+  const toPoint = pointForNode(toNode);
+  const direction = toPoint.x >= fromPoint.x ? 'right' : 'left';
+  const assets = JUMP_ASSETS[direction];
+  const duration = jumpDuration(fromPoint, toPoint);
+  const arc = jumpArcHeight(fromPoint, toPoint);
+
   levelKnight.style.transition = 'none';
+  levelKnight.style.animation = 'none';
 
-  const duration = Math.min(3600, Math.max(1500, totalLength * 34));
   return new Promise(resolve => {
-    const start = performance.now();
+    const startTime = performance.now();
+
     function frame(now) {
-      const t = Math.min(1, (now - start) / duration);
-      const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-      const point = pointAtDistance(samples, totalLength * eased);
-      if (point) setKnightPosition(point);
-      if (t < 1) {
+      const raw = Math.min(1, (now - startTime) / duration);
+      const eased = raw < 0.5 ? 2 * raw * raw : 1 - Math.pow(-2 * raw + 2, 2) / 2;
+      const x = fromPoint.x + (toPoint.x - fromPoint.x) * eased;
+      const y = fromPoint.y + (toPoint.y - fromPoint.y) * eased - Math.sin(Math.PI * eased) * arc;
+      const squash = 1 + Math.sin(Math.PI * raw) * 0.035;
+
+      setKnightSprite(raw < 0.5 ? assets.jump : assets.fall);
+      levelKnight.style.left = `${x}%`;
+      levelKnight.style.top = `${y}%`;
+      levelKnight.style.transform = `translate(-50%, -88%) scale(${squash.toFixed(3)})`;
+
+      if (raw < 1) {
         requestAnimationFrame(frame);
-      } else {
-        setKnightPosition(samples[samples.length - 1]);
-        setMarkersDisabled(false);
-        resolve();
+        return;
       }
+
+      setKnightPosition(toPoint);
+      levelKnight.style.transform = 'translate(-50%, -88%) scale(1)';
+      setKnightSprite(JUMP_ASSETS.stand);
+      resolve();
     }
+
     requestAnimationFrame(frame);
   });
 }
 
 async function moveToNode(targetNode) {
-  const points = pathBetween(currentNode, targetNode);
-  await moveKnightAlong(points);
-  saveCurrentNode(targetNode);
-}
+  if (!targetNode || currentNode === targetNode) return;
+  setMarkersDisabled(true);
 
-function ensureGuideSvg() {
-  if (guideSvg) return guideSvg;
-  guideSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  guideSvg.setAttribute('viewBox', '0 0 100 100');
-  guideSvg.setAttribute('preserveAspectRatio', 'none');
-  guideSvg.classList.add('level-path-svg');
-  levelStage.appendChild(guideSvg);
-  return guideSvg;
+  while (currentNode !== targetNode) {
+    const nextNode = nextJumpNode(currentNode, targetNode);
+    if (!nextNode || nextNode === currentNode) break;
+    await moveKnightJump(currentNode, nextNode);
+    saveCurrentNode(nextNode);
+  }
+
+  levelKnight.style.animation = '';
+  setMarkersDisabled(false);
 }
 
 function renderGuidePath() {
-  const svg = ensureGuideSvg();
-  const progress = getAreaProgress();
-  let points = null;
+  // Keine gestrichelte Pfadlinie mehr: Der Ritter springt direkt zwischen den Feldern.
+}
 
-  if (!progress.level1Completed) {
-    points = curvedPath('red');
-  } else if (!progress.level2Completed) {
-    points = curvedPath('purple');
-  }
 
-  if (!points) {
-    svg.innerHTML = '';
-    return;
-  }
-
-  svg.innerHTML = `<path class="level-guide-line" d="${pathToSvgData(points)}"></path>`;
+function preloadLevelJumpSprites() {
+  [
+    JUMP_ASSETS.stand,
+    JUMP_ASSETS.right.jump,
+    JUMP_ASSETS.right.fall,
+    JUMP_ASSETS.left.jump,
+    JUMP_ASSETS.left.fall
+  ].forEach(src => {
+    const img = new Image();
+    img.src = src;
+  });
 }
 
 function applyMarkerStates() {
@@ -914,6 +804,7 @@ if (backButton) {
   });
 }
 
+preloadLevelJumpSprites();
 currentNode = initialNodeFromProgress();
 saveCurrentNode(currentNode);
 const initialPoint = getNodes()[currentNode] || stageStart();

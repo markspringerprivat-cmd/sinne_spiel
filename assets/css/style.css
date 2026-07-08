@@ -1851,3 +1851,13 @@ p { line-height: 1.5; }
 .hotspot.area-completed {
   cursor: pointer;
 }
+
+/* ===== v49: Levelkarten ohne gestrichelten Pfad, Sprungbewegung ===== */
+.level-path-svg,
+.level-guide-line {
+  display: none !important;
+}
+.level-knight {
+  transition: none !important;
+  will-change: left, top, transform;
+}
