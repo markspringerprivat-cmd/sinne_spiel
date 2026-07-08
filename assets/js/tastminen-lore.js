@@ -6,7 +6,9 @@
   const MAX_HEARTS = 3;
   const RACE_SECONDS = 10;
   const BUILD_SECONDS = 20;
-  const TOTAL_SECTIONS = 3;
+  const TOTAL_SECTIONS = 4;
+  const FINAL_RACE_SECONDS = 10;
+  const TOTAL_PROGRESS_UNITS = TOTAL_SECTIONS + 1;
   const RAIL_SPEED = 0.42;
   const BIG_GAP_LENGTH = 0.36;
   const BIG_GAP_INITIAL_CENTER = -0.26;
@@ -39,18 +41,20 @@
   images.cart.src = '../assets/images/minigame/cart_normal.png';
 
   const materials = [
-    { id: 'stein', label: 'Backstein', icon: '🧱', kind: 'hart', color: '#cfa28f' },
-    { id: 'metall', label: 'Metallschiene', icon: '⚙️', kind: 'hart', color: '#bcc7d6' },
-    { id: 'holz', label: 'Holzbrett', icon: '🪵', kind: 'hart', color: '#c58b48' },
-    { id: 'seil', label: 'Seil', icon: '🪢', kind: 'weich', color: '#d5b06b' },
-    { id: 'lehm', label: 'Lehmklumpen', icon: '🪨', kind: 'weich', color: '#b9794c' },
-    { id: 'gras', label: 'Gras', icon: '🌿', kind: 'weich', color: '#8bc45a' },
-    { id: 'heu', label: 'Heu', icon: '🌾', kind: 'weich', color: '#dfca65' },
-    { id: 'moos', label: 'Moos', icon: '🍃', kind: 'weich', color: '#79a35b' },
-    { id: 'papier', label: 'Papier', icon: '📄', kind: 'weich', color: '#f2ead4' },
-    { id: 'feder', label: 'Feder', icon: '🪶', kind: 'weich', color: '#e7d3b4' },
-    { id: 'schwamm', label: 'Schwamm', icon: '🧽', kind: 'weich', color: '#edd16b' },
-    { id: 'pilz', label: 'Pilz', icon: '🍄', kind: 'weich', color: '#d79384' },
+    { id: 'stein', label: 'Backstein', iconClass: 'brick', kind: 'hart', color: '#cfa28f' },
+    { id: 'metall', label: 'Metallschiene', iconClass: 'metal', kind: 'hart', color: '#bcc7d6' },
+    { id: 'holz', label: 'Holzbrett', iconClass: 'wood', kind: 'hart', color: '#c58b48' },
+    { id: 'seil', label: 'Seil', iconClass: 'rope', kind: 'weich', color: '#d5b06b' },
+    { id: 'lehm', label: 'Lehmklumpen', iconClass: 'clay', kind: 'weich', color: '#b9794c' },
+    { id: 'gras', label: 'Grasbüschel', iconClass: 'grass', kind: 'weich', color: '#8bc45a' },
+    { id: 'heu', label: 'Heu', iconClass: 'hay', kind: 'weich', color: '#dfca65' },
+    { id: 'moos', label: 'Moos', iconClass: 'moss', kind: 'weich', color: '#79a35b' },
+    { id: 'papier', label: 'Papier', iconClass: 'paper', kind: 'weich', color: '#f2ead4' },
+    { id: 'feder', label: 'Feder', iconClass: 'feather', kind: 'weich', color: '#e7d3b4' },
+    { id: 'schwamm', label: 'Schwamm', iconClass: 'sponge', kind: 'weich', color: '#edd16b' },
+    { id: 'pilz', label: 'Pilz', iconClass: 'mushroom', kind: 'weich', color: '#d79384' },
+    { id: 'blatt', label: 'Blatt', iconClass: 'leaf', kind: 'weich', color: '#87b96b' },
+    { id: 'wolle', label: 'Wolle', iconClass: 'wool', kind: 'weich', color: '#efe6d4' },
   ];
 
   const bridgeRecipes = [
@@ -92,6 +96,8 @@
     bridgeDriveStart: 0,
     bigGapCenter: BIG_GAP_INITIAL_CENTER,
     pendingCrashReason: '',
+    finalPlatformCenter: -0.22,
+    finalPlatformStopAt: 0,
     message: '',
     messageUntil: 0,
     lastHudAt: 0,
@@ -240,6 +246,8 @@
     game.bridgeDriveStart = 0;
     game.bigGapCenter = BIG_GAP_INITIAL_CENTER;
     game.pendingCrashReason = '';
+    game.finalPlatformCenter = -0.22;
+    game.finalPlatformStopAt = 0;
     game.message = '';
     game.messageUntil = 0;
     game.lastHudAt = 0;
@@ -282,27 +290,35 @@
     if (game.state === 'race') {
       const raceElapsed = Math.min(RACE_SECONDS, (now - game.stateStart) / 1000);
       const left = Math.max(0, Math.ceil(RACE_SECONDS - raceElapsed));
-      label = game.message || `Abschnitt ${game.section}/${TOTAL_SECTIONS}: ${left} s bis zur Schlucht`;
-      progress = ((game.section - 1) + raceElapsed / RACE_SECONDS) / TOTAL_SECTIONS;
+      label = game.message || `Fahrt ${game.section}/${TOTAL_SECTIONS}: ${left} s bis zur Schlucht`;
+      progress = ((game.section - 1) + raceElapsed / RACE_SECONDS) / TOTAL_PROGRESS_UNITS;
     } else if (game.state === 'approachBridge') {
       label = game.message || 'Große Lücke voraus …';
-      progress = ((game.section - 1) + 0.95) / TOTAL_SECTIONS;
+      progress = ((game.section - 1) + 0.95) / TOTAL_PROGRESS_UNITS;
     } else if (game.state === 'build') {
       const left = Math.max(0, Math.ceil((game.bridgeDeadline - now) / 1000));
       label = game.message || `Brückenbau ${game.section}/${TOTAL_SECTIONS}: ${left} s`;
-      progress = ((game.section - 1) + 0.98) / TOTAL_SECTIONS;
+      progress = ((game.section - 1) + 0.98) / TOTAL_PROGRESS_UNITS;
     } else if (game.state === 'bridgeDrive') {
       label = game.message || 'Brücke stabil – weiterfahren!';
-      progress = game.section / TOTAL_SECTIONS;
+      progress = game.section / TOTAL_PROGRESS_UNITS;
     } else if (game.state === 'bridgeFailDrive') {
       label = game.message || 'Die Lore rollt in die Lücke …';
-      progress = ((game.section - 1) + 0.98) / TOTAL_SECTIONS;
+      progress = ((game.section - 1) + 0.98) / TOTAL_PROGRESS_UNITS;
+    } else if (game.state === 'finalRace') {
+      const raceElapsed = Math.min(FINAL_RACE_SECONDS, (now - game.stateStart) / 1000);
+      const left = Math.max(0, Math.ceil(FINAL_RACE_SECONDS - raceElapsed));
+      label = game.message || `Letzte Fahrt: ${left} s bis zum Ziel`;
+      progress = (TOTAL_SECTIONS + raceElapsed / FINAL_RACE_SECONDS) / TOTAL_PROGRESS_UNITS;
+    } else if (game.state === 'finalPlatform') {
+      label = game.message || 'Zielplattform voraus …';
+      progress = 0.98;
     } else if (game.state === 'crash') {
       label = game.message || 'Lore stürzt ab …';
-      progress = (game.section - 1) / TOTAL_SECTIONS;
+      progress = (game.section - 1) / TOTAL_PROGRESS_UNITS;
     } else if (game.state === 'respawnWait') {
       label = game.message || 'Lore wird wieder eingesetzt …';
-      progress = (game.section - 1) / TOTAL_SECTIONS;
+      progress = (game.section - 1) / TOTAL_PROGRESS_UNITS;
     } else {
       label = game.message || 'Tastminen';
       progress = 0;
@@ -328,7 +344,7 @@
   }
 
   function setLane(direction) {
-    if (!game.running || game.state !== 'race') return;
+    if (!game.running || !['race', 'finalRace'].includes(game.state)) return;
     const now = performance.now();
     if (now - game.lastLaneInputAt < 80) return;
     const next = Math.max(0, Math.min(LANES.length - 1, game.targetLane + direction));
@@ -356,9 +372,9 @@
   }
 
   function loseHeartAndRespawn(reason) {
-    if (!['race', 'build', 'approachBridge', 'bridgeFailDrive'].includes(game.state)) return;
+    if (!['race', 'finalRace', 'build', 'approachBridge', 'bridgeFailDrive'].includes(game.state)) return;
     const now = performance.now();
-    if (now < game.invulnerableUntil && game.state === 'race') return;
+    if (now < game.invulnerableUntil && ['race', 'finalRace'].includes(game.state)) return;
     game.hearts -= 1;
     game.pendingCrashReason = reason;
     game.invulnerableUntil = now + 2700;
@@ -391,9 +407,13 @@
   }
 
   function finishRespawnWait() {
+    if (game.pendingCrashReason === 'railFinal') {
+      startFinalRace();
+      return;
+    }
     if (game.pendingCrashReason === 'bridge') {
       if (game.section >= TOTAL_SECTIONS) {
-        endGame(true);
+        startFinalRace();
         return;
       }
       game.section += 1;
@@ -408,20 +428,44 @@
     updateHud(true);
   }
 
+  function startFinalRace() {
+    game.pendingCrashReason = '';
+    game.state = 'finalRace';
+    game.stateStart = performance.now();
+    game.gaps = [];
+    game.spawnTimer = 1.0;
+    game.blinkUntil = 0;
+    game.bridgeClosed = false;
+    game.finalPlatformCenter = -0.22;
+    game.finalPlatformStopAt = 0;
+    setMessage('Letzte Strecke bis zum Ziel!', 1200);
+    updateHud(true);
+  }
+
+  function startFinalPlatformApproach(now) {
+    game.state = 'finalPlatform';
+    game.stateStart = now;
+    game.finalPlatformCenter = -0.22;
+    game.finalPlatformStopAt = 0;
+    game.targetLane = 1;
+    setMessage('Zielplattform voraus!', 1100);
+    updateHud(true);
+  }
+
   function startBridgeApproach() {
     game.state = 'approachBridge';
     game.bridgeApproachStart = performance.now();
     game.bigGapCenter = BIG_GAP_INITIAL_CENTER;
     game.bridgeWaitStart = 0;
     game.bridgeClosed = false;
-    game.gaps = [];
+    game.targetLane = 1;
     setMessage('Große Lücke voraus!', 1000);
     updateHud(true);
   }
 
   function startBridgePhase() {
     game.state = 'build';
-    game.gaps = [];
+    game.gaps = game.gaps.filter((gap) => gap.y < 1.25);
     game.bridgeResolved = false;
     game.bridgeClosed = false;
     game.bigGapCenter = BIG_GAP_STOP_CENTER;
@@ -433,6 +477,12 @@
 
   function materialById(id) {
     return materials.find((m) => m.id === id);
+  }
+
+  function materialIconHtml(id, extraClass = '') {
+    const mat = materialById(id);
+    if (!mat) return '';
+    return `<span class="material-icon ${mat.iconClass} ${extraClass}" title="${mat.label}" aria-label="${mat.label}"></span>`;
   }
 
   function shuffled(items) {
@@ -452,7 +502,7 @@
     game.chipCounter = 0;
 
     game.bridgeRecipe = shuffled(bridgeRecipes)[0].slice();
-    const recipeIcons = game.bridgeRecipe.map((id) => `<span class="recipe-icon" title="${materialById(id).label}">${materialById(id).icon}</span>`).join('<span class="recipe-plus">+</span>');
+    const recipeIcons = game.bridgeRecipe.map((id) => materialIconHtml(id, 'recipe-icon')).join('<span class="recipe-plus">+</span>');
     bridgeRecipeText.innerHTML = `Bauplan: ${recipeIcons}`;
 
     for (let i = 0; i < 3; i += 1) {
@@ -464,11 +514,11 @@
     }
 
     const chipIds = game.bridgeRecipe.slice();
-    const distractors = shuffled(materials.map((m) => m.id).filter((id) => !game.bridgeRecipe.includes(id))).slice(0, 6);
+    const distractors = shuffled(materials.map((m) => m.id).filter((id) => !game.bridgeRecipe.includes(id))).slice(0, 9);
     chipIds.push(...distractors);
-    while (chipIds.length < 10) chipIds.push(shuffled(materials)[0].id);
+    while (chipIds.length < 13) chipIds.push(shuffled(materials)[0].id);
 
-    const placed = shuffled(chipIds).slice(0, 10);
+    const placed = shuffled(chipIds).slice(0, 13);
     requestAnimationFrame(() => {
       const rect = bridgeMaterials.getBoundingClientRect();
       placed.forEach((id, index) => createChip(id, index, rect));
@@ -483,7 +533,7 @@
     chip.dataset.material = id;
     chip.dataset.chipId = `chip-${game.chipCounter++}`;
     chip.dataset.slot = '';
-    chip.innerHTML = `<span class="chip-icon" title="${mat.label}">${mat.icon}</span>`;
+    chip.innerHTML = materialIconHtml(id, 'chip-icon');
     chip.style.background = `linear-gradient(145deg, ${mat.color}, #fff2bf)`;
 
     const chipSize = 70;
@@ -602,7 +652,7 @@
       }
       const chip = bridgeMaterials.querySelector(`[data-chip-id="${chipId}"]`);
       const mat = chip ? materialById(chip.dataset.material) : null;
-      slot.innerHTML = mat ? `<span class="slot-icon" title="${mat.label}">${mat.icon}</span>` : '<span class="slot-placeholder">?</span>';
+      slot.innerHTML = mat ? materialIconHtml(chip.dataset.material, 'slot-icon') : '<span class="slot-placeholder">?</span>';
     });
   }
 
@@ -653,7 +703,9 @@
   function update(dt, now) {
     if (game.message && now > game.messageUntil) game.message = '';
 
-    if (game.state === 'race') {
+    if (game.state === 'race' || game.state === 'finalRace') {
+      const isFinalRace = game.state === 'finalRace';
+      const raceLimit = isFinalRace ? FINAL_RACE_SECONDS : RACE_SECONDS;
       const raceElapsed = (now - game.stateStart) / 1000;
       game.railOffset += dt * RAIL_SPEED;
 
@@ -662,7 +714,7 @@
       if (Math.abs(game.playerX - targetX) < 0.006) game.lane = game.targetLane;
 
       game.spawnTimer -= dt;
-      if (game.spawnTimer <= 0 && raceElapsed < RACE_SECONDS - 1.3) {
+      if (game.spawnTimer <= 0 && raceElapsed < raceLimit - 1.3) {
         spawnRailGap();
         game.spawnTimer = 1.0 + Math.random() * 0.45;
       }
@@ -671,7 +723,10 @@
       game.gaps = game.gaps.filter((gap) => gap.y < 1.25);
       checkGapCollision(now);
 
-      if (raceElapsed >= RACE_SECONDS) startBridgeApproach();
+      if (raceElapsed >= raceLimit) {
+        if (isFinalRace) startFinalPlatformApproach(now);
+        else startBridgeApproach();
+      }
     } else if (game.state === 'approachBridge') {
       if (!game.bridgeWaitStart) {
         const remaining = Math.max(0, BIG_GAP_STOP_CENTER - game.bigGapCenter);
@@ -680,6 +735,11 @@
         const step = Math.min(remaining, visualSpeed * dt);
         game.bigGapCenter += step;
         game.railOffset += step;
+        for (const gap of game.gaps) gap.y += step;
+        game.gaps = game.gaps.filter((gap) => gap.y < 1.25);
+        const targetX = LANES[1];
+        game.playerX += (targetX - game.playerX) * Math.min(1, dt * 6);
+        if (Math.abs(game.playerX - targetX) < 0.006) { game.lane = 1; game.targetLane = 1; }
         if (game.bigGapCenter >= BIG_GAP_STOP_CENTER - 0.0001) {
           game.bigGapCenter = BIG_GAP_STOP_CENTER;
           game.bridgeWaitStart = now;
@@ -694,7 +754,7 @@
       game.railOffset += dt * RAIL_SPEED;
       if (now - game.bridgeDriveStart >= 1250) {
         if (game.section >= TOTAL_SECTIONS) {
-          endGame(true);
+          startFinalRace();
           return;
         }
         game.section += 1;
@@ -711,6 +771,21 @@
       game.bigGapCenter += step;
       const [gapStart, gapEnd] = currentBigGapRange();
       if (PLAYER_Y >= gapStart && PLAYER_Y <= gapEnd) loseHeartAndRespawn('bridge');
+    } else if (game.state === 'finalPlatform') {
+      const remaining = Math.max(0, PLAYER_Y - game.finalPlatformCenter);
+      const slowZone = 0.22;
+      const visualSpeed = remaining > slowZone ? RAIL_SPEED : Math.max(0.025, RAIL_SPEED * (remaining / slowZone));
+      const step = Math.min(remaining, visualSpeed * dt);
+      game.finalPlatformCenter += step;
+      game.railOffset += step;
+      for (const gap of game.gaps) gap.y += step;
+      game.gaps = game.gaps.filter((gap) => gap.y < 1.25);
+      const targetX = LANES[1];
+      game.playerX += (targetX - game.playerX) * Math.min(1, dt * 6);
+      if (remaining <= 0.003) {
+        if (!game.finalPlatformStopAt) game.finalPlatformStopAt = now;
+        if (now - game.finalPlatformStopAt >= 900) endGame(true);
+      }
     } else if (game.state === 'crash') {
       if (game.crashAnim && now >= game.crashAnim.start + game.crashAnim.duration) finishCrashRecovery();
     } else if (game.state === 'respawnWait') {
@@ -729,7 +804,7 @@
       const gapEnd = gap.y + gap.length / 2;
       // Erst abstürzen, wenn die Mitte der Lore wirklich in der Lücke liegt.
       if (PLAYER_Y >= gapStart && PLAYER_Y <= gapEnd) {
-        loseHeartAndRespawn('rail');
+        loseHeartAndRespawn(game.state === 'finalRace' ? 'railFinal' : 'rail');
         break;
       }
     }
@@ -890,27 +965,37 @@
   }
 
   function drawBigChasm(w, h) {
-    if (!isBigGapVisible()) return;
-    const [gapStart, gapEnd] = currentBigGapRange();
-    const y1 = gapStart * h;
-    const y2 = gapEnd * h;
+    // Die große Schlucht wird grafisch durch fehlende Schienen und gebrochene Schienenenden gezeigt.
+    // Keine zusätzliche schwarze Fläche, damit der normale Minenboden sichtbar bleibt.
+  }
+
+  function drawFinalPlatform(w, h) {
+    if (game.state !== 'finalPlatform') return;
+    const y = game.finalPlatformCenter * h;
+    const platformW = w * 0.62;
+    const platformH = Math.max(70, h * 0.11);
     ctx.save();
-    const grd = ctx.createLinearGradient(0, y1, 0, y2);
-    grd.addColorStop(0, 'rgba(28, 15, 8, 0.28)');
-    grd.addColorStop(0.22, 'rgba(0, 0, 0, 0.84)');
-    grd.addColorStop(0.78, 'rgba(0, 0, 0, 0.88)');
-    grd.addColorStop(1, 'rgba(38, 21, 10, 0.30)');
-    ctx.fillStyle = grd;
-    ctx.fillRect(w * 0.10, y1, w * 0.80, y2 - y1);
-    ctx.strokeStyle = 'rgba(214, 144, 57, 0.78)';
-    ctx.lineWidth = 4;
-    ctx.lineCap = 'round';
+    ctx.translate(w / 2, y);
+    ctx.fillStyle = 'rgba(35, 24, 16, 0.34)';
     ctx.beginPath();
-    ctx.moveTo(w * 0.11, y1 + 2);
-    ctx.lineTo(w * 0.89, y1 - 2);
-    ctx.moveTo(w * 0.11, y2 - 2);
-    ctx.lineTo(w * 0.89, y2 + 2);
+    ctx.ellipse(0, platformH * 0.35, platformW * 0.54, platformH * 0.22, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#8a5a2b';
+    ctx.strokeStyle = '#2a180d';
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.rect(-platformW / 2, -platformH / 2, platformW, platformH);
+    ctx.fill();
     ctx.stroke();
+    ctx.fillStyle = '#c5904b';
+    for (let i = -2; i <= 2; i += 1) {
+      ctx.fillRect(i * platformW * 0.18 - 8, -platformH / 2 + 8, 16, platformH - 16);
+    }
+    ctx.fillStyle = '#ffe28a';
+    ctx.font = `900 ${Math.round(Math.min(30, w * 0.06))}px system-ui`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('ZIEL', 0, 0);
     ctx.restore();
   }
 
@@ -952,6 +1037,7 @@
     drawBackground(w, h);
     drawRails(w, h);
     drawBigChasm(w, h);
+    drawFinalPlatform(w, h);
     drawMineCart(w, h, now);
   }
 
@@ -981,12 +1067,12 @@
 
   let pointerStartX = null;
   function handlePointerDown(event) {
-    if (game.state !== 'race') return;
+    if (!['race', 'finalRace'].includes(game.state)) return;
     pointerStartX = event.clientX;
   }
 
   function handlePointerUp(event) {
-    if (pointerStartX == null || game.state !== 'race') return;
+    if (pointerStartX == null || !['race', 'finalRace'].includes(game.state)) return;
     const dx = event.clientX - pointerStartX;
     pointerStartX = null;
     if (Math.abs(dx) > 35) {

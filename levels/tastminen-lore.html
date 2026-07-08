@@ -342,6 +342,82 @@
       filter: drop-shadow(0 2px 1px rgba(0,0,0,.18));
     }
 
+
+
+    .material-icon {
+      position: relative;
+      display: inline-grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      overflow: hidden;
+      box-sizing: border-box;
+    }
+
+    .recipe-icon, .slot-icon, .chip-icon {
+      display: inline-grid;
+      place-items: center;
+      line-height: 1;
+    }
+
+    .recipe-icon { width: clamp(38px, 9vw, 54px); height: clamp(38px, 9vw, 54px); }
+    .slot-icon { width: clamp(42px, 10vw, 58px); height: clamp(42px, 10vw, 58px); }
+    .chip-icon { width: 44px; height: 44px; filter: drop-shadow(0 2px 1px rgba(0,0,0,.18)); }
+
+    .material-icon::before, .material-icon::after { content: ""; position: absolute; box-sizing: border-box; }
+    .material-icon.brick { background:#b8583c; border:3px solid #6d2b1c; }
+    .material-icon.brick::before { inset:8px 3px auto; height:3px; background:#ffd1b5; box-shadow:0 10px 0 #ffd1b5, 0 20px 0 #ffd1b5; opacity:.85; }
+    .material-icon.brick::after { top:3px; bottom:3px; left:50%; width:3px; background:#ffd1b5; box-shadow:-15px 10px 0 #ffd1b5, 15px 20px 0 #ffd1b5; opacity:.75; }
+
+    .material-icon.metal { background:linear-gradient(135deg,#dce8f4,#7d8790); border:3px solid #4f5962; }
+    .material-icon.metal::before { left:7px; right:7px; top:18px; height:7px; border-radius:4px; background:#34404a; }
+    .material-icon.metal::after { left:17px; top:5px; width:8px; height:32px; border-radius:4px; background:#f3f7fb; box-shadow:0 0 0 2px #4f5962; }
+
+    .material-icon.wood { background:#b87333; border:3px solid #6c3b17; }
+    .material-icon.wood::before { left:5px; right:5px; top:10px; height:8px; border-radius:999px; background:#e4a45f; box-shadow:0 13px 0 #91501f; }
+    .material-icon.wood::after { inset:8px; border:2px solid rgba(83,39,12,.55); border-radius:999px; transform:rotate(-18deg); }
+
+    .material-icon.rope { background:#e0be78; border:3px solid #8c6326; }
+    .material-icon.rope::before { inset:8px; border:6px solid #8c6326; border-radius:999px; }
+    .material-icon.rope::after { left:8px; top:19px; width:27px; height:4px; background:#f6d78f; transform:rotate(-32deg); border-radius:999px; box-shadow:0 8px 0 #8c6326; }
+
+    .material-icon.clay { background:#b9794c; border:3px solid #68402a; border-radius:999px 55% 70% 60%; }
+    .material-icon.clay::before { left:8px; top:9px; width:25px; height:19px; background:#8f5839; border-radius:58% 42% 60% 40%; }
+    .material-icon.clay::after { left:12px; top:11px; width:8px; height:5px; background:rgba(255,238,200,.45); border-radius:999px; }
+
+    .material-icon.grass { background:#dff4c4; border:3px solid #5d8b34; }
+    .material-icon.grass::before { bottom:5px; left:6px; width:7px; height:26px; background:#4d9d32; border-radius:999px 999px 0 0; transform:rotate(18deg); box-shadow:9px -3px 0 #6fbf3c, 18px 0 0 #3f842a, 27px -4px 0 #79c849; }
+
+    .material-icon.hay { background:#ead36d; border:3px solid #9f8127; }
+    .material-icon.hay::before { left:7px; right:7px; top:12px; height:5px; background:#8f741f; box-shadow:0 9px 0 #8f741f, 0 18px 0 #8f741f; transform:rotate(7deg); }
+    .material-icon.hay::after { inset:7px 16px; border-left:3px solid rgba(116,86,14,.7); transform:rotate(-18deg); }
+
+    .material-icon.moss { background:#7ca75e; border:3px solid #3d642e; border-radius:999px; }
+    .material-icon.moss::before { left:4px; top:15px; width:16px; height:14px; background:#4d7e37; border-radius:999px; box-shadow:12px -7px 0 #90bd6b, 22px 2px 0 #527f3e; }
+
+    .material-icon.paper { background:#f7f1df; border:3px solid #b8a889; }
+    .material-icon.paper::before { right:0; top:0; border-style:solid; border-width:0 13px 13px 0; border-color:transparent #d7cab3 transparent transparent; }
+    .material-icon.paper::after { left:8px; right:8px; top:15px; height:3px; background:#b8a889; box-shadow:0 8px 0 #b8a889; opacity:.8; }
+
+    .material-icon.feather { background:#e9d3b5; border:3px solid #9e7652; }
+    .material-icon.feather::before { left:10px; top:5px; width:24px; height:31px; background:#f7ecd8; border:3px solid #9e7652; border-radius:100% 0 100% 0; transform:rotate(22deg); }
+    .material-icon.feather::after { left:20px; top:8px; width:3px; height:29px; background:#8b6545; transform:rotate(22deg); }
+
+    .material-icon.sponge { background:#edcf55; border:3px solid #9d7e1d; }
+    .material-icon.sponge::before { left:8px; top:8px; width:7px; height:7px; background:#b69423; border-radius:999px; box-shadow:15px 3px 0 #b69423, 7px 17px 0 #b69423, 22px 18px 0 #b69423; }
+
+    .material-icon.mushroom { background:#ead6bf; border:3px solid #8e5641; }
+    .material-icon.mushroom::before { left:6px; right:6px; top:7px; height:19px; background:#c94f41; border-radius:999px 999px 8px 8px; }
+    .material-icon.mushroom::after { left:16px; top:20px; width:12px; height:16px; background:#f6e7cf; border:2px solid #8e5641; border-radius:4px; }
+
+    .material-icon.leaf { background:#d7f1c8; border:3px solid #5e8a39; }
+    .material-icon.leaf::before { left:8px; top:8px; width:28px; height:22px; background:#6fbf4a; border:3px solid #3d7a2b; border-radius:100% 0 100% 0; transform:rotate(-20deg); }
+    .material-icon.leaf::after { left:20px; top:12px; width:3px; height:22px; background:#3d7a2b; transform:rotate(38deg); }
+
+    .material-icon.wool { background:#f0e8d8; border:3px solid #aaa08e; border-radius:999px; }
+    .material-icon.wool::before { left:5px; top:13px; width:14px; height:14px; background:#fffaf0; border-radius:999px; box-shadow:10px -7px 0 #fffaf0, 20px 0 0 #fffaf0, 10px 8px 0 #e4dac7; }
+
     .material-chip.dragging {
       z-index: 30;
       cursor: grabbing;
