@@ -7,6 +7,12 @@
   const RACE_SECONDS = 10;
   const BUILD_SECONDS = 20;
   const TOTAL_SECTIONS = 3;
+  const RAIL_SPEED = 0.42;
+  const BIG_GAP_START = 0.50;
+  const BIG_GAP_END = 1.10;
+  const BIG_GAP_STOP_Y = 0.69;
+  const BRIDGE_WAIT_MS = 1000;
+  const RESPAWN_BLINK_MS = 2000;
 
   const canvas = document.getElementById('mineCanvas');
   const ctx = canvas.getContext('2d', { alpha: true });
@@ -75,6 +81,11 @@
     invulnerableUntil: 0,
     blinkUntil: 0,
     crashAnim: null,
+    bridgeApproachStart: 0,
+    bridgeWaitStart: 0,
+    bridgeClosed: false,
+    bridgeDriveStart: 0,
+    pendingCrashReason: '',
     message: '',
     messageUntil: 0,
     lastHudAt: 0,
@@ -216,6 +227,11 @@
     game.invulnerableUntil = 0;
     game.blinkUntil = 0;
     game.crashAnim = null;
+    game.bridgeApproachStart = 0;
+    game.bridgeWaitStart = 0;
+    game.bridgeClosed = false;
+    game.bridgeDriveStart = 0;
+    game.pendingCrashReason = '';
     game.message = '';
     game.messageUntil = 0;
     game.lastHudAt = 0;
@@ -260,11 +276,20 @@
       const left = Math.max(0, Math.ceil(RACE_SECONDS - raceElapsed));
       label = game.message || `Abschnitt ${game.section}/${TOTAL_SECTIONS}: ${left} s bis zur Schlucht`;
       progress = ((game.section - 1) + raceElapsed / RACE_SECONDS) / TOTAL_SECTIONS;
+    } else if (game.state === 'approachBridge') {
+      label = game.message || 'Große Lücke voraus …';
+      progress = ((game.section - 1) + 0.95) / TOTAL_SECTIONS;
     } else if (game.state === 'build') {
       const left = Math.max(0, Math.ceil((game.bridgeDeadline - now) / 1000));
       label = game.message || `Brückenbau ${game.section}/${TOTAL_SECTIONS}: ${left} s`;
-      progress = ((game.section - 1) + 0.5) / TOTAL_SECTIONS;
+      progress = ((game.section - 1) + 0.98) / TOTAL_SECTIONS;
+    } else if (game.state === 'bridgeDrive') {
+      label = game.message || 'Brücke stabil – weiterfahren!';
+      progress = game.section / TOTAL_SECTIONS;
     } else if (game.state === 'crash') {
+      label = game.message || 'Lore stürzt ab …';
+      progress = (game.section - 1) / TOTAL_SECTIONS;
+    } else if (game.state === 'respawnWait') {
       label = game.message || 'Lore wird wieder eingesetzt …';
       progress = (game.section - 1) / TOTAL_SECTIONS;
     } else {
@@ -315,45 +340,78 @@
       [lanes[i], lanes[j]] = [lanes[j], lanes[i]];
     }
     for (const lane of lanes.slice(0, count)) {
-      game.gaps.push({ lane, y: -0.22, length: 0.145, speed: 0.52 });
+      game.gaps.push({ lane, y: -0.22, length: 0.145, speed: RAIL_SPEED });
     }
   }
 
   function loseHeartAndRespawn(reason) {
-    if (game.state !== 'race' && game.state !== 'build') return;
+    if (!['race', 'build', 'approachBridge'].includes(game.state)) return;
     const now = performance.now();
     if (now < game.invulnerableUntil && game.state === 'race') return;
     game.hearts -= 1;
-    game.invulnerableUntil = now + 1300;
-    game.blinkUntil = now + 1350;
-    game.crashAnim = { start: now, duration: 900, kind: reason };
+    game.pendingCrashReason = reason;
+    game.invulnerableUntil = now + 2700;
+    game.blinkUntil = 0;
+    game.crashAnim = { start: now, duration: 720, kind: reason };
     game.state = 'crash';
     game.message = reason === 'bridge' ? 'Brücke nicht gebaut: 1 Leben verloren!' : 'Schienenlücke: 1 Leben verloren!';
-    game.messageUntil = now + 1200;
+    game.messageUntil = now + 1400;
     if (navigator.vibrate) navigator.vibrate([70, 35, 70]);
     bridgeOverlay.classList.add('hidden');
     updateHud(true);
     if (game.hearts <= 0) {
-      setTimeout(() => endGame(false), 900);
+      setTimeout(() => endGame(false), 760);
     }
   }
 
   function finishCrashRecovery() {
     if (game.hearts <= 0) return;
+    const now = performance.now();
     game.crashAnim = null;
     game.gaps = [];
     game.lane = Math.max(0, Math.min(2, game.targetLane));
     game.playerX = LANES[game.lane];
-    game.spawnTimer = 0.85;
+    game.spawnTimer = 0.95;
+    game.state = 'respawnWait';
+    game.blinkUntil = now + RESPAWN_BLINK_MS;
+    game.bridgeWaitStart = now;
+    setMessage('Lore wieder eingesetzt …', RESPAWN_BLINK_MS);
+    updateHud(true);
+  }
+
+  function finishRespawnWait() {
+    if (game.pendingCrashReason === 'bridge') {
+      if (game.section >= TOTAL_SECTIONS) {
+        endGame(true);
+        return;
+      }
+      game.section += 1;
+    }
+    game.pendingCrashReason = '';
     game.state = 'race';
     game.stateStart = performance.now();
+    game.gaps = [];
+    game.spawnTimer = 1.0;
+    game.blinkUntil = 0;
     setMessage('Weiter geht’s!', 850);
+    updateHud(true);
+  }
+
+  function startBridgeApproach() {
+    game.state = 'approachBridge';
+    game.bridgeApproachStart = performance.now();
+    game.bridgeWaitStart = 0;
+    game.bridgeClosed = false;
+    game.gaps = [];
+    setMessage('Große Lücke voraus!', 1000);
+    updateHud(true);
   }
 
   function startBridgePhase() {
     game.state = 'build';
     game.gaps = [];
     game.bridgeResolved = false;
+    game.bridgeClosed = false;
     game.bridgeDeadline = performance.now() + BUILD_SECONDS * 1000;
     setupBridgePuzzle();
     bridgeOverlay.classList.remove('hidden');
@@ -428,7 +486,7 @@
   }
 
   function startChipDrag(event) {
-    if (game.state !== 'build') return;
+    if (!isBigGapVisible()) return;
     event.preventDefault();
     const chip = event.currentTarget;
     chip.setPointerCapture(event.pointerId);
@@ -556,20 +614,19 @@
     game.bridgeResolved = true;
     bridgeOverlay.classList.add('hidden');
     if (success) {
-      setMessage('Brücke gebaut!', 1100);
-      if (game.section >= TOTAL_SECTIONS) {
-        endGame(true);
-        return;
-      }
-      game.section += 1;
-      game.state = 'race';
-      game.stateStart = performance.now();
+      game.bridgeClosed = true;
+      game.bridgeDriveStart = performance.now();
+      game.state = 'bridgeDrive';
       game.gaps = [];
-      game.spawnTimer = 1.0;
+      setMessage('Brücke gebaut!', 1200);
       updateHud(true);
       return;
     }
-    loseHeartAndRespawn('bridge');
+    game.bridgeClosed = false;
+    game.state = 'approachBridge';
+    game.bridgeWaitStart = 0;
+    game.bridgeApproachStart = performance.now() - 1300;
+    setTimeout(() => loseHeartAndRespawn('bridge'), 250);
   }
 
   bridgeBuildButton.addEventListener('click', () => {
@@ -583,7 +640,7 @@
 
     if (game.state === 'race') {
       const raceElapsed = (now - game.stateStart) / 1000;
-      game.railOffset += dt * 0.38;
+      game.railOffset += dt * RAIL_SPEED;
 
       const targetX = LANES[game.targetLane];
       game.playerX += (targetX - game.playerX) * Math.min(1, dt * 11);
@@ -595,16 +652,42 @@
         game.spawnTimer = 1.0 + Math.random() * 0.45;
       }
 
-      for (const gap of game.gaps) gap.y += gap.speed * dt;
+      for (const gap of game.gaps) gap.y += RAIL_SPEED * dt;
       game.gaps = game.gaps.filter((gap) => gap.y < 1.25);
       checkGapCollision(now);
 
-      if (raceElapsed >= RACE_SECONDS) startBridgePhase();
+      if (raceElapsed >= RACE_SECONDS) startBridgeApproach();
+    } else if (game.state === 'approachBridge') {
+      const elapsed = (now - game.bridgeApproachStart) / 1000;
+      const speedFactor = Math.max(0, 1 - elapsed / 1.2);
+      game.railOffset += dt * RAIL_SPEED * speedFactor;
+      if (elapsed >= 1.2 && !game.bridgeWaitStart) {
+        game.bridgeWaitStart = now;
+        setMessage('Stopp vor der Lücke …', 1000);
+      }
+      if (game.bridgeWaitStart && now - game.bridgeWaitStart >= BRIDGE_WAIT_MS) startBridgePhase();
     } else if (game.state === 'build') {
       bridgeTimer.textContent = String(Math.max(0, Math.ceil((game.bridgeDeadline - now) / 1000)));
       if (now >= game.bridgeDeadline) finishBridge(false);
+    } else if (game.state === 'bridgeDrive') {
+      game.railOffset += dt * RAIL_SPEED;
+      if (now - game.bridgeDriveStart >= 1250) {
+        if (game.section >= TOTAL_SECTIONS) {
+          endGame(true);
+          return;
+        }
+        game.section += 1;
+        game.bridgeClosed = false;
+        game.state = 'race';
+        game.stateStart = now;
+        game.gaps = [];
+        game.spawnTimer = 1.0;
+        updateHud(true);
+      }
     } else if (game.state === 'crash') {
       if (game.crashAnim && now >= game.crashAnim.start + game.crashAnim.duration) finishCrashRecovery();
+    } else if (game.state === 'respawnWait') {
+      if (now >= game.blinkUntil) finishRespawnWait();
     }
 
     updateHud();
@@ -615,7 +698,10 @@
     const currentLane = Math.round(game.lane);
     for (const gap of game.gaps) {
       if (gap.lane !== currentLane) continue;
-      if (Math.abs(gap.y - PLAYER_Y) < gap.length * 0.52) {
+      const gapStart = gap.y - gap.length / 2;
+      const gapEnd = gap.y + gap.length / 2;
+      // Erst abstürzen, wenn die Mitte der Lore wirklich in der Lücke liegt.
+      if (PLAYER_Y >= gapStart && PLAYER_Y <= gapEnd) {
         loseHeartAndRespawn('rail');
         break;
       }
@@ -651,7 +737,8 @@
   }
 
   function laneRailHalfWidth(y, w) {
-    return Math.max(w * 0.0165, Math.min(w * 0.021, w * (0.018 + y * 0.0015)));
+    // Breiter als vorher: Die Schienenbahn entspricht optisch eher der Lorebreite.
+    return Math.max(w * 0.027, Math.min(w * 0.036, w * (0.031 + y * 0.0015)));
   }
 
   function drawRailSegment(lane, y1, y2, w, h) {
@@ -678,10 +765,17 @@
     ctx.restore();
   }
 
+  function isBigGapVisible() {
+    if (game.bridgeClosed) return false;
+    return game.state === 'approachBridge'
+      || game.state === 'build'
+      || (game.state === 'crash' && game.pendingCrashReason === 'bridge');
+  }
+
   function drawRails(w, h) {
     for (let lane = 0; lane < LANES.length; lane += 1) {
       const laneGaps = game.gaps.filter((gap) => gap.lane === lane).map((gap) => [gap.y - gap.length / 2, gap.y + gap.length / 2]);
-      if (game.state === 'build') laneGaps.push([0.45, 1.08]);
+      if (isBigGapVisible()) laneGaps.push([BIG_GAP_START, BIG_GAP_END]);
       laneGaps.sort((a, b) => a[0] - b[0]);
 
       let start = -0.08;
@@ -725,7 +819,7 @@
       const end = gap.y + gap.length / 2;
       if (y >= start - tieHalf && y <= end + tieHalf) return true;
     }
-    if (game.state === 'build' && y >= 0.45 - tieHalf && y <= 1.08 + tieHalf) return true;
+    if (isBigGapVisible() && y >= BIG_GAP_START - tieHalf && y <= BIG_GAP_END + tieHalf) return true;
     return false;
   }
 
@@ -760,9 +854,9 @@
   }
 
   function drawBigChasm(w, h) {
-    if (game.state !== 'build') return;
+    if (!isBigGapVisible()) return;
     ctx.save();
-    const y = h * 0.58;
+    const y = h * ((BIG_GAP_START + BIG_GAP_END) / 2);
     const grd = ctx.createRadialGradient(w / 2, y, 20, w / 2, y, w * 0.55);
     grd.addColorStop(0, 'rgba(0,0,0,0.85)');
     grd.addColorStop(1, 'rgba(0,0,0,0.25)');
@@ -794,18 +888,11 @@
 
     if (game.crashAnim) {
       const t = Math.min(1, (now - game.crashAnim.start) / game.crashAnim.duration);
-      if (t < 0.58) {
-        y += h * 0.18 * t;
-        scale = 1 - t * 0.92;
-        alpha = 1 - t * 0.65;
-      } else {
-        const rt = (t - 0.58) / 0.42;
-        y = PLAYER_Y * h - h * 0.04 * (1 - rt);
-        scale = 0.36 + rt * 0.64;
-        alpha = 0.2 + rt * 0.8;
-      }
-    } else if (now < game.blinkUntil && Math.floor(now / 90) % 2 === 0) {
-      alpha = 0.38;
+      y += h * 0.16 * t;
+      scale = Math.max(0.02, 1 - t);
+      alpha = Math.max(0, 1 - t * 1.15);
+    } else if (now < game.blinkUntil && Math.floor(now / 120) % 2 === 0) {
+      alpha = 0.32;
     }
 
     const targetSize = Math.min(w, h) * 0.25 * scale;
