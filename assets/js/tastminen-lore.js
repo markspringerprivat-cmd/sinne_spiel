@@ -8,9 +8,9 @@
   const BUILD_SECONDS = 20;
   const TOTAL_SECTIONS = 3;
   const RAIL_SPEED = 0.42;
-  const BIG_GAP_LENGTH = 0.30;
-  const BIG_GAP_INITIAL_CENTER = 0.18;
-  const BIG_GAP_STOP_CENTER = 0.62;
+  const BIG_GAP_LENGTH = 0.36;
+  const BIG_GAP_INITIAL_CENTER = -0.26;
+  const BIG_GAP_STOP_CENTER = 0.54;
   const BIG_GAP_APPROACH_SECONDS = 2.4;
   const BRIDGE_WAIT_MS = 1000;
   const RESPAWN_BLINK_MS = 2000;
@@ -29,7 +29,7 @@
   const bridgeSlots = document.getElementById('bridgeSlots');
   const bridgeMaterials = document.getElementById('bridgeMaterials');
   const bridgeBuildButton = document.getElementById('bridgeBuildButton');
-  const musicLoop = window.createCrossfadeLoop ? window.createCrossfadeLoop(musicElement, { fadeSeconds: 0.025 }) : null;
+  const musicLoop = null;
 
   const images = {
     background: new Image(),
@@ -39,14 +39,18 @@
   images.cart.src = '../assets/images/minigame/cart_normal.png';
 
   const materials = [
-    { id: 'stein', label: 'Stein', icon: '🧱', kind: 'hart', color: '#b9aea1' },
-    { id: 'metall', label: 'Metall', icon: '🔩', kind: 'hart', color: '#bcc7d6' },
-    { id: 'holz', label: 'Holz', icon: '🪵', kind: 'hart', color: '#c58b48' },
+    { id: 'stein', label: 'Backstein', icon: '🧱', kind: 'hart', color: '#cfa28f' },
+    { id: 'metall', label: 'Metallschiene', icon: '⚙️', kind: 'hart', color: '#bcc7d6' },
+    { id: 'holz', label: 'Holzbrett', icon: '🪵', kind: 'hart', color: '#c58b48' },
     { id: 'seil', label: 'Seil', icon: '🪢', kind: 'weich', color: '#d5b06b' },
-    { id: 'lehm', label: 'Lehm', icon: '🟫', kind: 'weich', color: '#b9794c' },
+    { id: 'lehm', label: 'Lehmklumpen', icon: '🪨', kind: 'weich', color: '#b9794c' },
     { id: 'gras', label: 'Gras', icon: '🌿', kind: 'weich', color: '#8bc45a' },
     { id: 'heu', label: 'Heu', icon: '🌾', kind: 'weich', color: '#dfca65' },
-    { id: 'moos', label: 'Moos', icon: '🟩', kind: 'weich', color: '#79a35b' },
+    { id: 'moos', label: 'Moos', icon: '🍃', kind: 'weich', color: '#79a35b' },
+    { id: 'papier', label: 'Papier', icon: '📄', kind: 'weich', color: '#f2ead4' },
+    { id: 'feder', label: 'Feder', icon: '🪶', kind: 'weich', color: '#e7d3b4' },
+    { id: 'schwamm', label: 'Schwamm', icon: '🧽', kind: 'weich', color: '#edd16b' },
+    { id: 'pilz', label: 'Pilz', icon: '🍄', kind: 'weich', color: '#d79384' },
   ];
 
   const bridgeRecipes = [
@@ -111,6 +115,7 @@
     } else {
       musicElement.volume = volume;
       musicElement.loop = true;
+      if (musicElement.ended) { try { musicElement.currentTime = 0; } catch {} }
       musicElement.play().catch(() => {});
     }
   }
@@ -289,6 +294,9 @@
     } else if (game.state === 'bridgeDrive') {
       label = game.message || 'Brücke stabil – weiterfahren!';
       progress = game.section / TOTAL_SECTIONS;
+    } else if (game.state === 'bridgeFailDrive') {
+      label = game.message || 'Die Lore rollt in die Lücke …';
+      progress = ((game.section - 1) + 0.98) / TOTAL_SECTIONS;
     } else if (game.state === 'crash') {
       label = game.message || 'Lore stürzt ab …';
       progress = (game.section - 1) / TOTAL_SECTIONS;
@@ -348,7 +356,7 @@
   }
 
   function loseHeartAndRespawn(reason) {
-    if (!['race', 'build', 'approachBridge'].includes(game.state)) return;
+    if (!['race', 'build', 'approachBridge', 'bridgeFailDrive'].includes(game.state)) return;
     const now = performance.now();
     if (now < game.invulnerableUntil && game.state === 'race') return;
     game.hearts -= 1;
@@ -478,7 +486,7 @@
     chip.innerHTML = `<span class="chip-icon" title="${mat.label}">${mat.icon}</span>`;
     chip.style.background = `linear-gradient(145deg, ${mat.color}, #fff2bf)`;
 
-    const chipSize = 80;
+    const chipSize = 70;
     const maxX = Math.max(10, areaRect.width - chipSize - 10);
     const maxY = Math.max(10, areaRect.height - chipSize - 10);
     const x = 12 + ((index * 67) % maxX);
@@ -630,10 +638,10 @@
     }
     game.bridgeClosed = false;
     game.bigGapCenter = BIG_GAP_STOP_CENTER;
-    game.state = 'approachBridge';
-    game.bridgeWaitStart = 0;
-    game.bridgeApproachStart = performance.now() - BIG_GAP_APPROACH_SECONDS * 1000;
-    setTimeout(() => loseHeartAndRespawn('bridge'), 250);
+    game.state = 'bridgeFailDrive';
+    game.bridgeDriveStart = performance.now();
+    setMessage('Die Brücke hält nicht!', 900);
+    updateHud(true);
   }
 
   bridgeBuildButton.addEventListener('click', () => {
@@ -665,16 +673,18 @@
 
       if (raceElapsed >= RACE_SECONDS) startBridgeApproach();
     } else if (game.state === 'approachBridge') {
-      const elapsed = (now - game.bridgeApproachStart) / 1000;
-      const approachT = Math.min(1, elapsed / BIG_GAP_APPROACH_SECONDS);
-      const eased = 1 - Math.pow(1 - approachT, 3);
-      game.bigGapCenter = BIG_GAP_INITIAL_CENTER + (BIG_GAP_STOP_CENTER - BIG_GAP_INITIAL_CENTER) * eased;
-      const speedFactor = Math.max(0, 1 - approachT);
-      game.railOffset += dt * RAIL_SPEED * speedFactor;
-      if (approachT >= 1 && !game.bridgeWaitStart) {
-        game.bridgeWaitStart = now;
-        game.bigGapCenter = BIG_GAP_STOP_CENTER;
-        setMessage('Stopp vor der Lücke …', 1000);
+      if (!game.bridgeWaitStart) {
+        const remaining = Math.max(0, BIG_GAP_STOP_CENTER - game.bigGapCenter);
+        const slowZone = 0.20;
+        const visualSpeed = remaining > slowZone ? RAIL_SPEED : Math.max(0.035, RAIL_SPEED * (remaining / slowZone));
+        const step = Math.min(remaining, visualSpeed * dt);
+        game.bigGapCenter += step;
+        game.railOffset += step;
+        if (game.bigGapCenter >= BIG_GAP_STOP_CENTER - 0.0001) {
+          game.bigGapCenter = BIG_GAP_STOP_CENTER;
+          game.bridgeWaitStart = now;
+          setMessage('Stopp vor der Lücke …', 1000);
+        }
       }
       if (game.bridgeWaitStart && now - game.bridgeWaitStart >= BRIDGE_WAIT_MS) startBridgePhase();
     } else if (game.state === 'build') {
@@ -695,6 +705,12 @@
         game.spawnTimer = 1.0;
         updateHud(true);
       }
+    } else if (game.state === 'bridgeFailDrive') {
+      const step = RAIL_SPEED * dt;
+      game.railOffset += step;
+      game.bigGapCenter += step;
+      const [gapStart, gapEnd] = currentBigGapRange();
+      if (PLAYER_Y >= gapStart && PLAYER_Y <= gapEnd) loseHeartAndRespawn('bridge');
     } else if (game.state === 'crash') {
       if (game.crashAnim && now >= game.crashAnim.start + game.crashAnim.duration) finishCrashRecovery();
     } else if (game.state === 'respawnWait') {
@@ -780,6 +796,7 @@
     if (game.bridgeClosed) return false;
     return game.state === 'approachBridge'
       || game.state === 'build'
+      || game.state === 'bridgeFailDrive'
       || (game.state === 'crash' && game.pendingCrashReason === 'bridge');
   }
 
@@ -978,6 +995,16 @@
     }
     if (event.clientX < window.innerWidth * 0.45) setLane(-1);
     else if (event.clientX > window.innerWidth * 0.55) setLane(1);
+  }
+
+
+  if (musicElement) {
+    musicElement.loop = true;
+    musicElement.addEventListener('ended', () => {
+      if (!game.running) return;
+      try { musicElement.currentTime = 0; } catch {}
+      musicElement.play().catch(() => {});
+    });
   }
 
   window.addEventListener('resize', () => { resizeCanvas(); draw(); });
