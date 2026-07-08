@@ -8,9 +8,10 @@
   const BUILD_SECONDS = 20;
   const TOTAL_SECTIONS = 3;
   const RAIL_SPEED = 0.42;
-  const BIG_GAP_START = 0.50;
-  const BIG_GAP_END = 1.10;
-  const BIG_GAP_STOP_Y = 0.69;
+  const BIG_GAP_LENGTH = 0.30;
+  const BIG_GAP_INITIAL_CENTER = 0.18;
+  const BIG_GAP_STOP_CENTER = 0.62;
+  const BIG_GAP_APPROACH_SECONDS = 2.4;
   const BRIDGE_WAIT_MS = 1000;
   const RESPAWN_BLINK_MS = 2000;
 
@@ -38,14 +39,14 @@
   images.cart.src = '../assets/images/minigame/cart_normal.png';
 
   const materials = [
-    { id: 'stein', label: 'Stein', kind: 'hart', color: '#b9aea1' },
-    { id: 'metall', label: 'Metall', kind: 'hart', color: '#bcc7d6' },
-    { id: 'holz', label: 'Holz', kind: 'hart', color: '#c58b48' },
-    { id: 'seil', label: 'Seil', kind: 'weich', color: '#d5b06b' },
-    { id: 'lehm', label: 'Lehm', kind: 'weich', color: '#b9794c' },
-    { id: 'gras', label: 'Gras', kind: 'weich', color: '#8bc45a' },
-    { id: 'heu', label: 'Heu', kind: 'weich', color: '#dfca65' },
-    { id: 'moos', label: 'Moos', kind: 'weich', color: '#79a35b' },
+    { id: 'stein', label: 'Stein', icon: '🧱', kind: 'hart', color: '#b9aea1' },
+    { id: 'metall', label: 'Metall', icon: '🔩', kind: 'hart', color: '#bcc7d6' },
+    { id: 'holz', label: 'Holz', icon: '🪵', kind: 'hart', color: '#c58b48' },
+    { id: 'seil', label: 'Seil', icon: '🪢', kind: 'weich', color: '#d5b06b' },
+    { id: 'lehm', label: 'Lehm', icon: '🟫', kind: 'weich', color: '#b9794c' },
+    { id: 'gras', label: 'Gras', icon: '🌿', kind: 'weich', color: '#8bc45a' },
+    { id: 'heu', label: 'Heu', icon: '🌾', kind: 'weich', color: '#dfca65' },
+    { id: 'moos', label: 'Moos', icon: '🟩', kind: 'weich', color: '#79a35b' },
   ];
 
   const bridgeRecipes = [
@@ -85,6 +86,7 @@
     bridgeWaitStart: 0,
     bridgeClosed: false,
     bridgeDriveStart: 0,
+    bigGapCenter: BIG_GAP_INITIAL_CENTER,
     pendingCrashReason: '',
     message: '',
     messageUntil: 0,
@@ -231,6 +233,7 @@
     game.bridgeWaitStart = 0;
     game.bridgeClosed = false;
     game.bridgeDriveStart = 0;
+    game.bigGapCenter = BIG_GAP_INITIAL_CENTER;
     game.pendingCrashReason = '';
     game.message = '';
     game.messageUntil = 0;
@@ -400,6 +403,7 @@
   function startBridgeApproach() {
     game.state = 'approachBridge';
     game.bridgeApproachStart = performance.now();
+    game.bigGapCenter = BIG_GAP_INITIAL_CENTER;
     game.bridgeWaitStart = 0;
     game.bridgeClosed = false;
     game.gaps = [];
@@ -412,6 +416,7 @@
     game.gaps = [];
     game.bridgeResolved = false;
     game.bridgeClosed = false;
+    game.bigGapCenter = BIG_GAP_STOP_CENTER;
     game.bridgeDeadline = performance.now() + BUILD_SECONDS * 1000;
     setupBridgePuzzle();
     bridgeOverlay.classList.remove('hidden');
@@ -439,14 +444,14 @@
     game.chipCounter = 0;
 
     game.bridgeRecipe = shuffled(bridgeRecipes)[0].slice();
-    const recipeLabels = game.bridgeRecipe.map((id) => materialById(id).label).join(' + ');
-    bridgeRecipeText.textContent = `Bauplan: ${recipeLabels}`;
+    const recipeIcons = game.bridgeRecipe.map((id) => `<span class="recipe-icon" title="${materialById(id).label}">${materialById(id).icon}</span>`).join('<span class="recipe-plus">+</span>');
+    bridgeRecipeText.innerHTML = `Bauplan: ${recipeIcons}`;
 
     for (let i = 0; i < 3; i += 1) {
       const slot = document.createElement('div');
       slot.className = 'bridge-slot';
       slot.dataset.slot = String(i);
-      slot.textContent = `Teil ${i + 1}`;
+      slot.innerHTML = '<span class="slot-placeholder">?</span>';
       bridgeSlots.appendChild(slot);
     }
 
@@ -470,7 +475,7 @@
     chip.dataset.material = id;
     chip.dataset.chipId = `chip-${game.chipCounter++}`;
     chip.dataset.slot = '';
-    chip.innerHTML = `<span>${mat.label}</span>`;
+    chip.innerHTML = `<span class="chip-icon" title="${mat.label}">${mat.icon}</span>`;
     chip.style.background = `linear-gradient(145deg, ${mat.color}, #fff2bf)`;
 
     const chipSize = 80;
@@ -584,11 +589,12 @@
     [...bridgeSlots.children].forEach((slot, index) => {
       const chipId = game.slotValues[index];
       if (!chipId) {
-        slot.textContent = `Teil ${index + 1}`;
+        slot.innerHTML = '<span class="slot-placeholder">?</span>';
         return;
       }
       const chip = bridgeMaterials.querySelector(`[data-chip-id="${chipId}"]`);
-      slot.textContent = chip ? chip.dataset.material : `Teil ${index + 1}`;
+      const mat = chip ? materialById(chip.dataset.material) : null;
+      slot.innerHTML = mat ? `<span class="slot-icon" title="${mat.label}">${mat.icon}</span>` : '<span class="slot-placeholder">?</span>';
     });
   }
 
@@ -623,9 +629,10 @@
       return;
     }
     game.bridgeClosed = false;
+    game.bigGapCenter = BIG_GAP_STOP_CENTER;
     game.state = 'approachBridge';
     game.bridgeWaitStart = 0;
-    game.bridgeApproachStart = performance.now() - 1300;
+    game.bridgeApproachStart = performance.now() - BIG_GAP_APPROACH_SECONDS * 1000;
     setTimeout(() => loseHeartAndRespawn('bridge'), 250);
   }
 
@@ -659,10 +666,14 @@
       if (raceElapsed >= RACE_SECONDS) startBridgeApproach();
     } else if (game.state === 'approachBridge') {
       const elapsed = (now - game.bridgeApproachStart) / 1000;
-      const speedFactor = Math.max(0, 1 - elapsed / 1.2);
+      const approachT = Math.min(1, elapsed / BIG_GAP_APPROACH_SECONDS);
+      const eased = 1 - Math.pow(1 - approachT, 3);
+      game.bigGapCenter = BIG_GAP_INITIAL_CENTER + (BIG_GAP_STOP_CENTER - BIG_GAP_INITIAL_CENTER) * eased;
+      const speedFactor = Math.max(0, 1 - approachT);
       game.railOffset += dt * RAIL_SPEED * speedFactor;
-      if (elapsed >= 1.2 && !game.bridgeWaitStart) {
+      if (approachT >= 1 && !game.bridgeWaitStart) {
         game.bridgeWaitStart = now;
+        game.bigGapCenter = BIG_GAP_STOP_CENTER;
         setMessage('Stopp vor der Lücke …', 1000);
       }
       if (game.bridgeWaitStart && now - game.bridgeWaitStart >= BRIDGE_WAIT_MS) startBridgePhase();
@@ -772,10 +783,15 @@
       || (game.state === 'crash' && game.pendingCrashReason === 'bridge');
   }
 
+  function currentBigGapRange() {
+    const center = game.bigGapCenter || BIG_GAP_STOP_CENTER;
+    return [center - BIG_GAP_LENGTH / 2, center + BIG_GAP_LENGTH / 2];
+  }
+
   function drawRails(w, h) {
     for (let lane = 0; lane < LANES.length; lane += 1) {
       const laneGaps = game.gaps.filter((gap) => gap.lane === lane).map((gap) => [gap.y - gap.length / 2, gap.y + gap.length / 2]);
-      if (isBigGapVisible()) laneGaps.push([BIG_GAP_START, BIG_GAP_END]);
+      if (isBigGapVisible()) laneGaps.push(currentBigGapRange());
       laneGaps.sort((a, b) => a[0] - b[0]);
 
       let start = -0.08;
@@ -819,7 +835,10 @@
       const end = gap.y + gap.length / 2;
       if (y >= start - tieHalf && y <= end + tieHalf) return true;
     }
-    if (isBigGapVisible() && y >= BIG_GAP_START - tieHalf && y <= BIG_GAP_END + tieHalf) return true;
+    if (isBigGapVisible()) {
+      const [bigStart, bigEnd] = currentBigGapRange();
+      if (y >= bigStart - tieHalf && y <= bigEnd + tieHalf) return true;
+    }
     return false;
   }
 
@@ -855,20 +874,25 @@
 
   function drawBigChasm(w, h) {
     if (!isBigGapVisible()) return;
+    const [gapStart, gapEnd] = currentBigGapRange();
+    const y1 = gapStart * h;
+    const y2 = gapEnd * h;
     ctx.save();
-    const y = h * ((BIG_GAP_START + BIG_GAP_END) / 2);
-    const grd = ctx.createRadialGradient(w / 2, y, 20, w / 2, y, w * 0.55);
-    grd.addColorStop(0, 'rgba(0,0,0,0.85)');
-    grd.addColorStop(1, 'rgba(0,0,0,0.25)');
+    const grd = ctx.createLinearGradient(0, y1, 0, y2);
+    grd.addColorStop(0, 'rgba(28, 15, 8, 0.28)');
+    grd.addColorStop(0.22, 'rgba(0, 0, 0, 0.84)');
+    grd.addColorStop(0.78, 'rgba(0, 0, 0, 0.88)');
+    grd.addColorStop(1, 'rgba(38, 21, 10, 0.30)');
     ctx.fillStyle = grd;
+    ctx.fillRect(w * 0.10, y1, w * 0.80, y2 - y1);
+    ctx.strokeStyle = 'rgba(214, 144, 57, 0.78)';
+    ctx.lineWidth = 4;
+    ctx.lineCap = 'round';
     ctx.beginPath();
-    ctx.ellipse(w / 2, y, w * 0.48, h * 0.16, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = '#d49b45';
-    ctx.lineWidth = 5;
-    ctx.setLineDash([16, 12]);
-    ctx.beginPath();
-    ctx.ellipse(w / 2, y, w * 0.44, h * 0.12, 0, 0, Math.PI * 2);
+    ctx.moveTo(w * 0.11, y1 + 2);
+    ctx.lineTo(w * 0.89, y1 - 2);
+    ctx.moveTo(w * 0.11, y2 - 2);
+    ctx.lineTo(w * 0.89, y2 + 2);
     ctx.stroke();
     ctx.restore();
   }
@@ -896,11 +920,9 @@
     }
 
     const targetSize = Math.min(w, h) * 0.25 * scale;
-    const normalizedLaneOffset = Math.max(-1, Math.min(1, (0.5 - game.playerX) / (0.5 - LANES[0])));
     ctx.save();
     ctx.globalAlpha = alpha;
     ctx.translate(x, y);
-    ctx.rotate(normalizedLaneOffset * Math.PI / 13);
     drawSprite(images.cart, 0, 0, targetSize);
     ctx.restore();
   }

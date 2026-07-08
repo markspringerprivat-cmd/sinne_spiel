@@ -236,6 +236,31 @@
     .bridge-header h2 { margin: 0 0 4px; font-size: clamp(24px, 6vw, 38px); line-height: 1; }
     .bridge-header p { margin: 0; font-size: clamp(14px, 3.5vw, 18px); font-weight: 850; }
 
+    #bridgeRecipeText {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .recipe-icon {
+      display: inline-grid;
+      place-items: center;
+      width: clamp(38px, 9vw, 54px);
+      height: clamp(38px, 9vw, 54px);
+      border-radius: 14px;
+      background: rgba(255,255,255,.64);
+      border: 2px solid rgba(88,54,25,.42);
+      font-size: clamp(26px, 7vw, 38px);
+      line-height: 1;
+    }
+
+    .recipe-plus {
+      font-weight: 1000;
+      font-size: clamp(20px, 5vw, 30px);
+      color: #4a2b16;
+    }
+
     .bridge-timer {
       min-width: 62px;
       padding: 9px 11px;
@@ -269,6 +294,16 @@
       font-size: clamp(13px, 3.2vw, 16px);
     }
 
+    .slot-placeholder {
+      font-size: clamp(30px, 8vw, 42px);
+      opacity: .55;
+    }
+
+    .slot-icon {
+      font-size: clamp(36px, 9vw, 52px);
+      line-height: 1;
+    }
+
     .bridge-materials {
       position: relative;
       min-height: 245px;
@@ -292,12 +327,19 @@
       border: 3px solid rgba(58, 36, 18, .58);
       box-shadow: 0 7px 0 rgba(69, 42, 17, .30), 0 10px 16px rgba(0,0,0,.18);
       font-weight: 1000;
-      font-size: 13px;
+      font-size: 34px;
       color: #2f2118;
       text-align: center;
       user-select: none;
       touch-action: none;
       cursor: grab;
+    }
+
+    .chip-icon {
+      display: block;
+      font-size: 38px;
+      line-height: 1;
+      filter: drop-shadow(0 2px 1px rgba(0,0,0,.18));
     }
 
     .material-chip.dragging {
