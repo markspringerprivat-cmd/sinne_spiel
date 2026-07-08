@@ -13,6 +13,7 @@ const backButton = document.querySelector('.level-back-button');
 const STORAGE_VOLUME = 'sinnesmagie-volume';
 const STORAGE_FRAGMENTS = 'sinnesmagie-fragments';
 const STORAGE_LEVEL_PROGRESS = 'sinnesmagie-level-progress';
+const STORAGE_LEVEL_NODE = 'sinnesmagie-level-node';
 const QUIZ_SECONDS = 30;
 const QUIZ_TRANSITION_MS = 560;
 const BATTLE_ANIMATION_MS = 1500;
@@ -20,7 +21,7 @@ const STRIKE_RESET_MS = 760;
 const DAMAGE_RESET_MS = 760;
 const ATTACK_IMPACT_MS = 320;
 const ENEMY_IMPACT_MS = 320;
-const MOVE_MS = 950;
+const MOVE_MS = 560;
 
 const currentArea = window.location.pathname.split('/').pop().replace('.html', '');
 const AREA_TITLES = {
@@ -175,6 +176,84 @@ function getNodes() {
   };
 }
 
+function readLevelNodes() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_LEVEL_NODE) || '{}');
+    return saved && typeof saved === 'object' ? saved : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveCurrentNode(node) {
+  currentNode = node;
+  const saved = readLevelNodes();
+  saved[currentArea] = node;
+  localStorage.setItem(STORAGE_LEVEL_NODE, JSON.stringify(saved));
+}
+
+function initialNodeFromProgress() {
+  const progress = getAreaProgress();
+  if (progress.level2Completed) return 'level2';
+  if (progress.level1Completed) return 'level1';
+  return 'start';
+}
+
+function curvedPath(name) {
+  const n = getNodes();
+  const s = n.start;
+  const l1 = n.level1;
+  const l2 = n.level2;
+  const red = [
+    s,
+    { x: s.x + 9, y: Math.min(92, s.y + 1) },
+    { x: Math.max(s.x + 18, l1.x - 28), y: Math.max(l1.y + 22, s.y - 5) },
+    { x: l1.x - 12, y: l1.y + 12 },
+    l1
+  ];
+  const purple = [
+    l1,
+    { x: l1.x - 10, y: l1.y - 2 },
+    { x: (l1.x + l2.x) / 2 + 3, y: (l1.y + l2.y) / 2 + 9 },
+    { x: l2.x + 4, y: l2.y + 11 },
+    l2
+  ];
+  const blue = [
+    l2,
+    { x: l2.x - 1, y: Math.min(50, l2.y + 22) },
+    { x: (l1.x + l2.x) / 2 - 2, y: Math.min(70, l1.y + 13) },
+    { x: Math.max(18, s.x + 25), y: Math.max(70, s.y - 6) },
+    s
+  ];
+  if (name === 'red') return red;
+  if (name === 'purple') return purple;
+  if (name === 'blue') return blue;
+  return [s];
+}
+
+function reversePath(points) {
+  return points.slice().reverse();
+}
+
+function pathBetween(from, to) {
+  if (from === to) return [];
+  const red = curvedPath('red');
+  const purple = curvedPath('purple');
+  const blue = curvedPath('blue');
+  if (from === 'start' && to === 'level1') return red;
+  if (from === 'level1' && to === 'start') return reversePath(red);
+  if (from === 'level1' && to === 'level2') return purple;
+  if (from === 'level2' && to === 'level1') return reversePath(purple);
+  if (from === 'level2' && to === 'start') return blue;
+  if (from === 'start' && to === 'level2') return red.concat(purple.slice(1));
+  return [getNodes()[to]].filter(Boolean);
+}
+
+function pathToSvgData(points) {
+  if (!points || points.length === 0) return '';
+  return points.map((p, index) => `${index === 0 ? 'M' : 'L'} ${p.x.toFixed(2)} ${p.y.toFixed(2)}`).join(' ');
+}
+
 function showLevelPopup(title, text, buttonLabel = 'Weiter', onClose = null) {
   levelPopupTitle.textContent = title || 'Level';
   levelPopupText.textContent = text || 'Inhalt folgt später.';
@@ -191,6 +270,14 @@ function closeLevelPopup() {
   startLevelMusic();
 }
 
+function setMarkersDisabled(disabled) {
+  levelMarkers.forEach(marker => {
+    marker.disabled = disabled;
+    marker.classList.toggle('movement-disabled', disabled);
+  });
+  if (backButton) backButton.classList.toggle('movement-disabled', disabled);
+}
+
 function moveKnightToCoords(point) {
   return new Promise(resolve => {
     levelKnight.style.left = `${point.x}%`;
@@ -200,9 +287,19 @@ function moveKnightToCoords(point) {
 }
 
 async function moveKnightAlong(points) {
-  for (const point of points) {
+  if (!points || points.length === 0) return;
+  setMarkersDisabled(true);
+  const trimmed = points.slice(1);
+  for (const point of trimmed) {
     await moveKnightToCoords(point);
   }
+  setMarkersDisabled(false);
+}
+
+async function moveToNode(targetNode) {
+  const points = pathBetween(currentNode, targetNode);
+  await moveKnightAlong(points);
+  saveCurrentNode(targetNode);
 }
 
 function ensureGuideSvg() {
@@ -218,24 +315,20 @@ function ensureGuideSvg() {
 function renderGuidePath() {
   const svg = ensureGuideSvg();
   const progress = getAreaProgress();
-  const nodes = getNodes();
-  let from = null;
-  let to = null;
+  let points = null;
 
   if (!progress.level1Completed) {
-    from = nodes.start;
-    to = nodes.level1;
+    points = curvedPath('red');
   } else if (!progress.level2Completed) {
-    from = nodes.level1;
-    to = nodes.level2;
+    points = curvedPath('purple');
   }
 
-  if (!from || !to) {
+  if (!points) {
     svg.innerHTML = '';
     return;
   }
 
-  svg.innerHTML = `<line class="level-guide-line" x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}"></line>`;
+  svg.innerHTML = `<path class="level-guide-line" d="${pathToSvgData(points)}"></path>`;
 }
 
 function applyMarkerStates() {
@@ -248,16 +341,15 @@ function applyMarkerStates() {
     marker.classList.toggle('locked', locked);
     marker.classList.toggle('available', !locked && !completed);
     marker.setAttribute('aria-disabled', locked ? 'true' : 'false');
+    marker.disabled = locked;
   });
   renderGuidePath();
 }
 
 async function handleLevelOne() {
-  const nodes = getNodes();
-  await moveKnightAlong([nodes.level1]);
-  currentNode = 'level1';
-
   const progress = getAreaProgress();
+  await moveToNode('level1');
+
   if (!progress.level1Completed) {
     const minigameUrl = levelMarkers[0].dataset.minigameUrl;
     if (minigameUrl) {
@@ -265,9 +357,7 @@ async function handleLevelOne() {
         levelMarkers[0].dataset.title || 'Minispiel',
         `${levelMarkers[0].dataset.text || 'Hier startet das Minispiel.'} Danach wird der zweite Punkt freigeschaltet.`,
         'Minispiel starten',
-        () => {
-          window.location.href = minigameUrl;
-        }
+        () => { window.location.href = minigameUrl; }
       );
       return;
     }
@@ -278,13 +368,15 @@ async function handleLevelOne() {
       'Minispiel abschließen',
       () => {
         setAreaProgress({ level1Completed: true });
+        saveCurrentNode('level1');
         applyMarkerStates();
-        showLevelPopup('Level 1 geschafft', 'Der erste Bereich ist nun erledigt. Der zweite Punkt mit dem Quiz ist jetzt freigeschaltet.');
+        showLevelPopup('Level 1 geschafft', 'Der zweite Punkt mit dem Quiz ist jetzt freigeschaltet.');
       }
     );
-  } else {
-    showLevelPopup(levelMarkers[0].dataset.title || 'Minispiel', 'Dieses Minispiel hast du bereits geschafft. Du kannst nun zum zweiten Punkt weitergehen.');
+    return;
   }
+
+  showLevelPopup(levelMarkers[0].dataset.title || 'Minispiel', 'Dieses Minispiel hast du bereits geschafft. Der nächste Punkt ist freigeschaltet.');
 }
 
 async function handleLevelTwo() {
@@ -294,22 +386,14 @@ async function handleLevelTwo() {
     return;
   }
 
-  const nodes = getNodes();
-  if (currentNode === 'start') {
-    await moveKnightAlong([nodes.level1, nodes.level2]);
-  } else {
-    await moveKnightAlong([nodes.level2]);
-  }
-  currentNode = 'level2';
+  await moveToNode('level2');
   openQuizIntro(levelMarkers[1].dataset.quizId || currentArea);
 }
 
 async function moveLevelKnightTo(marker, index) {
-  if (index === 0) {
-    await handleLevelOne();
-  } else {
-    await handleLevelTwo();
-  }
+  if (marker.disabled || marker.classList.contains('movement-disabled')) return;
+  if (index === 0) await handleLevelOne();
+  else await handleLevelTwo();
 }
 
 levelMarkers.forEach((marker, index) => {
@@ -654,7 +738,7 @@ function showQuizResult() {
   result.className = 'quiz-result quiz-panel quiz-final-result';
 
   if (won) {
-    showWinResultSlide(result, reward, 1);
+    showWinResultSlide(result, reward, 1, fragmentStatus);
     return;
   }
 
@@ -670,7 +754,7 @@ function showQuizResult() {
   document.getElementById('closeQuizButton').addEventListener('click', returnToOverworld);
 }
 
-function showWinResultSlide(result, reward, slide) {
+function showWinResultSlide(result, reward, slide, fragmentStatus = {}) {
   if (slide === 1) {
     result.innerHTML = `
       <h2>Gewonnen!</h2>
@@ -679,7 +763,7 @@ function showWinResultSlide(result, reward, slide) {
         <button id="winNextButton" class="primary-button" type="button">Weiter</button>
       </div>
     `;
-    document.getElementById('winNextButton').addEventListener('click', () => showWinResultSlide(result, reward, 2));
+    document.getElementById('winNextButton').addEventListener('click', () => showWinResultSlide(result, reward, 2, fragmentStatus));
     return;
   }
   const rewardBlock = reward
@@ -691,8 +775,12 @@ function showWinResultSlide(result, reward, slide) {
       </div>
     `
     : `<p>Der Kristall wird automatisch auf der Weltkarte angezeigt.</p>`;
+  const afterText = fragmentStatus.allCollected
+    ? 'Du hast alle Sinnes-Kristalle gesammelt. Jetzt kannst du zum Zauberschloss gehen und die Magie der Sinne zurückholen.'
+    : 'Dieses Gebiet ist abgeschlossen. Kehre zur Weltkarte zurück, um weitere Kristalle zu sammeln.';
   result.innerHTML = `
     ${rewardBlock}
+    <p>${afterText}</p>
     <div class="quiz-result-actions single-action">
       <button id="closeQuizButton" class="primary-button" type="button">Zur Weltkarte</button>
     </div>
@@ -701,17 +789,17 @@ function showWinResultSlide(result, reward, slide) {
 }
 
 async function returnToOverworld() {
-  window.location.href = '../game.html?fromLevel=1';
+  const modal = ensureQuizModal();
+  modal.classList.add('hidden');
+  startLevelMusic();
+  saveCurrentNode('level2');
+  await moveToNode('start');
+  window.location.href = `../game.html?fromLevel=1&completedArea=${encodeURIComponent(activeQuiz?.quizId || currentArea)}`;
 }
 
 async function exitLevel() {
   pauseLevelMusic();
-  const nodes = getNodes();
-  if (currentNode === 'level2') {
-    await moveKnightAlong([nodes.level1, nodes.start]);
-  } else if (currentNode === 'level1') {
-    await moveKnightAlong([nodes.start]);
-  }
+  await moveToNode('start');
   window.location.href = '../game.html?fromLevel=1';
 }
 
@@ -722,11 +810,10 @@ if (backButton) {
   });
 }
 
-levelKnight.style.left = `${stageStart().x}%`;
-levelKnight.style.top = `${stageStart().y}%`;
+currentNode = initialNodeFromProgress();
+saveCurrentNode(currentNode);
+const initialPoint = getNodes()[currentNode] || stageStart();
+levelKnight.style.left = `${initialPoint.x}%`;
+levelKnight.style.top = `${initialPoint.y}%`;
 applyMarkerStates();
-showLevelPopup(
-  `${AREA_TITLES[currentArea] || 'Level'} betreten`,
-  'Schaffe zuerst Level 1. Danach wird Level 2 freigeschaltet. Dort wartet das Quiz mit dem Gegner.',
-  'OK'
-);
+startLevelMusic();

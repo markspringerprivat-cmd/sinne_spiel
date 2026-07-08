@@ -100,6 +100,7 @@ let scannerRunning = false;
 let scannerBusy = false;
 let pendingNavigation = null;
 let fragmentOrbitLayer = null;
+let completedAreaLayer = null;
 
 function readUnlocked() {
   try {
@@ -130,6 +131,25 @@ function saveFragments(fragmentSet) {
 
 function allFragmentsCollected() {
   return readFragments().size >= fragmentAreas.length;
+}
+
+function readLevelProgress() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_LEVEL_PROGRESS) || '{}');
+    return saved && typeof saved === 'object' ? saved : {};
+  } catch {
+    return {};
+  }
+}
+
+function isAreaCompleted(area) {
+  const progress = readLevelProgress();
+  return !!progress[area]?.level2Completed;
+}
+
+function allPlayableAreasCompleted() {
+  const progress = readLevelProgress();
+  return fragmentAreas.every(area => !!progress[area]?.level2Completed);
 }
 
 
@@ -200,6 +220,55 @@ function renderFragments() {
     img.draggable = false;
     wrap.appendChild(img);
     layer.appendChild(wrap);
+  });
+}
+
+function ensureCompletedAreaLayer() {
+  if (completedAreaLayer) return completedAreaLayer;
+  completedAreaLayer = document.createElement('div');
+  completedAreaLayer.id = 'completedAreaLayer';
+  completedAreaLayer.className = 'completed-area-layer';
+  mapStage.appendChild(completedAreaLayer);
+  return completedAreaLayer;
+}
+
+function completedAreaMessage(area) {
+  if (allPlayableAreasCompleted()) {
+    return 'Du hast alle Level abgeschlossen. Geh zum Zauberschloss und hole die Magie der Sinne zurück.';
+  }
+  return 'Du hast dieses Gebiet abgeschlossen. Scanne einen QR-Code, um ein anderes Gebiet freizuschalten.';
+}
+
+function showCompletedAreaInfo(area) {
+  showInfo(
+    `${areaNames[area] || 'Gebiet'} abgeschlossen`,
+    completedAreaMessage(area),
+    { showScanButton: !allPlayableAreasCompleted() }
+  );
+}
+
+function renderCompletedAreaBadges() {
+  const layer = ensureCompletedAreaLayer();
+  layer.innerHTML = '';
+
+  hotspots.forEach(button => {
+    const area = button.dataset.area;
+    const completed = isAreaCompleted(area) && fragmentMeta[area];
+    button.classList.toggle('area-completed', !!completed);
+    if (!completed) return;
+
+    const badge = document.createElement('button');
+    badge.className = 'completed-area-badge';
+    badge.type = 'button';
+    badge.textContent = '✓';
+    badge.style.setProperty('--x', `${button.dataset.targetX || 50}%`);
+    badge.style.setProperty('--y', `${button.dataset.targetY || 50}%`);
+    badge.setAttribute('aria-label', `${areaNames[area]} abgeschlossen`);
+    badge.addEventListener('click', event => {
+      event.stopPropagation();
+      showCompletedAreaInfo(area);
+    });
+    layer.appendChild(badge);
   });
 }
 
@@ -311,6 +380,7 @@ function updateLocks() {
     }
   });
   renderFragments();
+  renderCompletedAreaBadges();
 }
 
 function unlockArea(area, options = {}) {
@@ -337,6 +407,11 @@ function breakCastleSeal() {
 
 function moveKnightTo(button) {
   const area = button.dataset.area;
+
+  if (isAreaCompleted(area) && fragmentMeta[area]) {
+    showCompletedAreaInfo(area);
+    return;
+  }
 
   if (!isUnlocked(area)) {
     showLockedInfo(area);
@@ -527,14 +602,29 @@ function closeIntroAndStart() {
   startMusic();
 }
 
+function moveKnightHome() {
+  const homeX = '50';
+  const homeY = '60';
+  knight.style.left = `${homeX}%`;
+  knight.style.top = `${homeY}%`;
+  localStorage.setItem(STORAGE_POS_X, homeX);
+  localStorage.setItem(STORAGE_POS_Y, homeY);
+  localStorage.setItem(STORAGE_AREA, 'koenigsschloss');
+}
+
 function maybeShowEntryModal() {
   const params = new URLSearchParams(window.location.search);
   const fromLevel = params.get('fromLevel') === '1';
+  const completedArea = (params.get('completedArea') || '').trim().toLowerCase();
 
   if (fromLevel) {
-    returnModal.classList.remove('hidden');
     const cleanUrl = `${window.location.origin}${window.location.pathname}`;
     window.history.replaceState({}, document.title, cleanUrl);
+    startMusic();
+    window.setTimeout(moveKnightHome, 220);
+    if (completedArea && areaNames[completedArea]) {
+      window.setTimeout(() => renderCompletedAreaBadges(), 260);
+    }
     return;
   }
 
