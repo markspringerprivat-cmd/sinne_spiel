@@ -16,7 +16,7 @@
       width: 100%;
       height: 100%;
       margin: 0;
-      overflow: hidden;
+      overflow: visible;
       background: #160f13;
       touch-action: none;
       overscroll-behavior: none;
@@ -197,6 +197,127 @@
       box-shadow: 0 7px 0 #b7c2dd, 0 12px 18px rgba(0,0,0,0.18);
     }
 
+
+
+    .bridge-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 8;
+      display: grid;
+      place-items: center;
+      padding: 14px;
+      background: rgba(10, 7, 5, 0.34);
+      backdrop-filter: blur(2px);
+    }
+
+    .bridge-overlay.hidden { display: none !important; }
+
+    .bridge-panel {
+      width: min(94vw, 760px);
+      max-height: min(82vh, 760px);
+      display: grid;
+      grid-template-rows: auto auto minmax(230px, 1fr) auto;
+      gap: 12px;
+      padding: 16px;
+      border: 4px solid rgba(89, 52, 21, 0.82);
+      border-radius: 26px;
+      background: rgba(255, 246, 213, 0.96);
+      box-shadow: 0 16px 32px rgba(0,0,0,0.35), inset 0 0 0 3px rgba(255,255,255,0.36);
+      color: #392514;
+    }
+
+    .bridge-header {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .bridge-header h2 { margin: 0 0 4px; font-size: clamp(24px, 6vw, 38px); line-height: 1; }
+    .bridge-header p { margin: 0; font-size: clamp(14px, 3.5vw, 18px); font-weight: 850; }
+
+    .bridge-timer {
+      min-width: 62px;
+      padding: 9px 11px;
+      border-radius: 18px;
+      background: #362112;
+      color: #ffe081;
+      font-size: clamp(24px, 7vw, 40px);
+      font-weight: 1000;
+      text-align: center;
+      box-shadow: inset 0 -4px 0 rgba(0,0,0,0.24);
+    }
+
+    .bridge-slots {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      min-height: 82px;
+    }
+
+    .bridge-slot {
+      position: relative;
+      display: grid;
+      place-items: center;
+      min-height: 78px;
+      border: 3px dashed rgba(92, 56, 24, 0.55);
+      border-radius: 20px;
+      background: rgba(255,255,255,0.54);
+      font-weight: 950;
+      color: rgba(62, 37, 18, 0.72);
+      text-align: center;
+      font-size: clamp(13px, 3.2vw, 16px);
+    }
+
+    .bridge-materials {
+      position: relative;
+      min-height: 245px;
+      border: 3px solid rgba(92, 56, 24, 0.35);
+      border-radius: 22px;
+      overflow: visible;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(172, 120, 61, .16), transparent 34%),
+        radial-gradient(circle at 80% 70%, rgba(98, 59, 32, .12), transparent 38%),
+        rgba(247, 225, 180, 0.72);
+      touch-action: none;
+    }
+
+    .material-chip {
+      position: absolute;
+      width: 74px;
+      height: 74px;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      border: 3px solid rgba(58, 36, 18, .58);
+      box-shadow: 0 7px 0 rgba(69, 42, 17, .30), 0 10px 16px rgba(0,0,0,.18);
+      font-weight: 1000;
+      font-size: 13px;
+      color: #2f2118;
+      text-align: center;
+      user-select: none;
+      touch-action: none;
+      cursor: grab;
+    }
+
+    .material-chip.dragging {
+      z-index: 30;
+      cursor: grabbing;
+      transform: scale(1.07);
+      box-shadow: 0 12px 22px rgba(0,0,0,.28);
+    }
+
+    .bridge-build-button {
+      justify-self: center;
+      min-width: min(76vw, 280px);
+    }
+
+    .bridge-build-button:disabled {
+      opacity: .48;
+      filter: grayscale(.35);
+      cursor: not-allowed;
+    }
+
     @keyframes minePopupIn {
       from { opacity: 0; transform: translateY(28px) scale(0.96); }
       to { opacity: 1; transform: translateY(0) scale(1); }
@@ -205,11 +326,9 @@
 </head>
 <body class="mine-minigame-page">
   <audio id="mineMusic" src="../assets/audio/mine_background.mp3" preload="auto"></audio>
-  <audio id="mineTurboSound" src="../assets/audio/mine_turbo.mp3" preload="auto"></audio>
-  <audio id="mineGlassBreak" src="../assets/audio/mine_glassbreak.mp3" preload="auto"></audio>
 
   <main class="mine-game-shell" aria-label="Loren-Minispiel in den Tastminen">
-    <canvas id="mineCanvas" aria-label="Minenlore weicht stacheligen Diamanten aus"></canvas>
+    <canvas id="mineCanvas" aria-label="Minenlore weicht Schienenlücken aus und baut Brücken"></canvas>
   </main>
 
   <div class="mine-hud" aria-live="polite">
@@ -220,7 +339,24 @@
     <div id="mineHearts" class="mine-hud-card" aria-label="Lebenspunkte">♥♥♥</div>
   </div>
 
-  <div class="mine-controls-hint">Mit Pfeiltasten, A/D oder Wischen die Lore nach links und rechts steuern.</div>
+  <div class="mine-controls-hint">Race: Mit Pfeiltasten, A/D oder Wischen die Spur wechseln. Bauphase: Materialien in den Baukasten ziehen.</div>
+
+
+
+  <div id="bridgeOverlay" class="bridge-overlay hidden" aria-live="polite">
+    <section class="bridge-panel">
+      <div class="bridge-header">
+        <div>
+          <h2>Brücke bauen</h2>
+          <p id="bridgeRecipeText">Bauplan wird vorbereitet …</p>
+        </div>
+        <div id="bridgeTimer" class="bridge-timer">20</div>
+      </div>
+      <div id="bridgeSlots" class="bridge-slots" aria-label="Baukasten"></div>
+      <div id="bridgeMaterials" class="bridge-materials" aria-label="Materialien"></div>
+      <button id="bridgeBuildButton" class="mine-button bridge-build-button" type="button" disabled>Brücke bauen</button>
+    </section>
+  </div>
 
   <div id="mineOverlay" class="mine-overlay" role="dialog" aria-modal="true">
     <section id="minePopup" class="mine-popup"></section>
