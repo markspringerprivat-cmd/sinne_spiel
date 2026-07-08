@@ -149,6 +149,36 @@ function pauseLevelMusic() {
   }
 }
 
+function showLevelPopup(title, text, buttonLabel = 'Weiter', onClose = null) {
+  if (!levelPopup || !levelPopupTitle || !levelPopupText || !levelPopupClose) return;
+  levelPopupTitle.textContent = title || 'Level';
+  levelPopupText.textContent = text || 'Inhalt folgt später.';
+  levelPopupClose.textContent = buttonLabel || 'Weiter';
+  popupCloseHandler = onClose;
+  levelPopup.classList.remove('hidden');
+}
+
+function closeLevelPopup() {
+  if (!levelPopup) return;
+  levelPopup.classList.add('hidden');
+  const handler = popupCloseHandler;
+  popupCloseHandler = null;
+  if (typeof handler === 'function') handler();
+  startLevelMusic();
+}
+
+function setMarkersDisabled(disabled) {
+  levelMarkers.forEach(marker => {
+    marker.classList.toggle('movement-disabled', disabled);
+    if (disabled) {
+      marker.disabled = true;
+      return;
+    }
+    marker.disabled = marker.classList.contains('locked') || marker.getAttribute('aria-disabled') === 'true';
+  });
+  if (backButton) backButton.classList.toggle('movement-disabled', disabled);
+}
+
 function parsePercent(value, fallback = 0) {
   const num = parseFloat(String(value || '').replace('%', ''));
   return Number.isFinite(num) ? num : fallback;
