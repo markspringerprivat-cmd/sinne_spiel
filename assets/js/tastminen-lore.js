@@ -650,11 +650,15 @@
     return { x: laneWorldX(lane, y) * w, y: y * h };
   }
 
+  function laneRailHalfWidth(y, w) {
+    return Math.max(w * 0.0165, Math.min(w * 0.021, w * (0.018 + y * 0.0015)));
+  }
+
   function drawRailSegment(lane, y1, y2, w, h) {
     const p1 = railPoint(lane, y1, w, h);
     const p2 = railPoint(lane, y2, w, h);
-    const width1 = w * 0.008 + y1 * w * 0.006;
-    const width2 = w * 0.008 + y2 * w * 0.006;
+    const width1 = laneRailHalfWidth(y1, w);
+    const width2 = laneRailHalfWidth(y2, w);
     drawRailLine(p1.x - width1, p1.y, p2.x - width2, p2.y);
     drawRailLine(p1.x + width1, p1.y, p2.x + width2, p2.y);
   }
@@ -700,7 +704,7 @@
     [gapStart, gapEnd].forEach((gy) => {
       if (gy < -0.05 || gy > 1.1) return;
       const p = railPoint(lane, gy, w, h);
-      const half = w * (0.026 + gy * 0.018);
+      const half = laneRailHalfWidth(gy, w) + w * 0.01;
       ctx.beginPath();
       ctx.moveTo(p.x - half, p.y - 8);
       ctx.lineTo(p.x + half, p.y + 8);
@@ -713,9 +717,10 @@
     ctx.restore();
   }
 
-  function tieIntersectsGap(y) {
+  function tieIntersectsLaneGap(lane, y) {
     const tieHalf = 0.018;
     for (const gap of game.gaps) {
+      if (gap.lane !== lane) continue;
       const start = gap.y - gap.length / 2;
       const end = gap.y + gap.length / 2;
       if (y >= start - tieHalf && y <= end + tieHalf) return true;
@@ -724,25 +729,32 @@
     return false;
   }
 
-  function drawTies(w, h) {
-    ctx.save();
-    const spacing = 0.155;
-    const offset = (game.railOffset % spacing);
-    for (let y = -0.12 + offset; y < 1.14; y += spacing) {
-      if (tieIntersectsGap(y)) continue;
-      const left = railPoint(0, y, w, h);
-      const right = railPoint(2, y, w, h);
-      const tieH = Math.max(6, Math.min(12, 8 + y * 3));
+  function drawSingleLaneTies(lane, w, h) {
+    const spacing = 0.115;
+    const offset = game.railOffset % spacing;
+    for (let y = -0.14 + offset; y < 1.12; y += spacing) {
+      if (tieIntersectsLaneGap(lane, y)) continue;
+      const center = railPoint(lane, y, w, h);
+      const halfWidth = laneRailHalfWidth(y, w);
+      const overhang = Math.max(5, w * 0.008);
+      const tieThickness = Math.max(5, Math.min(10, 6.5 + y * 1.2));
       ctx.strokeStyle = '#3a2113';
-      ctx.lineWidth = tieH;
+      ctx.lineWidth = tieThickness;
       ctx.lineCap = 'round';
       ctx.beginPath();
-      ctx.moveTo(left.x - w * 0.032, left.y);
-      ctx.lineTo(right.x + w * 0.032, right.y);
+      ctx.moveTo(center.x - halfWidth - overhang, center.y);
+      ctx.lineTo(center.x + halfWidth + overhang, center.y);
       ctx.stroke();
       ctx.strokeStyle = '#8c5b2e';
-      ctx.lineWidth = Math.max(2, tieH * 0.30);
+      ctx.lineWidth = Math.max(2, tieThickness * 0.32);
       ctx.stroke();
+    }
+  }
+
+  function drawTies(w, h) {
+    ctx.save();
+    for (let lane = 0; lane < LANES.length; lane += 1) {
+      drawSingleLaneTies(lane, w, h);
     }
     ctx.restore();
   }
