@@ -65,9 +65,11 @@
       font-weight: 900;
     }
 
+    #mineTimerText { display: none; }
+
     .mine-progress-track {
       height: 14px;
-      margin-top: 7px;
+      margin-top: 0;
       border-radius: 999px;
       background: rgba(74, 43, 22, 0.22);
       overflow: hidden;
@@ -91,6 +93,7 @@
     }
 
     .mine-controls-hint {
+      display: none;
       position: fixed;
       left: 50%;
       bottom: max(12px, env(safe-area-inset-bottom));
@@ -418,6 +421,28 @@
     .material-icon.wool { background:#f0e8d8; border:3px solid #aaa08e; border-radius:999px; }
     .material-icon.wool::before { left:5px; top:13px; width:14px; height:14px; background:#fffaf0; border-radius:999px; box-shadow:10px -7px 0 #fffaf0, 20px 0 0 #fffaf0, 10px 8px 0 #e4dac7; }
 
+
+
+    .emoji-material {
+      background: rgba(255,255,255,.68) !important;
+      border: 2px solid rgba(88,54,25,.36) !important;
+      border-radius: 14px !important;
+      overflow: visible !important;
+      font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", system-ui, sans-serif;
+      font-size: 32px;
+      line-height: 1;
+    }
+
+    .emoji-material::before,
+    .emoji-material::after {
+      display: none !important;
+      content: none !important;
+    }
+
+    .recipe-icon.emoji-material { font-size: clamp(28px, 7vw, 40px); }
+    .slot-icon.emoji-material { font-size: clamp(34px, 8vw, 48px); }
+    .chip-icon.emoji-material { font-size: 36px; }
+
     .material-chip.dragging {
       z-index: 30;
       cursor: grabbing;
@@ -451,7 +476,7 @@
 
   <div class="mine-hud" aria-live="polite">
     <div class="mine-hud-card">
-      <div id="mineTimerText">Zeit: 60 s</div>
+      <div id="mineTimerText"></div>
       <div class="mine-progress-track" aria-hidden="true"><div id="mineProgressFill"></div></div>
     </div>
     <div id="mineHearts" class="mine-hud-card" aria-label="Lebenspunkte">♥♥♥</div>

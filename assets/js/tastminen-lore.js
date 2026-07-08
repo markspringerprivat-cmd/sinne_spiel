@@ -8,7 +8,7 @@
   const BUILD_SECONDS = 20;
   const TOTAL_SECTIONS = 4;
   const FINAL_RACE_SECONDS = 10;
-  const TOTAL_PROGRESS_UNITS = TOTAL_SECTIONS + 1;
+  const TOTAL_PROGRESS_UNITS = TOTAL_SECTIONS * 2 + 1;
   const RAIL_SPEED = 0.42;
   const BIG_GAP_LENGTH = 0.36;
   const BIG_GAP_INITIAL_CENTER = -0.26;
@@ -41,20 +41,20 @@
   images.cart.src = '../assets/images/minigame/cart_normal.png';
 
   const materials = [
-    { id: 'stein', label: 'Backstein', iconClass: 'brick', kind: 'hart', color: '#cfa28f' },
-    { id: 'metall', label: 'Metallschiene', iconClass: 'metal', kind: 'hart', color: '#bcc7d6' },
-    { id: 'holz', label: 'Holzbrett', iconClass: 'wood', kind: 'hart', color: '#c58b48' },
-    { id: 'seil', label: 'Seil', iconClass: 'rope', kind: 'weich', color: '#d5b06b' },
-    { id: 'lehm', label: 'Lehmklumpen', iconClass: 'clay', kind: 'weich', color: '#b9794c' },
-    { id: 'gras', label: 'Grasbüschel', iconClass: 'grass', kind: 'weich', color: '#8bc45a' },
-    { id: 'heu', label: 'Heu', iconClass: 'hay', kind: 'weich', color: '#dfca65' },
-    { id: 'moos', label: 'Moos', iconClass: 'moss', kind: 'weich', color: '#79a35b' },
-    { id: 'papier', label: 'Papier', iconClass: 'paper', kind: 'weich', color: '#f2ead4' },
-    { id: 'feder', label: 'Feder', iconClass: 'feather', kind: 'weich', color: '#e7d3b4' },
-    { id: 'schwamm', label: 'Schwamm', iconClass: 'sponge', kind: 'weich', color: '#edd16b' },
-    { id: 'pilz', label: 'Pilz', iconClass: 'mushroom', kind: 'weich', color: '#d79384' },
-    { id: 'blatt', label: 'Blatt', iconClass: 'leaf', kind: 'weich', color: '#87b96b' },
-    { id: 'wolle', label: 'Wolle', iconClass: 'wool', kind: 'weich', color: '#efe6d4' },
+    { id: 'stein', label: 'Backstein', emoji: '🧱', kind: 'hart', color: '#cfa28f' },
+    { id: 'metall', label: 'Metallschiene', emoji: '🔩', kind: 'hart', color: '#bcc7d6' },
+    { id: 'holz', label: 'Holzbrett', emoji: '🪵', kind: 'hart', color: '#c58b48' },
+    { id: 'seil', label: 'Seil', emoji: '🪢', kind: 'weich', color: '#d5b06b' },
+    { id: 'lehm', label: 'Lehmklumpen', emoji: '🟤', kind: 'weich', color: '#b9794c' },
+    { id: 'gras', label: 'Grasbüschel', emoji: '🌿', kind: 'weich', color: '#8bc45a' },
+    { id: 'heu', label: 'Heu', emoji: '🌾', kind: 'weich', color: '#dfca65' },
+    { id: 'moos', label: 'Moos', emoji: '🍃', kind: 'weich', color: '#79a35b' },
+    { id: 'papier', label: 'Papier', emoji: '📄', kind: 'weich', color: '#f2ead4' },
+    { id: 'feder', label: 'Feder', emoji: '🪶', kind: 'weich', color: '#e7d3b4' },
+    { id: 'schwamm', label: 'Schwamm', emoji: '🧽', kind: 'weich', color: '#edd16b' },
+    { id: 'pilz', label: 'Pilz', emoji: '🍄', kind: 'weich', color: '#d79384' },
+    { id: 'blatt', label: 'Blatt', emoji: '🍂', kind: 'weich', color: '#87b96b' },
+    { id: 'wolle', label: 'Wolle', emoji: '☁️', kind: 'weich', color: '#efe6d4' },
   ];
 
   const bridgeRecipes = [
@@ -285,54 +285,33 @@
     if (!force && now - game.lastHudAt < 160) return;
     game.lastHudAt = now;
 
-    let label = '';
     let progress = 0;
     if (game.state === 'race') {
       const raceElapsed = Math.min(RACE_SECONDS, (now - game.stateStart) / 1000);
-      const left = Math.max(0, Math.ceil(RACE_SECONDS - raceElapsed));
-      label = game.message || `Fahrt ${game.section}/${TOTAL_SECTIONS}: ${left} s bis zur Schlucht`;
-      progress = ((game.section - 1) + raceElapsed / RACE_SECONDS) / TOTAL_PROGRESS_UNITS;
+      progress = (((game.section - 1) * 2) + raceElapsed / RACE_SECONDS) / TOTAL_PROGRESS_UNITS;
     } else if (game.state === 'approachBridge') {
-      label = game.message || 'Große Lücke voraus …';
-      progress = ((game.section - 1) + 0.95) / TOTAL_PROGRESS_UNITS;
+      const approachProgress = BIG_GAP_STOP_CENTER > BIG_GAP_INITIAL_CENTER
+        ? Math.max(0, Math.min(1, (game.bigGapCenter - BIG_GAP_INITIAL_CENTER) / (BIG_GAP_STOP_CENTER - BIG_GAP_INITIAL_CENTER)))
+        : 0;
+      progress = (((game.section - 1) * 2) + 1 + approachProgress * 0.12) / TOTAL_PROGRESS_UNITS;
     } else if (game.state === 'build') {
-      const left = Math.max(0, Math.ceil((game.bridgeDeadline - now) / 1000));
-      label = game.message || `Brückenbau ${game.section}/${TOTAL_SECTIONS}: ${left} s`;
-      progress = ((game.section - 1) + 0.98) / TOTAL_PROGRESS_UNITS;
-    } else if (game.state === 'bridgeDrive') {
-      label = game.message || 'Brücke stabil – weiterfahren!';
-      progress = game.section / TOTAL_PROGRESS_UNITS;
-    } else if (game.state === 'bridgeFailDrive') {
-      label = game.message || 'Die Lore rollt in die Lücke …';
-      progress = ((game.section - 1) + 0.98) / TOTAL_PROGRESS_UNITS;
+      const buildElapsed = Math.max(0, Math.min(BUILD_SECONDS, (BUILD_SECONDS * 1000 - (game.bridgeDeadline - now)) / 1000));
+      progress = (((game.section - 1) * 2) + 1 + buildElapsed / BUILD_SECONDS) / TOTAL_PROGRESS_UNITS;
+    } else if (game.state === 'bridgeDrive' || game.state === 'bridgeFailDrive') {
+      progress = (game.section * 2) / TOTAL_PROGRESS_UNITS;
     } else if (game.state === 'finalRace') {
       const raceElapsed = Math.min(FINAL_RACE_SECONDS, (now - game.stateStart) / 1000);
-      const left = Math.max(0, Math.ceil(FINAL_RACE_SECONDS - raceElapsed));
-      label = game.message || `Letzte Fahrt: ${left} s bis zum Ziel`;
-      progress = (TOTAL_SECTIONS + raceElapsed / FINAL_RACE_SECONDS) / TOTAL_PROGRESS_UNITS;
+      progress = ((TOTAL_SECTIONS * 2) + raceElapsed / FINAL_RACE_SECONDS) / TOTAL_PROGRESS_UNITS;
     } else if (game.state === 'finalPlatform') {
-      label = game.message || 'Zielplattform voraus …';
-      progress = 0.98;
-    } else if (game.state === 'crash') {
-      label = game.message || 'Lore stürzt ab …';
-      progress = (game.section - 1) / TOTAL_PROGRESS_UNITS;
-    } else if (game.state === 'respawnWait') {
-      label = game.message || 'Lore wird wieder eingesetzt …';
-      progress = (game.section - 1) / TOTAL_PROGRESS_UNITS;
-    } else {
-      label = game.message || 'Tastminen';
-      progress = 0;
+      const platformProgress = Math.max(0, Math.min(1, (game.finalPlatformCenter + 0.22) / (PLAYER_Y + 0.22)));
+      progress = ((TOTAL_SECTIONS * 2) + platformProgress) / TOTAL_PROGRESS_UNITS;
+    } else if (game.state === 'crash' || game.state === 'respawnWait') {
+      progress = Math.max(0, ((game.section - 1) * 2) / TOTAL_PROGRESS_UNITS);
     }
-
-    if (game.message && now > game.messageUntil) game.message = '';
 
     const progressValue = Math.round(Math.min(100, Math.max(0, progress * 100)));
     const heartsValue = `${game.hearts > 0 ? '♥'.repeat(game.hearts) : ''}${game.hearts < MAX_HEARTS ? '♡'.repeat(MAX_HEARTS - game.hearts) : ''}`;
 
-    if (label !== game.lastHudText) {
-      timerText.textContent = label;
-      game.lastHudText = label;
-    }
     if (progressValue !== game.lastHudProgress) {
       progressFill.style.width = `${progressValue}%`;
       game.lastHudProgress = progressValue;
@@ -458,7 +437,6 @@
     game.bigGapCenter = BIG_GAP_INITIAL_CENTER;
     game.bridgeWaitStart = 0;
     game.bridgeClosed = false;
-    game.targetLane = 1;
     setMessage('Große Lücke voraus!', 1000);
     updateHud(true);
   }
@@ -482,7 +460,7 @@
   function materialIconHtml(id, extraClass = '') {
     const mat = materialById(id);
     if (!mat) return '';
-    return `<span class="material-icon ${mat.iconClass} ${extraClass}" title="${mat.label}" aria-label="${mat.label}"></span>`;
+    return `<span class="material-icon emoji-material ${extraClass}" title="${mat.label}" aria-label="${mat.label}">${mat.emoji}</span>`;
   }
 
   function shuffled(items) {
@@ -737,9 +715,6 @@
         game.railOffset += step;
         for (const gap of game.gaps) gap.y += step;
         game.gaps = game.gaps.filter((gap) => gap.y < 1.25);
-        const targetX = LANES[1];
-        game.playerX += (targetX - game.playerX) * Math.min(1, dt * 6);
-        if (Math.abs(game.playerX - targetX) < 0.006) { game.lane = 1; game.targetLane = 1; }
         if (game.bigGapCenter >= BIG_GAP_STOP_CENTER - 0.0001) {
           game.bigGapCenter = BIG_GAP_STOP_CENTER;
           game.bridgeWaitStart = now;
