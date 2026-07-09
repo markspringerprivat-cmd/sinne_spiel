@@ -41,6 +41,9 @@
   let stunTimer = 0;
   let redBalls = [];
   let ball = { x: 0.5, y: 0.29, vx: 0.09, vy: 0.23, speed: 1 };
+  const BASE_BALL_VECTOR_SPEED = Math.hypot(0.09, 0.23);
+  let lastObstacleHit = null;
+  let obstacleCooldown = 0;
 
   function currentVolume() {
     const saved = Number(localStorage.getItem(STORAGE_VOLUME));
@@ -161,8 +164,9 @@
     ball.y = 0.29;
     ball.speed = 1;
     const side = first ? (Math.random() < 0.5 ? -1 : 1) : (knightX < 0.5 ? 1 : -1);
-    ball.vx = side * (0.075 + Math.random() * 0.04);
-    ball.vy = 0.23;
+    setBallVector(side * (0.075 + Math.random() * 0.04), 0.23, BASE_BALL_VECTOR_SPEED);
+    lastObstacleHit = null;
+    obstacleCooldown = 0;
     updateSprites();
   }
 
@@ -180,8 +184,20 @@
   function stageRect() { return stage.getBoundingClientRect(); }
   function clamp(v, min, max) { return Math.min(max, Math.max(min, v)); }
 
-  function accelerateGreenBall() {
-    ball.speed *= 1.05;
+  function actualBallSpeed() {
+    return Math.hypot(ball.vx, ball.vy) * ball.speed;
+  }
+
+  function setBallVector(rawVx, rawVy, actualSpeed = actualBallSpeed()) {
+    const len = Math.hypot(rawVx, rawVy) || BASE_BALL_VECTOR_SPEED;
+    ball.vx = (rawVx / len) * BASE_BALL_VECTOR_SPEED;
+    ball.vy = (rawVy / len) * BASE_BALL_VECTOR_SPEED;
+    ball.speed = Math.max(0.25, actualSpeed / BASE_BALL_VECTOR_SPEED);
+  }
+
+  function bounceGreenBall(rawVx, rawVy) {
+    const nextActualSpeed = actualBallSpeed() * 1.05;
+    setBallVector(rawVx, rawVy, nextActualSpeed);
   }
 
   function rect01(el) {
@@ -214,23 +230,28 @@
     return Math.hypot(cx - bx, cy - by) < cr + br;
   }
 
-  function bounceFromObstacle(rect) {
+  function bounceFromObstacle(rect, obstacleId) {
     if (!ballVisible || damage < 1) return;
+    if (obstacleCooldown > 0 && lastObstacleHit === obstacleId) return;
     const cx = rect.left + rect.width / 2;
     const cy = rect.top + rect.height / 2;
     const cr = Math.min(rect.width, rect.height) * 0.48;
-    if (!circleCollision(cx, cy, cr, ball.x, ball.y, 0.018)) return;
+    const ballRadius = 0.018;
+    if (!circleCollision(cx, cy, cr, ball.x, ball.y, ballRadius)) return;
     const dx = ball.x - cx;
     const dy = ball.y - cy;
     const len = Math.hypot(dx, dy) || 1;
     const nx = dx / len;
     const ny = dy / len;
     const dot = ball.vx * nx + ball.vy * ny;
-    ball.vx -= 2 * dot * nx;
-    ball.vy -= 2 * dot * ny;
-    ball.x = cx + nx * (cr + 0.022);
-    ball.y = cy + ny * (cr + 0.022);
-    accelerateGreenBall();
+    const reflectedVx = ball.vx - 2 * dot * nx;
+    const reflectedVy = ball.vy - 2 * dot * ny;
+
+    ball.x = cx + nx * (cr + ballRadius + 0.012);
+    ball.y = cy + ny * (cr + ballRadius + 0.012);
+    bounceGreenBall(reflectedVx, reflectedVy);
+    lastObstacleHit = obstacleId;
+    obstacleCooldown = 0.08;
     playImpact(540, .045);
   }
 
@@ -284,6 +305,7 @@
     last = now;
 
     if (stunTimer > 0) stunTimer = Math.max(0, stunTimer - dt);
+    if (obstacleCooldown > 0) obstacleCooldown = Math.max(0, obstacleCooldown - dt);
 
     const targetX = clamp(ballVisible ? ball.x : 0.5, 0.13, 0.87);
     const diff = targetX - mageX;
@@ -304,16 +326,15 @@
       if (ball.x > 0.965) { ball.x = 0.965; ball.vx = -Math.abs(ball.vx); playImpact(360, .045); }
 
       if (damage >= 1) {
-        bounceFromObstacle(rect01(obstacleLeft));
-        bounceFromObstacle(rect01(obstacleRight));
+        bounceFromObstacle(rect01(obstacleLeft), 'left');
+        bounceFromObstacle(rect01(obstacleRight), 'right');
       }
 
       if (hitPaddle(knightRect, false)) {
         ball.y = knightRect.top - 0.015;
         const offset = clamp((ball.x - knightX) / 0.105, -1, 1);
-        ball.vx = offset * 0.22;
-        ball.vy = -Math.abs(ball.vy || 0.23);
-        accelerateGreenBall();
+        bounceGreenBall(offset * 0.22, -Math.abs(ball.vy || 0.23));
+        lastObstacleHit = null;
         playerHits += 1;
         playImpact(620, .06);
       }
@@ -321,9 +342,8 @@
       if (hitPaddle(mageRect, true)) {
         ball.y = mageRect.bottom + 0.014;
         const offset = clamp((ball.x - mageX) / 0.14, -1, 1);
-        ball.vx = offset * 0.18;
-        ball.vy = Math.abs(ball.vy || 0.23);
-        accelerateGreenBall();
+        bounceGreenBall(offset * 0.18, Math.abs(ball.vy || 0.23));
+        lastObstacleHit = null;
         playImpact(420, .055);
       }
 
