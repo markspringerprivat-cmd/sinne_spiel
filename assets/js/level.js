@@ -23,6 +23,11 @@ const DAMAGE_RESET_MS = 760;
 const ATTACK_IMPACT_MS = 320;
 const ENEMY_IMPACT_MS = 320;
 const MOVE_MS = 560;
+const CASTLE_QUIZ_QUESTION_COUNT = 3;
+const CASTLE_DODGE_DURATION_MS = 10000;
+const CASTLE_PROJECTILE_SPAWN_MS = 1050;
+const CASTLE_FLIGHT_SWAP_MS = 1200;
+const CASTLE_STUN_MS = 900;
 
 const currentArea = window.location.pathname.split('/').pop().replace('.html', '');
 const AREA_TITLES = {
@@ -51,6 +56,90 @@ const AREA_SENSE_INFO = {
   flammenkueche: 'Hier geht es um Geschmack: süß, sauer, salzig, bitter und um Sicherheit beim Essen.',
   zauberschloss: 'Im Zauberschloss geht es darum, ruhig zu bleiben, genau zu reagieren und den Magier zu überwinden.'
 };
+
+function isCastleBossQuiz(quizId = activeQuiz?.quizId) {
+  return quizId === 'zauberschloss';
+}
+
+function castleEnemyAsset(state = 'normal') {
+  if (state === 'laugh') return '../assets/images/enemies/zauberer_laugh.png';
+  if (state === 'surprised') return '../assets/images/enemies/zauberer_surprised.png';
+  if (state === 'flyLeft') return '../assets/images/enemies/zauberer_fly_left.png';
+  if (state === 'flyRight') return '../assets/images/enemies/zauberer_fly_right.png';
+  if (state === 'hover') return '../assets/images/enemies/zauberer_hover.png';
+  return '../assets/images/enemies/zauberer.png';
+}
+
+function activeQuizQuestions() {
+  if (!activeQuiz) return [];
+  return Array.isArray(activeQuiz.questions) ? activeQuiz.questions : activeQuiz.data?.questions || [];
+}
+
+function wait(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function resetCastleBattleClasses() {
+  const zone = document.getElementById('quizBattleZone');
+  const knight = document.getElementById('quizKnight');
+  const enemy = document.getElementById('quizEnemy');
+  const speech = document.getElementById('castleSpeech');
+  const beam = document.getElementById('castleBeam');
+  if (zone) zone.classList.remove('castle-boss-mode', 'castle-dodge-mode');
+  if (knight) {
+    knight.classList.remove('castle-runner', 'castle-knight-evade', 'castle-knight-hit');
+    knight.style.transform = '';
+  }
+  if (enemy) {
+    enemy.classList.remove('castle-boss-dodge', 'castle-boss-smirk', 'castle-flight-left', 'castle-flight-right', 'castle-hover-drop', 'castle-hovering', 'castle-flyer', 'castle-pass-left', 'castle-pass-right');
+    enemy.style.transform = '';
+  }
+  if (speech) {
+    speech.classList.add('hidden');
+    speech.innerHTML = '';
+  }
+  if (beam) beam.classList.add('hidden');
+}
+
+function clearCastleProjectiles() {
+  const layer = document.getElementById('castleProjectileLayer');
+  if (layer) layer.innerHTML = '';
+  if (activeQuiz?.castleDodge) activeQuiz.castleDodge.projectiles = [];
+}
+
+function cleanupCastleDodgeGame() {
+  if (!activeQuiz?.castleDodge) return;
+  const state = activeQuiz.castleDodge;
+  state.running = false;
+  if (state.spawnTimer) clearInterval(state.spawnTimer);
+  if (state.flightTimer) clearInterval(state.flightTimer);
+  if (state.rafId) cancelAnimationFrame(state.rafId);
+  clearCastleProjectiles();
+  activeQuiz.castleDodge = null;
+  const dodgePanel = document.getElementById('castleDodgePanel');
+  if (dodgePanel) dodgePanel.classList.add('hidden');
+  const layer = document.getElementById('castleProjectileLayer');
+  if (layer) layer.classList.add('hidden');
+  resetCastleBattleClasses();
+}
+
+function showCastleSpeech(html) {
+  const speech = document.getElementById('castleSpeech');
+  if (!speech) return;
+  speech.innerHTML = html;
+  speech.classList.remove('hidden');
+}
+
+function hideCastleSpeech() {
+  const speech = document.getElementById('castleSpeech');
+  if (!speech) return;
+  speech.classList.add('hidden');
+  speech.innerHTML = '';
+}
+
+function formatCastleDodgeTime(ms) {
+  return Math.max(0, ms / 1000).toFixed(1);
+}
 
 function writePendingNotice(notice) {
   try {
@@ -134,6 +223,9 @@ async function preloadQuizAssetsAsync(data, quizId) {
     enemyAttackAsset(data.enemy),
     FRAGMENT_REWARDS[quizId]?.image
   ].filter(Boolean);
+  if (isCastleBossQuiz(quizId)) {
+    imgs.push(castleEnemyAsset('laugh'), castleEnemyAsset('surprised'), castleEnemyAsset('flyLeft'), castleEnemyAsset('flyRight'), castleEnemyAsset('hover'));
+  }
   await Promise.race([
     Promise.all(imgs.map(preloadImageAsync)),
     new Promise(resolve => setTimeout(resolve, 1600))
@@ -644,6 +736,9 @@ function preloadQuizAssets(data, quizId) {
   ['normal', 'attack', 'damage', 'defeated', 'victory'].forEach(state => preloadImage(knightAsset(state)));
   ['normal', 'damage', 'defeated'].forEach(state => preloadImage(enemyAsset(data.enemy, state)));
   preloadImage(enemyAttackAsset(data.enemy));
+  if (isCastleBossQuiz(quizId)) {
+    ['laugh', 'surprised', 'flyLeft', 'flyRight', 'hover'].forEach(state => preloadImage(castleEnemyAsset(state)));
+  }
   if (FRAGMENT_REWARDS[quizId]) preloadImage(FRAGMENT_REWARDS[quizId].image);
 }
 
@@ -657,9 +752,12 @@ function ensureQuizModal() {
     <div class="quiz-card" role="dialog" aria-modal="true" aria-labelledby="quizTitle">
       <img id="quizBattleBg" class="quiz-battle-bg" alt="" draggable="false">
       <div class="quiz-hearts-area"><div id="quizHearts" class="quiz-hearts" aria-label="Lebenspunkte"></div></div>
-      <div class="quiz-battle-zone" aria-hidden="true">
+      <div id="quizBattleZone" class="quiz-battle-zone" aria-hidden="true">
         <img id="quizKnight" class="battle-sprite knight-battle" alt="Ritter" draggable="false">
         <img id="quizEnemy" class="battle-sprite enemy-battle" alt="Gegner" draggable="false">
+        <div id="castleProjectileLayer" class="castle-projectile-layer hidden"></div>
+        <div id="castleBeam" class="castle-beam hidden"></div>
+        <div id="castleSpeech" class="castle-speech hidden"></div>
         <span id="battleFeedback" class="battle-feedback hidden"></span>
       </div>
       <div id="quizIntro" class="quiz-intro quiz-panel"></div>
@@ -672,9 +770,25 @@ function ensureQuizModal() {
         <p id="quizQuestion" class="quiz-question"></p>
         <div id="quizAnswers" class="quiz-answers"></div>
       </div>
+      <div id="castleDodgePanel" class="quiz-panel castle-dodge-panel hidden">
+        <div class="castle-dodge-top">
+          <strong>Ausweichen!</strong>
+          <span id="castleDodgeTimer">10.0</span>
+        </div>
+        <p class="castle-dodge-info">Weiche den lilanen Bällen aus.</p>
+        <div id="castleDodgeFeedback" class="castle-dodge-feedback hidden"></div>
+        <div class="castle-dodge-controls">
+          <button id="castleMoveLeft" class="ghost-button" type="button">← Links</button>
+          <button id="castleMoveRight" class="primary-button" type="button">Rechts →</button>
+        </div>
+      </div>
       <div id="quizResult" class="quiz-result quiz-panel hidden"></div>
     </div>`;
   document.body.appendChild(modal);
+  const leftBtn = modal.querySelector('#castleMoveLeft');
+  const rightBtn = modal.querySelector('#castleMoveRight');
+  if (leftBtn) leftBtn.addEventListener('click', () => moveCastleKnight(-1));
+  if (rightBtn) rightBtn.addEventListener('click', () => moveCastleKnight(1));
   return modal;
 }
 
@@ -704,15 +818,21 @@ async function openQuizIntro(quizId) {
   modal.classList.remove('hidden');
   modal.querySelector('#quizGame').classList.add('hidden');
   modal.querySelector('#quizResult').classList.add('hidden');
+  modal.querySelector('#castleDodgePanel').classList.add('hidden');
+  resetCastleBattleClasses();
+  clearCastleProjectiles();
   setQuizScene(modal, data, quizId);
   const intro = modal.querySelector('#quizIntro');
   intro.className = 'quiz-intro quiz-panel';
+  const introText = isCastleBossQuiz(quizId)
+    ? 'Beantworte drei Fragen. Selbst richtige Treffer bringen den Zauberer nur kurz aus dem Gleichgewicht.'
+    : 'Beantworte die Fragen. Richtig: Ritter greift an. Falsch: Du verlierst ein Herz.';
   intro.innerHTML = `
     <h2>${data.title}</h2>
     <div class="visual-notice">
       <div class="visual-notice-hero"><img src="${enemyAsset(data.enemy, 'normal')}" alt="${data.enemyName}"></div>
       <p><strong>${data.enemyName}</strong> fordert dich heraus.</p>
-      <p>Beantworte die Fragen. Richtig: Ritter greift an. Falsch: Du verlierst ein Herz.</p>
+      <p>${introText}</p>
     </div>
     <button id="startQuizButton" class="primary-button" type="button">Kampf starten</button>
   `;
@@ -724,21 +844,26 @@ function startQuiz(quizId) {
   startBossMusic('full');
   const data = window.SINNESMAGIE_QUIZZES[quizId];
   preloadQuizAssets(data, quizId);
+  const questions = isCastleBossQuiz(quizId) ? data.questions.slice(0, CASTLE_QUIZ_QUESTION_COUNT) : data.questions.slice();
+  cleanupCastleDodgeGame();
   activeQuiz = {
     quizId,
     data,
+    questions,
     index: 0,
-    hearts: 3,
+    hearts: isCastleBossQuiz(quizId) ? 3 : 3,
     correct: 0,
     answered: false,
     seconds: QUIZ_SECONDS,
     finished: false,
-    transitioning: false
+    transitioning: false,
+    castleDodge: null
   };
   const modal = ensureQuizModal();
   setQuizScene(modal, data, quizId);
   modal.querySelector('#quizIntro').classList.add('hidden');
   modal.querySelector('#quizResult').classList.add('hidden');
+  modal.querySelector('#castleDodgePanel').classList.add('hidden');
   const game = modal.querySelector('#quizGame');
   game.className = 'quiz-game quiz-panel hidden';
   game.style.display = '';
@@ -747,8 +872,15 @@ function startQuiz(quizId) {
 }
 
 function renderHearts() {
+  const heartsWrap = document.querySelector('.quiz-hearts-area');
   const hearts = document.getElementById('quizHearts');
   if (!hearts || !activeQuiz) return;
+  if (isCastleBossQuiz()) {
+    hearts.innerHTML = '';
+    if (heartsWrap) heartsWrap.classList.add('hidden');
+    return;
+  }
+  if (heartsWrap) heartsWrap.classList.remove('hidden');
   hearts.innerHTML = '';
   for (let i = 0; i < 3; i++) {
     const span = document.createElement('span');
@@ -760,7 +892,8 @@ function renderHearts() {
 function renderQuestion(entrance = 'none') {
   clearInterval(quizTimer);
   if (!activeQuiz || activeQuiz.finished) return;
-  const q = activeQuiz.data.questions[activeQuiz.index];
+  const questions = activeQuizQuestions();
+  const q = questions[activeQuiz.index];
   activeQuiz.answered = false;
   activeQuiz.transitioning = false;
   activeQuiz.seconds = QUIZ_SECONDS;
@@ -774,7 +907,7 @@ function renderQuestion(entrance = 'none') {
   }
 
   document.getElementById('quizTitle').textContent = activeQuiz.data.title;
-  document.getElementById('quizCounter').textContent = `Frage ${activeQuiz.index + 1} / ${activeQuiz.data.questions.length}`;
+  document.getElementById('quizCounter').textContent = `Frage ${activeQuiz.index + 1} / ${questions.length}`;
   document.getElementById('quizTimer').textContent = activeQuiz.seconds;
   document.getElementById('quizQuestion').textContent = q[0];
   document.getElementById('quizKnight').src = knightAsset('normal');
@@ -803,12 +936,16 @@ function renderQuestion(entrance = 'none') {
 
 function answerQuestion(idx) {
   if (!activeQuiz || activeQuiz.answered || activeQuiz.finished || activeQuiz.transitioning) return;
+  if (isCastleBossQuiz()) {
+    answerCastleQuestion(idx);
+    return;
+  }
   activeQuiz.answered = true;
   activeQuiz.transitioning = true;
   clearInterval(quizTimer);
   setBossMusicMode('full');
 
-  const q = activeQuiz.data.questions[activeQuiz.index];
+  const q = activeQuizQuestions()[activeQuiz.index];
   const correct = idx === q[2];
   const answerButtons = document.querySelectorAll('.quiz-answer');
   answerButtons.forEach((btn, i) => {
@@ -895,7 +1032,7 @@ function playBattleAnimation(correct, idx) {
     knight.classList.remove('sprite-pop', 'sprite-shake', 'knight-strike', 'knight-damaged', 'knight-attack-pose');
     enemy.classList.remove('sprite-shake', 'enemy-hit', 'enemy-attack-strike');
 
-    if (activeQuiz.hearts <= 0 || activeQuiz.index >= activeQuiz.data.questions.length - 1) {
+    if (activeQuiz.hearts <= 0 || activeQuiz.index >= activeQuizQuestions().length - 1) {
       showQuizEndPanel();
     } else {
       activeQuiz.index += 1;
@@ -907,6 +1044,290 @@ function playBattleAnimation(correct, idx) {
       renderQuestion('in');
     }
   }, BATTLE_ANIMATION_MS);
+}
+
+async function answerCastleQuestion(idx) {
+  if (!activeQuiz || activeQuiz.answered || activeQuiz.finished || activeQuiz.transitioning) return;
+  activeQuiz.answered = true;
+  activeQuiz.transitioning = true;
+  clearInterval(quizTimer);
+  setBossMusicMode('full');
+
+  const q = activeQuizQuestions()[activeQuiz.index];
+  const correct = idx === q[2];
+  const answerButtons = document.querySelectorAll('.quiz-answer');
+  answerButtons.forEach((btn, i) => {
+    btn.disabled = true;
+    if (i === q[2]) btn.classList.add('correct-answer');
+    if (i === idx && !correct) btn.classList.add('wrong-answer');
+  });
+
+  await wait(320);
+  const game = document.getElementById('quizGame');
+  game.classList.add('slide-out-left');
+  await wait(QUIZ_TRANSITION_MS);
+  game.classList.add('hidden');
+  game.classList.remove('slide-out-left');
+  await playCastleQuizAnimation(correct, idx);
+}
+
+async function playCastleQuizAnimation(correct, idx) {
+  const feedback = document.getElementById('battleFeedback');
+  const knight = document.getElementById('quizKnight');
+  const enemy = document.getElementById('quizEnemy');
+  feedback.classList.remove('hidden');
+  feedback.classList.remove('castle-taunt-bubble');
+  knight.classList.remove('knight-strike', 'knight-damaged', 'knight-attack-pose', 'castle-knight-evade', 'castle-knight-hit');
+  enemy.classList.remove('castle-boss-dodge', 'castle-boss-smirk');
+
+  if (correct) {
+    activeQuiz.correct += 1;
+    feedback.textContent = 'Richtig!';
+    knight.src = knightAsset('attack');
+    knight.classList.add('knight-attack-pose');
+    enemy.src = castleEnemyAsset('surprised');
+    void knight.offsetWidth;
+    void enemy.offsetWidth;
+    playSfx(sfxCorrect);
+    knight.classList.add('knight-strike');
+    enemy.classList.add('castle-boss-dodge');
+    await wait(1050);
+  } else {
+    feedback.textContent = idx === -1 ? 'Zeit abgelaufen!' : 'Falsch!';
+    enemy.src = castleEnemyAsset('laugh');
+    playSfx(sfxWrong);
+    enemy.classList.add('castle-boss-smirk');
+    await wait(900);
+  }
+
+  knight.classList.remove('knight-strike', 'knight-attack-pose');
+  enemy.classList.remove('castle-boss-dodge', 'castle-boss-smirk');
+  knight.src = knightAsset('normal');
+  enemy.src = enemyAsset(activeQuiz.data.enemy, 'normal');
+  feedback.classList.add('hidden');
+
+  if (activeQuiz.index >= activeQuizQuestions().length - 1) {
+    await startCastlePostQuizSequence();
+    return;
+  }
+
+  activeQuiz.index += 1;
+  document.getElementById('quizGame').classList.remove('hidden');
+  renderQuestion('in');
+}
+
+async function startCastlePostQuizSequence() {
+  if (!activeQuiz || !isCastleBossQuiz()) return;
+  const modal = ensureQuizModal();
+  const zone = document.getElementById('quizBattleZone');
+  const knight = document.getElementById('quizKnight');
+  const enemy = document.getElementById('quizEnemy');
+  const feedback = document.getElementById('battleFeedback');
+  const beam = document.getElementById('castleBeam');
+  feedback.classList.add('hidden');
+  modal.querySelector('#quizGame').classList.add('hidden');
+  modal.querySelector('#quizIntro').classList.add('hidden');
+  modal.querySelector('#quizResult').classList.add('hidden');
+  zone.classList.add('castle-boss-mode');
+  knight.src = knightAsset('normal');
+  enemy.src = castleEnemyAsset('laugh');
+  showCastleSpeech('<strong>Ha!</strong><br>Die Schläge des Ritters können mir nichts anhaben.<br>Nichts kann die Magie zurück in das Königreich bringen!');
+  await wait(2600);
+  hideCastleSpeech();
+
+  enemy.src = castleEnemyAsset('flyLeft');
+  enemy.classList.add('castle-flight-left');
+  await wait(1200);
+  enemy.classList.remove('castle-flight-left');
+
+  enemy.src = castleEnemyAsset('flyRight');
+  enemy.classList.add('castle-flight-right');
+  await wait(1200);
+  enemy.classList.remove('castle-flight-right');
+
+  enemy.src = castleEnemyAsset('hover');
+  enemy.classList.add('castle-hover-drop');
+  await wait(1100);
+  enemy.classList.remove('castle-hover-drop');
+  enemy.classList.add('castle-hovering');
+
+  beam.classList.remove('hidden');
+  beam.classList.add('castle-beam-shot');
+  knight.classList.add('castle-knight-evade');
+  await wait(900);
+  beam.classList.add('hidden');
+  beam.classList.remove('castle-beam-shot');
+  knight.classList.remove('castle-knight-evade');
+
+  await startCastleDodgeGame();
+}
+
+function moveCastleKnight(direction) {
+  if (!activeQuiz?.castleDodge || !activeQuiz.castleDodge.running) return;
+  const state = activeQuiz.castleDodge;
+  if (state.stunned) return;
+  state.lane = Math.max(0, Math.min(state.lanes.length - 1, state.lane + direction));
+  const knight = document.getElementById('quizKnight');
+  if (!knight) return;
+  knight.style.transform = `translateX(${state.lanes[state.lane]}%)`;
+}
+
+function spawnCastleProjectile() {
+  if (!activeQuiz?.castleDodge || !activeQuiz.castleDodge.running) return;
+  const state = activeQuiz.castleDodge;
+  const layer = document.getElementById('castleProjectileLayer');
+  if (!layer) return;
+  const el = document.createElement('div');
+  el.className = 'castle-projectile';
+  const x = state.spawnXs[Math.floor(Math.random() * state.spawnXs.length)];
+  el.style.left = `${x}%`;
+  layer.appendChild(el);
+  state.projectiles.push({ el, x, y: -6, speed: 23 + Math.random() * 5 });
+}
+
+function setCastleMagePass(side) {
+  const enemy = document.getElementById('quizEnemy');
+  if (!enemy || !activeQuiz?.castleDodge) return;
+  enemy.classList.remove('castle-pass-left', 'castle-pass-right');
+  if (side === 'left') {
+    enemy.src = castleEnemyAsset('flyLeft');
+    enemy.classList.add('castle-pass-left');
+    activeQuiz.castleDodge.spawnXs = [22, 34, 46];
+  } else {
+    enemy.src = castleEnemyAsset('flyRight');
+    enemy.classList.add('castle-pass-right');
+    activeQuiz.castleDodge.spawnXs = [30, 42, 54];
+  }
+}
+
+function castleKnightHit() {
+  const state = activeQuiz?.castleDodge;
+  const knight = document.getElementById('quizKnight');
+  const feedback = document.getElementById('castleDodgeFeedback');
+  if (!state || state.stunned || !knight) return;
+  state.stunned = true;
+  knight.classList.add('castle-knight-hit');
+  if (feedback) {
+    feedback.textContent = 'Getroffen!';
+    feedback.classList.remove('hidden');
+  }
+  setTimeout(() => {
+    if (feedback) feedback.classList.add('hidden');
+    knight.classList.remove('castle-knight-hit');
+    if (activeQuiz?.castleDodge) activeQuiz.castleDodge.stunned = false;
+  }, CASTLE_STUN_MS);
+}
+
+function updateCastleProjectiles(now) {
+  const state = activeQuiz?.castleDodge;
+  if (!state || !state.running) return;
+  const zone = document.getElementById('quizBattleZone');
+  const knight = document.getElementById('quizKnight');
+  if (!zone || !knight) return;
+  const zoneRect = zone.getBoundingClientRect();
+  const knightRect = knight.getBoundingClientRect();
+
+  state.projectiles = state.projectiles.filter(projectile => {
+    projectile.y += projectile.speed * (state.lastFrameDelta / 1000);
+    projectile.el.style.top = `${projectile.y}%`;
+    if (projectile.y > 108) {
+      projectile.el.remove();
+      return false;
+    }
+    const rect = projectile.el.getBoundingClientRect();
+    const overlaps = !(rect.right < knightRect.left || rect.left > knightRect.right || rect.bottom < knightRect.top || rect.top > knightRect.bottom);
+    if (overlaps) {
+      projectile.el.remove();
+      castleKnightHit();
+      return false;
+    }
+    return true;
+  });
+}
+
+function castleDodgeFrame(now) {
+  const state = activeQuiz?.castleDodge;
+  if (!state || !state.running) return;
+  const delta = Math.min(40, now - (state.lastFrame || now));
+  state.lastFrame = now;
+  state.lastFrameDelta = delta;
+  const remaining = Math.max(0, state.endTime - now);
+  const timer = document.getElementById('castleDodgeTimer');
+  if (timer) timer.textContent = formatCastleDodgeTime(remaining);
+  updateCastleProjectiles(now);
+  if (remaining <= 0) {
+    finishCastleDodgeGame();
+    return;
+  }
+  state.rafId = requestAnimationFrame(castleDodgeFrame);
+}
+
+async function startCastleDodgeGame() {
+  if (!activeQuiz) return;
+  const zone = document.getElementById('quizBattleZone');
+  const layer = document.getElementById('castleProjectileLayer');
+  const dodgePanel = document.getElementById('castleDodgePanel');
+  const knight = document.getElementById('quizKnight');
+  const enemy = document.getElementById('quizEnemy');
+  if (!zone || !layer || !dodgePanel || !knight || !enemy) return;
+
+  zone.classList.remove('castle-boss-mode');
+  zone.classList.add('castle-dodge-mode');
+  layer.classList.remove('hidden');
+  dodgePanel.classList.remove('hidden');
+  knight.src = knightAsset('normal');
+  knight.classList.add('castle-runner');
+  enemy.classList.remove('castle-hovering');
+  enemy.classList.add('castle-flyer');
+
+  activeQuiz.castleDodge = {
+    running: true,
+    lane: 1,
+    lanes: [0, 55, 110],
+    projectiles: [],
+    spawnXs: [30, 42, 54],
+    stunned: false,
+    endTime: performance.now() + CASTLE_DODGE_DURATION_MS,
+    lastFrame: 0,
+    lastFrameDelta: 16,
+    spawnTimer: null,
+    flightTimer: null,
+    rafId: null
+  };
+  knight.style.transform = `translateX(${activeQuiz.castleDodge.lanes[activeQuiz.castleDodge.lane]}%)`;
+
+  let side = 'right';
+  setCastleMagePass(side);
+  activeQuiz.castleDodge.flightTimer = setInterval(() => {
+    if (!activeQuiz?.castleDodge?.running) return;
+    side = side === 'right' ? 'left' : 'right';
+    setCastleMagePass(side);
+  }, CASTLE_FLIGHT_SWAP_MS);
+  activeQuiz.castleDodge.spawnTimer = setInterval(spawnCastleProjectile, CASTLE_PROJECTILE_SPAWN_MS);
+  activeQuiz.castleDodge.rafId = requestAnimationFrame(castleDodgeFrame);
+}
+
+function finishCastleDodgeGame() {
+  if (!activeQuiz) return;
+  cleanupCastleDodgeGame();
+  setAreaProgress({ level2Completed: true });
+  applyMarkerStates();
+  const modal = ensureQuizModal();
+  modal.querySelector('#quizGame').classList.add('hidden');
+  modal.querySelector('#quizIntro').classList.add('hidden');
+  const result = modal.querySelector('#quizResult');
+  result.className = 'quiz-result quiz-panel quiz-final-result';
+  result.classList.remove('hidden');
+  result.innerHTML = `
+    <h2>Fortsetzung folgt</h2>
+    <p>Du hast den ersten Angriff des Zauberers überstanden.</p>
+    <p>Der Kampf im Zauberschloss geht bald weiter.</p>
+    <div class="quiz-result-actions single-action">
+      <button id="closeQuizButton" class="primary-button" type="button">Zur Weltkarte</button>
+    </div>
+  `;
+  const btn = document.getElementById('closeQuizButton');
+  if (btn) btn.addEventListener('click', returnToOverworld);
 }
 
 function showQuizEndPanel() {
@@ -950,7 +1371,7 @@ function showQuizResult() {
       <h2>Boss besiegt!</h2>
       <div class="visual-notice">
         <div class="visual-notice-icon">✅</div>
-        <p>${activeQuiz.correct}/${activeQuiz.data.questions.length} Fragen richtig beantwortet.</p>
+        <p>${activeQuiz.correct}/${activeQuizQuestions().length} Fragen richtig beantwortet.</p>
         <p>Deine Belohnung erscheint gleich auf der Weltkarte.</p>
       </div>
       <div class="quiz-result-actions single-action">
@@ -963,7 +1384,7 @@ function showQuizResult() {
 
   result.innerHTML = `
     <h2>Verloren!</h2>
-    <p>Du hast ${activeQuiz.correct} von ${activeQuiz.data.questions.length} Fragen richtig beantwortet.</p>
+    <p>Du hast ${activeQuiz.correct} von ${activeQuizQuestions().length} Fragen richtig beantwortet.</p>
     <div class="quiz-result-actions">
       <button id="retryQuizButton" class="ghost-button" type="button">Nochmal spielen</button>
       <button id="closeQuizButton" class="primary-button" type="button">Zur Weltkarte</button>
@@ -981,7 +1402,7 @@ function showWinResultSlide(result, reward, slide, fragmentStatus = {}) {
         <div class="mini-guide-slider" aria-label="Quiz Ergebnis">
           <article class="mini-guide-card">
             <div class="mini-guide-icon">✅</div>
-            <p class="mini-guide-title">${activeQuiz.correct}/${activeQuiz.data.questions.length}</p>
+            <p class="mini-guide-title">${activeQuiz.correct}/${activeQuizQuestions().length}</p>
             <p class="mini-guide-text">Fragen richtig beantwortet.</p>
           </article>
           <article class="mini-guide-card">
@@ -1021,6 +1442,7 @@ function showWinResultSlide(result, reward, slide, fragmentStatus = {}) {
 }
 
 async function returnToOverworld() {
+  cleanupCastleDodgeGame();
   const modal = ensureQuizModal();
   modal.classList.add('hidden');
   pauseBossMusic();
@@ -1031,6 +1453,7 @@ async function returnToOverworld() {
 }
 
 async function exitLevel() {
+  cleanupCastleDodgeGame();
   pauseBossMusic();
   pauseLevelMusic();
   await moveToNode('start');
