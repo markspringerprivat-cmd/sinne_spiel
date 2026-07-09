@@ -82,7 +82,7 @@ Wenn das Repository anders heißt oder unter einer anderen Adresse veröffentlic
 ## Erweiterungen
 
 - Beim ersten Betreten des Spielfelds erscheint ein dreiteiliges Einführungs-Pop-up.
-- Die Hintergrundmusik `assets/audio/overworld.mp3` startet nach Klick auf „Abenteuer beginnen“.
+- Die Hintergrundmusik `assets/audio/overworld_new.mp3` startet nach Klick auf „Abenteuer beginnen“.
 - In den Einstellungen gibt es einen Lautstärkeregler.
 - In den Einstellungen können alle QR-Codes eingeblendet werden.
 - Gesperrte Gebiete zeigen nur ein Schloss-Symbol; die Karte bleibt sichtbar.

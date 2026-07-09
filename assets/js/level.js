@@ -50,6 +50,11 @@ let currentNode = 'start';
 const sfxCorrect = new Audio('../assets/audio/richtig_1.mp3');
 const sfxWrong = new Audio('../assets/audio/falsch_3.mp3');
 
+const bossMusic = new Audio('../assets/audio/bossencounter.mp3');
+bossMusic.loop = true;
+let bossMusicWanted = false;
+let bossMusicMode = 'full';
+
 function playSfx(audio) {
   if (!audio) return;
   try {
@@ -130,6 +135,7 @@ function awardFragment(quizId) {
 }
 
 function startLevelMusic() {
+  pauseBossMusic();
   if (!levelMusic) return;
   if (levelMusicLoop) {
     levelMusicLoop.setVolume(currentVolume());
@@ -147,6 +153,35 @@ function pauseLevelMusic() {
   } else {
     levelMusic.pause();
   }
+}
+
+function bossVolumeForMode(mode = bossMusicMode) {
+  const base = currentVolume();
+  return base * (mode === 'question' ? 0.7 : 1);
+}
+
+function setBossMusicMode(mode) {
+  bossMusicMode = mode === 'question' ? 'question' : 'full';
+  try {
+    bossMusic.volume = bossVolumeForMode();
+  } catch {}
+}
+
+function startBossMusic(mode = 'full') {
+  bossMusicWanted = true;
+  bossMusicMode = mode === 'question' ? 'question' : 'full';
+  try {
+    bossMusic.loop = true;
+    bossMusic.volume = bossVolumeForMode();
+    bossMusic.play().catch(() => {});
+  } catch {}
+}
+
+function pauseBossMusic() {
+  bossMusicWanted = false;
+  try {
+    bossMusic.pause();
+  } catch {}
 }
 
 function showLevelPopup(title, text, buttonLabel = 'Weiter', onClose = null) {
@@ -523,6 +558,7 @@ function openQuizIntro(quizId) {
     return;
   }
   pauseLevelMusic();
+  startBossMusic('full');
   preloadQuizAssets(data, quizId);
   const modal = ensureQuizModal();
   clearInterval(quizTimer);
@@ -543,6 +579,7 @@ function openQuizIntro(quizId) {
 
 function startQuiz(quizId) {
   pauseLevelMusic();
+  startBossMusic('full');
   const data = window.SINNESMAGIE_QUIZZES[quizId];
   preloadQuizAssets(data, quizId);
   activeQuiz = {
@@ -585,6 +622,7 @@ function renderQuestion(entrance = 'none') {
   activeQuiz.answered = false;
   activeQuiz.transitioning = false;
   activeQuiz.seconds = QUIZ_SECONDS;
+  setBossMusicMode('question');
 
   const game = document.getElementById('quizGame');
   game.className = 'quiz-game quiz-panel';
@@ -626,6 +664,7 @@ function answerQuestion(idx) {
   activeQuiz.answered = true;
   activeQuiz.transitioning = true;
   clearInterval(quizTimer);
+  setBossMusicMode('full');
 
   const q = activeQuiz.data.questions[activeQuiz.index];
   const correct = idx === q[2];
@@ -730,6 +769,7 @@ function playBattleAnimation(correct, idx) {
 
 function showQuizEndPanel() {
   activeQuiz.finished = true;
+  setBossMusicMode('full');
   clearInterval(quizTimer);
   const modal = ensureQuizModal();
   modal.querySelector('#quizGame').classList.add('hidden');
@@ -829,6 +869,7 @@ function showWinResultSlide(result, reward, slide, fragmentStatus = {}) {
 async function returnToOverworld() {
   const modal = ensureQuizModal();
   modal.classList.add('hidden');
+  pauseBossMusic();
   startLevelMusic();
   saveCurrentNode('level2');
   await moveToNode('start');
@@ -836,6 +877,7 @@ async function returnToOverworld() {
 }
 
 async function exitLevel() {
+  pauseBossMusic();
   pauseLevelMusic();
   await moveToNode('start');
   window.location.href = '../game.html?fromLevel=1';
