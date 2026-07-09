@@ -1123,7 +1123,6 @@ async function startCastlePostQuizSequence() {
   const knight = document.getElementById('quizKnight');
   const enemy = document.getElementById('quizEnemy');
   const feedback = document.getElementById('battleFeedback');
-  const beam = document.getElementById('castleBeam');
   feedback.classList.add('hidden');
   modal.querySelector('#quizGame').classList.add('hidden');
   modal.querySelector('#quizIntro').classList.add('hidden');
@@ -1131,35 +1130,17 @@ async function startCastlePostQuizSequence() {
   zone.classList.add('castle-boss-mode');
   knight.src = knightAsset('normal');
   enemy.src = castleEnemyAsset('laugh');
-  showCastleSpeech('<strong>Ha!</strong><br>Die Schläge des Ritters können mir nichts anhaben.<br>Nichts kann die Magie zurück in das Königreich bringen!');
-  await wait(2600);
+
+  showCastleSpeech('<strong>Ha!</strong><br>Deine Schläge können mir nichts anhaben.<br>Nichts wird die Magie zurück ins Königreich bringen!');
+  await wait(2500);
   hideCastleSpeech();
 
   enemy.src = castleEnemyAsset('flyLeft');
   enemy.classList.add('castle-flight-left');
-  await wait(1200);
-  enemy.classList.remove('castle-flight-left');
+  await wait(1150);
 
-  enemy.src = castleEnemyAsset('flyRight');
-  enemy.classList.add('castle-flight-right');
-  await wait(1200);
-  enemy.classList.remove('castle-flight-right');
-
-  enemy.src = castleEnemyAsset('hover');
-  enemy.classList.add('castle-hover-drop');
-  await wait(1100);
-  enemy.classList.remove('castle-hover-drop');
-  enemy.classList.add('castle-hovering');
-
-  beam.classList.remove('hidden');
-  beam.classList.add('castle-beam-shot');
-  knight.classList.add('castle-knight-evade');
-  await wait(900);
-  beam.classList.add('hidden');
-  beam.classList.remove('castle-beam-shot');
-  knight.classList.remove('castle-knight-evade');
-
-  await startCastleDodgeGame();
+  pauseBossMusic();
+  window.location.href = 'zauberschloss-dodge.html';
 }
 
 function moveCastleKnight(direction) {

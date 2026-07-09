@@ -2523,3 +2523,220 @@ p { line-height: 1.5; }
     left: 1% !important;
   }
 }
+
+
+/* ===== v62 Zauberschloss: ausgelagerter Ausweichkampf ===== */
+.castle-dodge-page {
+  min-height: 100vh;
+  margin: 0;
+  background: #090719;
+  overflow: hidden;
+  touch-action: none;
+}
+.castle-dodge-shell {
+  width: 100vw;
+  height: 100dvh;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+.castle-dodge-stage {
+  position: relative;
+  width: min(100vw, calc(100vh * 941 / 1672));
+  height: min(100vh, calc(100vw * 1672 / 941));
+  overflow: hidden;
+  background: #111;
+  box-shadow: 0 0 42px rgba(0,0,0,.55);
+  user-select: none;
+  touch-action: none;
+}
+.castle-dodge-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+  pointer-events: none;
+}
+.castle-dodge-loader {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  background: rgba(8, 7, 23, .68);
+  backdrop-filter: blur(3px);
+}
+.castle-dodge-loader.hidden {
+  display: none !important;
+}
+.castle-dodge-loader-card {
+  width: min(86%, 520px);
+  padding: 28px;
+  border-radius: 24px;
+  text-align: center;
+  color: #fff8d9;
+  background: rgba(23, 13, 46, .9);
+  border: 2px solid rgba(220, 186, 255, .45);
+  box-shadow: 0 18px 50px rgba(0,0,0,.4);
+}
+.castle-dodge-loader-card h1 {
+  margin: 0 0 10px;
+  font-size: clamp(1.45rem, 5vmin, 2.4rem);
+}
+.castle-dodge-loader-card p {
+  margin: 0 auto 16px;
+  font-weight: 800;
+}
+.castle-dodge-loadbar {
+  width: 100%;
+  height: 14px;
+  margin: 16px 0 20px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.22);
+  overflow: hidden;
+}
+.castle-dodge-loadbar span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #8453ff, #e3b7ff);
+  transform-origin: left center;
+  animation: castleDodgeLoad 1.2s ease-out both;
+}
+@keyframes castleDodgeLoad {
+  from { transform: scaleX(.06); }
+  to { transform: scaleX(1); }
+}
+.castle-dodge-hud {
+  position: absolute;
+  left: 50%;
+  top: max(14px, env(safe-area-inset-top));
+  z-index: 6;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 18px;
+  border-radius: 999px;
+  color: #fff6d4;
+  background: rgba(22, 13, 45, .75);
+  border: 2px solid rgba(235, 217, 255, .5);
+  box-shadow: 0 12px 30px rgba(0,0,0,.3);
+  font-weight: 900;
+}
+.castle-dodge-hud strong {
+  min-width: 4ch;
+  color: #ffdf7a;
+}
+.dodge-mage {
+  position: absolute;
+  top: 9%;
+  left: -8%;
+  width: 30%;
+  height: 22%;
+  object-fit: contain;
+  z-index: 5;
+  filter: drop-shadow(0 14px 18px rgba(0,0,0,.35));
+  pointer-events: none;
+}
+.dodge-knight {
+  position: absolute;
+  left: 50%;
+  bottom: 2%;
+  width: 24%;
+  height: 20%;
+  object-fit: contain;
+  z-index: 7;
+  transform: translateX(-50%);
+  filter: drop-shadow(0 12px 14px rgba(0,0,0,.35));
+  pointer-events: none;
+}
+.dodge-projectiles {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+}
+.dodge-projectile {
+  position: absolute;
+  width: clamp(24px, 5vmin, 44px);
+  height: clamp(24px, 5vmin, 44px);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle at 35% 30%, #fff1ff 0%, #d17eff 35%, #7c2fd6 72%, #34105e 100%);
+  box-shadow: 0 0 16px rgba(210, 130, 255, .96), 0 0 34px rgba(116, 42, 204, .65);
+}
+.dodge-controls {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: max(12px, env(safe-area-inset-bottom));
+  z-index: 12;
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  padding: 0 14px;
+}
+.dodge-controls button {
+  width: min(42%, 210px);
+  min-height: 54px;
+  font-size: clamp(1rem, 4.4vmin, 1.28rem);
+  touch-action: none;
+}
+.dodge-knight-hit {
+  animation: dodgeKnightHit .18s linear 5;
+}
+@keyframes dodgeKnightHit {
+  0%, 100% { filter: drop-shadow(0 12px 14px rgba(0,0,0,.35)) brightness(1); }
+  50% { filter: drop-shadow(0 12px 14px rgba(0,0,0,.35)) brightness(1.45); }
+}
+.dodge-popup {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  background: rgba(4, 4, 12, .55);
+  backdrop-filter: blur(2px);
+}
+.dodge-popup.hidden {
+  display: none !important;
+}
+.dodge-popup-card {
+  width: min(86%, 460px);
+  padding: 28px 24px;
+  border-radius: 24px;
+  text-align: center;
+  color: #3d2308;
+  background: rgba(255, 244, 211, .96);
+  border: 3px solid rgba(129, 78, 21, .28);
+  box-shadow: 0 20px 52px rgba(0,0,0,.36);
+}
+.dodge-popup-card h2 {
+  margin: 0 0 10px;
+  font-size: clamp(1.6rem, 5.8vmin, 2.3rem);
+}
+.dodge-popup-card p {
+  margin: 0 auto 18px;
+  max-width: 28rem;
+  font-weight: 800;
+}
+@media (max-width: 520px) {
+  .dodge-mage {
+    width: 38%;
+    height: 24%;
+  }
+  .dodge-knight {
+    width: 31%;
+    height: 22%;
+  }
+  .dodge-controls {
+    gap: 10px;
+  }
+  .dodge-controls button {
+    min-height: 50px;
+  }
+}
