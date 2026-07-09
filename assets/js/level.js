@@ -48,7 +48,8 @@ const AREA_SENSE_INFO = {
   klangwald: 'Höre genau hin: Im Klangwald geht es um Geräusche, Musik und Richtungshören.',
   tastminen: 'Hier geht es um Materialien: hart, weich, glatt, rau und stabil.',
   duftgarten: 'Im Duftgarten geht es um Gerüche, Warnsignale und die Nase.',
-  flammenkueche: 'Hier geht es um Geschmack: süß, sauer, salzig, bitter und um Sicherheit beim Essen.'
+  flammenkueche: 'Hier geht es um Geschmack: süß, sauer, salzig, bitter und um Sicherheit beim Essen.',
+  zauberschloss: 'Im Zauberschloss geht es darum, ruhig zu bleiben, genau zu reagieren und den Magier zu überwinden.'
 };
 
 function writePendingNotice(notice) {
@@ -199,7 +200,8 @@ function getAreaProgress() {
   const progress = readProgress();
   return {
     level1Completed: !!progress[currentArea]?.level1Completed,
-    level2Completed: !!progress[currentArea]?.level2Completed
+    level2Completed: !!progress[currentArea]?.level2Completed,
+    level3Completed: !!progress[currentArea]?.level3Completed
   };
 }
 
@@ -208,6 +210,7 @@ function setAreaProgress(patch) {
   progress[currentArea] = {
     level1Completed: !!progress[currentArea]?.level1Completed,
     level2Completed: !!progress[currentArea]?.level2Completed,
+    level3Completed: !!progress[currentArea]?.level3Completed,
     ...patch
   };
   writeProgress(progress);
@@ -333,11 +336,11 @@ function markerPoint(marker) {
 }
 
 function getNodes() {
-  return {
-    start: stageStart(),
-    level1: markerPoint(levelMarkers[0]),
-    level2: markerPoint(levelMarkers[1])
-  };
+  const nodes = { start: stageStart() };
+  levelMarkers.forEach((marker, index) => {
+    nodes[`level${index + 1}`] = markerPoint(marker);
+  });
+  return nodes;
 }
 
 function readLevelNodes() {
@@ -358,7 +361,7 @@ function saveCurrentNode(node) {
 
 function initialNodeFromProgress() {
   const progress = getAreaProgress();
-  if (progress.level2Completed) return 'level2';
+  if (progress.level2Completed) return levelMarkers[1] ? 'level2' : 'level1';
   if (progress.level1Completed) return 'level1';
   return 'start';
 }
@@ -392,17 +395,12 @@ function pointForNode(node) {
 
 function nextJumpNode(from, to) {
   if (from === to) return to;
-  if (from === 'start' && to === 'level1') return 'level1';
-  if (from === 'level1' && to === 'start') return 'start';
-  if (from === 'level1' && to === 'level2') return 'level2';
-  if (from === 'level2' && to === 'level1') return 'level1';
-
-  // Es wird nicht direkt zwischen Eingang und Quiz gesprungen.
-  // Der Weg läuft immer über das Minispiel-Level.
-  if (from === 'start' && to === 'level2') return 'level1';
-  if (from === 'level2' && to === 'start') return 'level1';
-
-  return to;
+  const order = ['start', ...levelMarkers.map((_, index) => `level${index + 1}`)];
+  const fromIndex = order.indexOf(from);
+  const toIndex = order.indexOf(to);
+  if (fromIndex === -1 || toIndex === -1) return to;
+  const step = Math.sign(toIndex - fromIndex);
+  return order[fromIndex + step] || to;
 }
 
 function jumpDuration(fromPoint, toPoint) {
@@ -492,9 +490,10 @@ function preloadLevelJumpSprites() {
 function applyMarkerStates() {
   const progress = getAreaProgress();
   levelMarkers.forEach((marker, index) => {
-    const isLevel1 = index === 0;
-    const completed = isLevel1 ? progress.level1Completed : progress.level2Completed;
-    const locked = !isLevel1 && !progress.level1Completed;
+    const levelKey = `level${index + 1}Completed`;
+    const previousKey = `level${index}Completed`;
+    const completed = !!progress[levelKey];
+    const locked = index > 0 && !progress[previousKey];
     marker.classList.toggle('completed', completed);
     marker.classList.toggle('locked', locked);
     marker.classList.toggle('available', !locked && !completed);
@@ -548,10 +547,25 @@ async function handleLevelTwo() {
   await openQuizIntro(levelMarkers[1].dataset.quizId || currentArea);
 }
 
+async function handleLevelThree() {
+  const progress = getAreaProgress();
+  if (!progress.level2Completed) {
+    showLevelPopup('Noch gesperrt', 'Du musst zuerst die Bossbegegnung schaffen, bevor das Finale startet.');
+    return;
+  }
+  await moveToNode('level3');
+  showLevelPopup(
+    levelMarkers[2]?.dataset.title || 'Finale',
+    `<div class="visual-notice"><div class="visual-notice-icon">✨🏰</div><p>${levelMarkers[2]?.dataset.text || 'Hier startet später das Finale.'}</p></div>`,
+    'OK'
+  );
+}
+
 async function moveLevelKnightTo(marker, index) {
   if (marker.disabled || marker.classList.contains('movement-disabled')) return;
   if (index === 0) await handleLevelOne();
-  else await handleLevelTwo();
+  else if (index === 1) await handleLevelTwo();
+  else await handleLevelThree();
 }
 
 levelMarkers.forEach((marker, index) => {
