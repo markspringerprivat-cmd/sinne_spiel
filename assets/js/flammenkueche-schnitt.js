@@ -1,6 +1,7 @@
 (() => {
   const STORAGE_VOLUME = 'sinnesmagie-volume';
   const STORAGE_LEVEL_PROGRESS = 'sinnesmagie-level-progress';
+  const STORAGE_PENDING_NOTICE = 'sinnesmagie-pending-notice';
   const GAME_DURATION = 60;
   const MAX_LIVES = 5;
   const MISS_DAMAGE = 0.25;
@@ -111,6 +112,13 @@
     playPooledSound(slimeSoundPool, 0.78);
   }
 
+
+  function writeMinigamePendingNotice(area) {
+    try {
+      localStorage.setItem(STORAGE_PENDING_NOTICE, JSON.stringify({ type: 'minigameComplete', area }));
+    } catch {}
+  }
+
   function readProgress() {
     try {
       const saved = JSON.parse(localStorage.getItem(STORAGE_LEVEL_PROGRESS) || '{}');
@@ -127,6 +135,7 @@
       level2Completed: !!progress.flammenkueche?.level2Completed,
     };
     localStorage.setItem(STORAGE_LEVEL_PROGRESS, JSON.stringify(progress));
+    writeMinigamePendingNotice('flammenkueche');
   }
 
   function resizeCanvas() {

@@ -41,6 +41,7 @@ const STORAGE_INTRO_SEEN = 'sinnesmagie-game-intro-seen';
 const STORAGE_VOLUME = 'sinnesmagie-volume';
 const STORAGE_FRAGMENTS = 'sinnesmagie-fragments';
 const STORAGE_LEVEL_PROGRESS = 'sinnesmagie-level-progress';
+const STORAGE_PENDING_NOTICE = 'sinnesmagie-pending-notice';
 
 const areaNames = {
   koenigsschloss: 'Königsschloss',
@@ -101,6 +102,7 @@ let scannerBusy = false;
 let pendingNavigation = null;
 let fragmentOrbitLayer = null;
 let completedAreaLayer = null;
+let currentInfoOnClose = null;
 
 function readUnlocked() {
   try {
@@ -150,6 +152,77 @@ function isAreaCompleted(area) {
 function allPlayableAreasCompleted() {
   const progress = readLevelProgress();
   return fragmentAreas.every(area => !!progress[area]?.level2Completed);
+}
+
+function readPendingNotice() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_PENDING_NOTICE) || 'null');
+    return saved && typeof saved === 'object' ? saved : null;
+  } catch {
+    return null;
+  }
+}
+
+function clearPendingNotice() {
+  localStorage.removeItem(STORAGE_PENDING_NOTICE);
+}
+
+function nextPlayableStep() {
+  const progress = readLevelProgress();
+  const unlocked = readUnlocked();
+  const playable = fragmentAreas.filter(area => unlocked.has(area) && !isAreaCompleted(area));
+  if (!playable.length) {
+    if (allPlayableAreasCompleted()) {
+      return {
+        title: 'Alle Sinnes-Kristalle gesammelt',
+        html: `<div class="visual-notice"><div class="visual-notice-icon">🏰✨</div><p>Geh zum Zauberschloss und hole die Magie der Sinne zurück.</p></div>`
+      };
+    }
+    return {
+      title: 'Nächstes Gebiet freischalten',
+      html: `<div class="visual-notice"><div class="visual-notice-icon">📱</div><p>Scanne einen QR-Code, um ein weiteres Gebiet zu öffnen.</p></div>`
+    };
+  }
+
+  const area = playable[0];
+  const p = progress[area] || {};
+  if (!p.level1Completed) {
+    return {
+      title: `Weiter im ${areaNames[area]}`,
+      html: `<div class="visual-notice"><div class="visual-notice-icon">⭐</div><p>Als Nächstes wartet das Minispiel.</p></div>`
+    };
+  }
+  return {
+    title: `Bossbegegnung im ${areaNames[area]}`,
+    html: `<div class="visual-notice"><div class="visual-notice-icon">⚔️</div><p>Das Boss-Quiz ist freigeschaltet.</p></div>`
+  };
+}
+
+function showReturnGuidance(pending = null) {
+  let title = 'Weiter geht’s';
+  let html = '';
+  if (pending?.type === 'fragment' && pending.area && fragmentMeta[pending.area]) {
+    const meta = fragmentMeta[pending.area];
+    const next = nextPlayableStep();
+    title = `${meta.label} erhalten`;
+    html = `
+      <div class="visual-notice">
+        <div class="visual-notice-hero"><img src="${meta.image}" alt="${meta.label}"></div>
+        <p>Du hast ${areaNames[pending.area]} abgeschlossen.</p>
+        <p>${next.title}</p>
+      </div>`;
+  } else {
+    const next = nextPlayableStep();
+    title = next.title;
+    html = next.html;
+  }
+
+  showInfo(title, html, {
+    html: true,
+    showScanButton: false,
+    backLabel: 'OK',
+    onClose: () => startMusic()
+  });
 }
 
 
@@ -279,6 +352,7 @@ function renderCompletedAreaBadges() {
 
 function renderInfoActions(options = {}) {
   infoModalActions.innerHTML = '';
+  currentInfoOnClose = typeof options.onClose === 'function' ? options.onClose : null;
 
   const backButton = document.createElement('button');
   backButton.className = 'ghost-button';
@@ -317,6 +391,10 @@ function showInfo(title, text, options = {}) {
 
 function closeInfo() {
   infoModal.classList.add('hidden');
+  const handler = currentInfoOnClose;
+  currentInfoOnClose = null;
+  if (typeof handler === 'function') handler();
+  else startMusic();
 }
 
 function openSettings() {
@@ -626,11 +704,11 @@ function maybeShowEntryModal() {
   if (fromLevel) {
     const cleanUrl = `${window.location.origin}${window.location.pathname}`;
     window.history.replaceState({}, document.title, cleanUrl);
-    startMusic();
     window.setTimeout(moveKnightHome, 220);
-    if (completedArea && areaNames[completedArea]) {
-      window.setTimeout(() => renderCompletedAreaBadges(), 260);
-    }
+    window.setTimeout(() => renderCompletedAreaBadges(), 260);
+    const pending = readPendingNotice();
+    clearPendingNotice();
+    window.setTimeout(() => showReturnGuidance(pending || (completedArea ? { type: 'fragment', area: completedArea } : null)), 420);
     return;
   }
 

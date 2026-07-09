@@ -14,6 +14,7 @@ const STORAGE_VOLUME = 'sinnesmagie-volume';
 const STORAGE_FRAGMENTS = 'sinnesmagie-fragments';
 const STORAGE_LEVEL_PROGRESS = 'sinnesmagie-level-progress';
 const STORAGE_LEVEL_NODE = 'sinnesmagie-level-node';
+const STORAGE_PENDING_NOTICE = 'sinnesmagie-pending-notice';
 const QUIZ_SECONDS = 30;
 const QUIZ_TRANSITION_MS = 560;
 const BATTLE_ANIMATION_MS = 1500;
@@ -41,6 +42,103 @@ const FRAGMENT_REWARDS = {
   flammenkueche: { name: 'Kristall des Schmeckens', image: '../assets/images/fragments/green.png' }
 };
 const ENEMIES_WITH_ATTACK_ASSET = new Set(['farbgolem', 'waldgeist', 'maulwurf', 'duftgeist', 'feuergolem']);
+
+const AREA_SENSE_INFO = {
+  farbenreich: 'Achte auf Farben, Formen und Muster. Das hilft dir beim Quiz zum Sehen.',
+  klangwald: 'Höre genau hin: Im Klangwald geht es um Geräusche, Musik und Richtungshören.',
+  tastminen: 'Hier geht es um Materialien: hart, weich, glatt, rau und stabil.',
+  duftgarten: 'Im Duftgarten geht es um Gerüche, Warnsignale und die Nase.',
+  flammenkueche: 'Hier geht es um Geschmack: süß, sauer, salzig, bitter und um Sicherheit beim Essen.'
+};
+
+function writePendingNotice(notice) {
+  try {
+    localStorage.setItem(STORAGE_PENDING_NOTICE, JSON.stringify(notice));
+  } catch {}
+}
+
+function readPendingNotice() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_PENDING_NOTICE) || 'null');
+    return saved && typeof saved === 'object' ? saved : null;
+  } catch {
+    return null;
+  }
+}
+
+function clearPendingNotice() {
+  localStorage.removeItem(STORAGE_PENDING_NOTICE);
+}
+
+function bossImageForArea(area) {
+  const quiz = window.SINNESMAGIE_QUIZZES?.[area];
+  return quiz?.enemy ? `../assets/images/enemies/${quiz.enemy}.png` : '';
+}
+
+function showBossUnlockedNotice(area) {
+  const data = window.SINNESMAGIE_QUIZZES?.[area];
+  const img = bossImageForArea(area);
+  const visual = img ? `<div class="visual-notice-hero"><img src="${img}" alt="${data?.enemyName || 'Boss'}"></div>` : '<div class="visual-notice-icon">⚔️</div>';
+  showLevelPopup(
+    'Bossbegegnung freigeschaltet',
+    `<div class="visual-notice">${visual}<p>${data?.enemyName || 'Der Boss'} wartet beim zweiten Punkt.</p><p>${AREA_SENSE_INFO[area] || 'Bereite dich auf das Quiz vor.'}</p></div>`,
+    'OK'
+  );
+}
+
+function showQuizLoading() {
+  let panel = document.getElementById('quizLoadingPanel');
+  if (!panel) {
+    panel = document.createElement('div');
+    panel.id = 'quizLoadingPanel';
+    panel.className = 'quiz-loading-panel hidden';
+    panel.innerHTML = `
+      <div class="quiz-loading-card">
+        Kampf wird vorbereitet …
+        <div class="quiz-loading-bar"><span></span></div>
+      </div>`;
+    document.body.appendChild(panel);
+  }
+  const bar = panel.querySelector('.quiz-loading-bar span');
+  if (bar) {
+    bar.style.animation = 'none';
+    void bar.offsetWidth;
+    bar.style.animation = '';
+  }
+  panel.classList.remove('hidden');
+  return panel;
+}
+
+function hideQuizLoading() {
+  const panel = document.getElementById('quizLoadingPanel');
+  if (panel) panel.classList.add('hidden');
+}
+
+function preloadImageAsync(src) {
+  return new Promise(resolve => {
+    if (!src) return resolve();
+    const img = new Image();
+    img.onload = resolve;
+    img.onerror = resolve;
+    img.src = src;
+    if (img.decode) img.decode().then(resolve).catch(resolve);
+  });
+}
+
+async function preloadQuizAssetsAsync(data, quizId) {
+  const imgs = [
+    battleBackgroundAsset(quizId),
+    knightAsset('normal'), knightAsset('attack'), knightAsset('damage'), knightAsset('defeated'), knightAsset('victory'),
+    enemyAsset(data.enemy, 'normal'), enemyAsset(data.enemy, 'damage'), enemyAsset(data.enemy, 'defeated'),
+    enemyAttackAsset(data.enemy),
+    FRAGMENT_REWARDS[quizId]?.image
+  ].filter(Boolean);
+  await Promise.race([
+    Promise.all(imgs.map(preloadImageAsync)),
+    new Promise(resolve => setTimeout(resolve, 1600))
+  ]);
+}
+
 
 let activeQuiz = null;
 let quizTimer = null;
@@ -415,9 +513,9 @@ async function handleLevelOne() {
     if (minigameUrl) {
       showLevelPopup(
         levelMarkers[0].dataset.title || 'Minispiel',
-        `${levelMarkers[0].dataset.text || 'Hier startet das Minispiel.'} Danach wird der zweite Punkt freigeschaltet.`,
+        `<div class="visual-notice"><div class="visual-notice-icon">🎮</div><p>${levelMarkers[0].dataset.text || 'Hier startet das Minispiel.'}</p><p>${AREA_SENSE_INFO[currentArea] || 'Das hilft dir später im Quiz.'}</p></div>`,
         'Minispiel starten',
-        () => { window.location.href = minigameUrl; }
+        () => { pauseLevelMusic(); window.location.href = minigameUrl; }
       );
       return;
     }
@@ -447,7 +545,7 @@ async function handleLevelTwo() {
   }
 
   await moveToNode('level2');
-  openQuizIntro(levelMarkers[1].dataset.quizId || currentArea);
+  await openQuizIntro(levelMarkers[1].dataset.quizId || currentArea);
 }
 
 async function moveLevelKnightTo(marker, index) {
@@ -551,15 +649,18 @@ function setQuizScene(modal, data, quizId) {
   modal.querySelector('#battleFeedback').classList.add('hidden');
 }
 
-function openQuizIntro(quizId) {
+async function openQuizIntro(quizId) {
   const data = window.SINNESMAGIE_QUIZZES?.[quizId];
   if (!data) {
     showLevelPopup('Quiz', 'Quizdaten fehlen noch.');
     return;
   }
   pauseLevelMusic();
-  startBossMusic('full');
+  const loading = showQuizLoading();
   preloadQuizAssets(data, quizId);
+  await preloadQuizAssetsAsync(data, quizId);
+  await new Promise(resolve => setTimeout(resolve, 450));
+  hideQuizLoading();
   const modal = ensureQuizModal();
   clearInterval(quizTimer);
   modal.classList.remove('hidden');
@@ -570,8 +671,11 @@ function openQuizIntro(quizId) {
   intro.className = 'quiz-intro quiz-panel';
   intro.innerHTML = `
     <h2>${data.title}</h2>
-    <p><strong>${data.enemyName}</strong> stellt sich dir in den Weg.</p>
-    <p>Beantworte sieben Fragen. Richtige Antworten lassen den Ritter angreifen. Bei falschen Antworten oder abgelaufener Zeit greift der Gegner an und du verlierst ein Herz.</p>
+    <div class="visual-notice">
+      <div class="visual-notice-hero"><img src="${enemyAsset(data.enemy, 'normal')}" alt="${data.enemyName}"></div>
+      <p><strong>${data.enemyName}</strong> fordert dich heraus.</p>
+      <p>Beantworte die Fragen. Richtig: Ritter greift an. Falsch: Du verlierst ein Herz.</p>
+    </div>
     <button id="startQuizButton" class="primary-button" type="button">Kampf starten</button>
   `;
   modal.querySelector('#startQuizButton').addEventListener('click', () => startQuiz(quizId));
@@ -792,18 +896,30 @@ function showQuizResult() {
   knight.src = won ? knightAsset('victory') : knightAsset('defeated');
   enemy.src = won ? enemyAsset(activeQuiz.data.enemy, 'defeated') : enemyAsset(activeQuiz.data.enemy, 'normal');
 
+  let fragmentStatus = { gained: false, reward: null, total: readFragments().size, allCollected: false };
   if (won) {
     setAreaProgress({ level2Completed: true });
     applyMarkerStates();
+    fragmentStatus = awardFragment(activeQuiz.quizId);
+    writePendingNotice({ type: 'fragment', area: activeQuiz.quizId, gained: fragmentStatus.gained, allCollected: fragmentStatus.allCollected });
   }
 
-  const fragmentStatus = won ? awardFragment(activeQuiz.quizId) : { gained: false, reward: null, total: readFragments().size, allCollected: false };
-  const reward = fragmentStatus.reward || FRAGMENT_REWARDS[activeQuiz.quizId] || null;
   const result = modal.querySelector('#quizResult');
   result.className = 'quiz-result quiz-panel quiz-final-result';
 
   if (won) {
-    showWinResultSlide(result, reward, 1, fragmentStatus);
+    result.innerHTML = `
+      <h2>Boss besiegt!</h2>
+      <div class="visual-notice">
+        <div class="visual-notice-icon">✅</div>
+        <p>${activeQuiz.correct}/${activeQuiz.data.questions.length} Fragen richtig beantwortet.</p>
+        <p>Deine Belohnung erscheint gleich auf der Weltkarte.</p>
+      </div>
+      <div class="quiz-result-actions single-action">
+        <button id="closeQuizButton" class="primary-button" type="button">Zur Weltkarte</button>
+      </div>
+    `;
+    document.getElementById('closeQuizButton').addEventListener('click', returnToOverworld);
     return;
   }
 
@@ -897,4 +1013,10 @@ const initialPoint = getNodes()[currentNode] || stageStart();
 levelKnight.style.left = `${initialPoint.x}%`;
 levelKnight.style.top = `${initialPoint.y}%`;
 applyMarkerStates();
-startLevelMusic();
+const pendingNotice = readPendingNotice();
+if (pendingNotice?.type === 'minigameComplete' && pendingNotice.area === currentArea) {
+  clearPendingNotice();
+  window.setTimeout(() => showBossUnlockedNotice(currentArea), 260);
+} else {
+  startLevelMusic();
+}

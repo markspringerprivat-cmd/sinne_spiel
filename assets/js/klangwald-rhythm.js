@@ -1,6 +1,7 @@
 (() => {
   const STORAGE_VOLUME = 'sinnesmagie-volume';
   const STORAGE_LEVEL_PROGRESS = 'sinnesmagie-level-progress';
+  const STORAGE_PENDING_NOTICE = 'sinnesmagie-pending-notice';
 
   const canvas = document.getElementById('rhythmCanvas');
   const ctx = canvas.getContext('2d');
@@ -63,6 +64,13 @@
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 
+
+  function writeMinigamePendingNotice(area) {
+    try {
+      localStorage.setItem(STORAGE_PENDING_NOTICE, JSON.stringify({ type: 'minigameComplete', area }));
+    } catch {}
+  }
+
   function readProgress() {
     try {
       const saved = JSON.parse(localStorage.getItem(STORAGE_LEVEL_PROGRESS) || '{}');
@@ -79,6 +87,7 @@
       level2Completed: !!progress.klangwald?.level2Completed
     };
     localStorage.setItem(STORAGE_LEVEL_PROGRESS, JSON.stringify(progress));
+    writeMinigamePendingNotice('klangwald');
   }
 
   function resetGame() {
@@ -188,18 +197,41 @@
 
   function startGame() {
     resetGame();
-    hidePopup();
+    popup.innerHTML = `
+      <div>
+        <h1>Bereit?</h1>
+        <div id="rhythmCountdown" class="rhythm-countdown">3</div>
+        <p>Gleich starten die Töne.</p>
+      </div>`;
+    overlay.classList.remove('hidden');
+
     music.pause();
     music.currentTime = 0;
-    music.volume = currentVolume();
-    music.play().then(() => {
-      game.startedAt = performance.now();
-      requestAnimationFrame(loop);
-    }).catch(() => {
-      game.startedAt = performance.now();
-      requestAnimationFrame(loop);
-    });
-    updateHud(true);
+    music.volume = 0;
+    music.play().catch(() => {});
+
+    let count = 3;
+    const countdown = document.getElementById('rhythmCountdown');
+    const tick = window.setInterval(() => {
+      count -= 1;
+      if (countdown) countdown.textContent = count > 0 ? String(count) : 'Los!';
+      if (count > 0) return;
+      window.clearInterval(tick);
+      window.setTimeout(() => {
+        hidePopup();
+        music.pause();
+        music.currentTime = 0;
+        music.volume = currentVolume();
+        music.play().then(() => {
+          game.startedAt = performance.now();
+          requestAnimationFrame(loop);
+        }).catch(() => {
+          game.startedAt = performance.now();
+          requestAnimationFrame(loop);
+        });
+        updateHud(true);
+      }, 420);
+    }, 1000);
   }
 
   function endGame(won) {
