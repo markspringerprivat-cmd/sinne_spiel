@@ -9,6 +9,9 @@
   const mage = document.getElementById('pongMage');
   const knight = document.getElementById('pongKnight');
   const ballEl = document.getElementById('pongBall');
+  const obstacleLeft = document.getElementById('obstacleLeft');
+  const obstacleRight = document.getElementById('obstacleRight');
+  const redBallLayer = document.getElementById('redBallLayer');
   const overlay = document.getElementById('pongOverlay');
   const card = document.getElementById('pongOverlayCard');
   const loader = document.getElementById('pongLoader');
@@ -16,17 +19,11 @@
   const wallText = document.getElementById('pongWallText');
   const speedText = document.getElementById('pongSpeedText');
 
-  const wallFiles = [
-    '../assets/images/minigame/zauberschloss-pong/wall1.png',
-    '../assets/images/minigame/zauberschloss-pong/wall2.png',
-    '../assets/images/minigame/zauberschloss-pong/wall3.png',
-    '../assets/images/minigame/zauberschloss-pong/wall4.png'
-  ];
   const preloadFiles = [
     '../assets/images/minigame/zauberschloss-pong/background.jpg',
     '../assets/images/minigame/zauberschloss-pong/ritter_paddle.png',
     '../assets/images/minigame/zauberschloss-pong/magier_paddle.png',
-    ...wallFiles
+    '../assets/images/minigame/zauberschloss-pong/wall1.png'
   ];
 
   let running = false;
@@ -38,7 +35,12 @@
   let dragging = false;
   let knightX = 0.5;
   let mageX = 0.5;
-  let ball = { x: 0.5, y: 0.24, vx: 0.12, vy: 0.28, speed: 1 };
+  let ballVisible = true;
+  let respawning = false;
+  let redSpawnTimer = 0;
+  let stunTimer = 0;
+  let redBalls = [];
+  let ball = { x: 0.5, y: 0.29, vx: 0.09, vy: 0.23, speed: 1 };
 
   function currentVolume() {
     const saved = Number(localStorage.getItem(STORAGE_VOLUME));
@@ -83,16 +85,14 @@
     overlay.classList.remove('hidden');
   }
 
-  function hideOverlay() {
-    overlay.classList.add('hidden');
-  }
+  function hideOverlay() { overlay.classList.add('hidden'); }
 
   function showIntro() {
     showOverlay(`
       <div>
         <h1>Magische Barriere</h1>
-        <p>Der Magier schützt das Schlosstor.</p>
-        <p>Ziehe den Ritter unten nach links und rechts. Schlage den grünen Zauberball zurück, bis der Magier ihn nicht mehr hält.</p>
+        <p>Der Magier schützt das erste Tor.</p>
+        <p>Ziehe den Ritter unten nach links und rechts. Nur der grüne Ball darf mit dem Schild zurückgespielt werden. Rote Kugeln machen dich kurz bewegungsunfähig.</p>
         <div class="pong-actions">
           <button id="pongBack" class="pong-button secondary" type="button">Zurück</button>
           <button id="pongStart" class="pong-button" type="button">Starten</button>
@@ -102,7 +102,7 @@
     document.getElementById('pongBack').addEventListener('click', () => { window.location.href = 'zauberschloss.html'; });
     document.getElementById('pongStart').addEventListener('click', () => {
       hideOverlay();
-      resetRound(true);
+      fullReset();
       running = true;
       last = performance.now();
       raf = requestAnimationFrame(loop);
@@ -116,9 +116,9 @@
     saveCompletion();
     showOverlay(`
       <div>
-        <h2>Barriere zerbrochen!</h2>
+        <h2>Barriere geschwächt!</h2>
         <p>Der Weg tiefer ins Zauberschloss ist frei.</p>
-        <p>Als Nächstes wartet die Bossbegegnung.</p>
+        <p>Als Nächstes wartet die Bossbegegnung am Kristallbrunnen.</p>
         <div class="pong-actions"><button id="pongContinue" class="pong-button" type="button">Weiter</button></div>
       </div>
     `);
@@ -134,23 +134,47 @@
     } catch {}
   }
 
-  function setWallState() {
-    const index = Math.min(3, damage);
-    wall.src = wallFiles[index];
-    wallText.textContent = ['Barriere: stabil', 'Barriere: beschädigt', 'Barriere: brüchig', 'Barriere: zerbrochen'][index];
+  function fullReset() {
+    damage = 0;
+    playerHits = 0;
+    redSpawnTimer = 0;
+    stunTimer = 0;
+    clearRedBalls();
+    obstacleLeft.classList.add('hidden');
+    obstacleRight.classList.add('hidden');
+    resetGreenBall(true);
+    updateSprites();
+  }
+
+  function setWallBlink() {
+    wallText.textContent = `Barriere: ${damage}/3`;
     wall.classList.remove('hit');
     void wall.offsetWidth;
     wall.classList.add('hit');
   }
 
-  function resetRound(first = false) {
-    const angle = first ? 0.58 : 0.72;
+  function resetGreenBall(first = false) {
+    ballVisible = true;
+    respawning = false;
+    ballEl.classList.remove('hidden');
     ball.x = mageX;
     ball.y = 0.29;
-    ball.speed = first ? 1 : Math.max(1, ball.speed * 0.92);
-    ball.vx = (Math.random() < 0.5 ? -1 : 1) * 0.13 * angle;
-    ball.vy = 0.28;
+    ball.speed = 1;
+    const side = first ? (Math.random() < 0.5 ? -1 : 1) : (knightX < 0.5 ? 1 : -1);
+    ball.vx = side * (0.075 + Math.random() * 0.04);
+    ball.vy = 0.23;
     updateSprites();
+  }
+
+  function scheduleGreenRespawn() {
+    if (respawning) return;
+    respawning = true;
+    ballVisible = false;
+    ballEl.classList.add('hidden');
+    setTimeout(() => {
+      if (!running || finished) return;
+      resetGreenBall(false);
+    }, 3000);
   }
 
   function stageRect() { return stage.getBoundingClientRect(); }
@@ -159,7 +183,7 @@
   function rect01(el) {
     const s = stageRect();
     const r = el.getBoundingClientRect();
-    return { left:(r.left-s.left)/s.width, right:(r.right-s.left)/s.width, top:(r.top-s.top)/s.height, bottom:(r.bottom-s.top)/s.height };
+    return { left:(r.left-s.left)/s.width, right:(r.right-s.left)/s.width, top:(r.top-s.top)/s.height, bottom:(r.bottom-s.top)/s.height, width:r.width/s.width, height:r.height/s.height };
   }
 
   function updateSprites() {
@@ -168,6 +192,12 @@
     ballEl.style.left = `${ball.x * 100}%`;
     ballEl.style.top = `${ball.y * 100}%`;
     speedText.textContent = `Tempo: ${Math.round(ball.speed * 100)}%`;
+    wallText.textContent = `Barriere: ${damage}/3`;
+    knight.classList.toggle('stunned', stunTimer > 0);
+    redBalls.forEach(red => {
+      red.el.style.left = `${red.x * 100}%`;
+      red.el.style.top = `${red.y * 100}%`;
+    });
   }
 
   function hitPaddle(r, fromTop) {
@@ -176,61 +206,143 @@
     return ball.x + radiusX > r.left && ball.x - radiusX < r.right && ball.y + radiusY > r.top && ball.y - radiusY < r.bottom && (fromTop ? ball.vy < 0 : ball.vy > 0);
   }
 
+  function circleCollision(cx, cy, cr, bx, by, br) {
+    return Math.hypot(cx - bx, cy - by) < cr + br;
+  }
+
+  function bounceFromObstacle(rect) {
+    if (!ballVisible || damage < 1) return;
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const cr = Math.min(rect.width, rect.height) * 0.48;
+    if (!circleCollision(cx, cy, cr, ball.x, ball.y, 0.018)) return;
+    const dx = ball.x - cx;
+    const dy = ball.y - cy;
+    const len = Math.hypot(dx, dy) || 1;
+    const nx = dx / len;
+    const ny = dy / len;
+    const dot = ball.vx * nx + ball.vy * ny;
+    ball.vx -= 2 * dot * nx;
+    ball.vy -= 2 * dot * ny;
+    ball.x = cx + nx * (cr + 0.022);
+    ball.y = cy + ny * (cr + 0.022);
+    playImpact(540, .045);
+  }
+
+  function spawnRedBall() {
+    const el = document.createElement('div');
+    el.className = 'pong-red-ball';
+    redBallLayer.appendChild(el);
+    const target = knightX + (Math.random() - 0.5) * 0.22;
+    const startX = clamp(mageX + (Math.random() - 0.5) * 0.12, 0.08, 0.92);
+    const vx = clamp((target - startX) * 0.24, -0.08, 0.08);
+    redBalls.push({ el, x: startX, y: 0.29, vx, vy: 0.33 });
+  }
+
+  function clearRedBalls() {
+    redBalls.forEach(red => red.el.remove());
+    redBalls = [];
+  }
+
+  function updateRedBalls(dt, knightRect) {
+    if (playerHits > 0) {
+      redSpawnTimer += dt;
+      if (redSpawnTimer >= 3) {
+        redSpawnTimer = 0;
+        spawnRedBall();
+      }
+    }
+
+    redBalls.forEach(red => {
+      red.x += red.vx * dt;
+      red.y += red.vy * dt;
+      if (red.x < 0.035 || red.x > 0.965) red.vx *= -1;
+      red.x = clamp(red.x, 0.035, 0.965);
+      if (red.x > knightRect.left && red.x < knightRect.right && red.y > knightRect.top && red.y < knightRect.bottom) {
+        stunTimer = 2;
+        playImpact(130, .14);
+        red.remove = true;
+      }
+      if (red.y > 1.08) red.remove = true;
+    });
+
+    redBalls = redBalls.filter(red => {
+      if (!red.remove) return true;
+      red.el.remove();
+      return false;
+    });
+  }
+
   function loop(now) {
     if (!running || finished) return;
     const dt = Math.min(0.033, (now - last) / 1000 || 0.016);
     last = now;
 
-    const difficultySpeed = 0.25 + playerHits * 0.006;
-    const targetX = clamp(ball.x, 0.13, 0.87);
+    if (stunTimer > 0) stunTimer = Math.max(0, stunTimer - dt);
+
+    const targetX = clamp(ballVisible ? ball.x : 0.5, 0.13, 0.87);
     const diff = targetX - mageX;
-    const maxStep = difficultySpeed * dt;
+    const mageBaseSpeed = 0.175 + Math.min(playerHits, 14) * 0.0035;
+    const maxStep = mageBaseSpeed * dt;
     mageX += clamp(diff, -maxStep, maxStep);
     mageX = clamp(mageX, 0.13, 0.87);
 
-    ball.x += ball.vx * ball.speed * dt;
-    ball.y += ball.vy * ball.speed * dt;
-
-    if (ball.x < 0.035) { ball.x = 0.035; ball.vx = Math.abs(ball.vx); playImpact(360, .045); }
-    if (ball.x > 0.965) { ball.x = 0.965; ball.vx = -Math.abs(ball.vx); playImpact(360, .045); }
-
     const knightRect = rect01(knight);
     const mageRect = rect01(mage);
+    updateRedBalls(dt, knightRect);
 
-    if (hitPaddle(knightRect, false)) {
-      ball.y = knightRect.top - 0.015;
-      const offset = clamp((ball.x - knightX) / 0.105, -1, 1);
-      ball.vx = offset * 0.22;
-      ball.vy = -Math.abs(ball.vy || 0.28);
-      ball.speed *= 1.10;
-      playerHits += 1;
-      playImpact(620, .06);
-    }
+    if (ballVisible) {
+      ball.x += ball.vx * ball.speed * dt;
+      ball.y += ball.vy * ball.speed * dt;
 
-    if (hitPaddle(mageRect, true)) {
-      ball.y = mageRect.bottom + 0.014;
-      const offset = clamp((ball.x - mageX) / 0.14, -1, 1);
-      ball.vx = offset * 0.18;
-      ball.vy = Math.abs(ball.vy || 0.28);
-      playImpact(420, .055);
-    }
+      if (ball.x < 0.035) { ball.x = 0.035; ball.vx = Math.abs(ball.vx); playImpact(360, .045); }
+      if (ball.x > 0.965) { ball.x = 0.965; ball.vx = -Math.abs(ball.vx); playImpact(360, .045); }
 
-    if (ball.y < 0.135) {
-      damage += 1;
-      playImpact(170, .16);
-      setWallState();
-      if (damage >= 3) {
-        setTimeout(showFinished, 760);
-        updateSprites();
-        return;
+      if (damage >= 1) {
+        bounceFromObstacle(rect01(obstacleLeft));
+        bounceFromObstacle(rect01(obstacleRight));
       }
-      resetRound(false);
-    }
 
-    if (ball.y > 1.03) {
-      playImpact(210, .09);
-      ball.speed = Math.max(1, ball.speed * 0.82);
-      resetRound(false);
+      if (hitPaddle(knightRect, false)) {
+        ball.y = knightRect.top - 0.015;
+        const offset = clamp((ball.x - knightX) / 0.105, -1, 1);
+        ball.vx = offset * 0.22;
+        ball.vy = -Math.abs(ball.vy || 0.23);
+        ball.speed *= 1.10;
+        playerHits += 1;
+        playImpact(620, .06);
+      }
+
+      if (hitPaddle(mageRect, true)) {
+        ball.y = mageRect.bottom + 0.014;
+        const offset = clamp((ball.x - mageX) / 0.14, -1, 1);
+        ball.vx = offset * 0.18;
+        ball.vy = Math.abs(ball.vy || 0.23);
+        playImpact(420, .055);
+      }
+
+      if (ball.y < 0.135) {
+        damage += 1;
+        playImpact(170, .16);
+        setWallBlink();
+        if (damage >= 1) {
+          obstacleLeft.classList.remove('hidden');
+          obstacleRight.classList.remove('hidden');
+        }
+        if (damage >= 3) {
+          ballVisible = false;
+          ballEl.classList.add('hidden');
+          setTimeout(showFinished, 760);
+          updateSprites();
+          return;
+        }
+        scheduleGreenRespawn();
+      }
+
+      if (ball.y > 1.05) {
+        playImpact(210, .09);
+        scheduleGreenRespawn();
+      }
     }
 
     updateSprites();
@@ -244,6 +356,7 @@
 
   knight.addEventListener('pointerdown', event => {
     event.preventDefault();
+    if (stunTimer > 0) return;
     dragging = true;
     knight.classList.add('dragging');
     knight.setPointerCapture?.(event.pointerId);
@@ -251,7 +364,7 @@
     updateSprites();
   });
   knight.addEventListener('pointermove', event => {
-    if (!dragging) return;
+    if (!dragging || stunTimer > 0) return;
     event.preventDefault();
     knightX = pointerToX(event.clientX);
     updateSprites();

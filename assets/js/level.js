@@ -198,21 +198,20 @@ function writeProgress(progress) {
 
 function getAreaProgress() {
   const progress = readProgress();
-  return {
-    level1Completed: !!progress[currentArea]?.level1Completed,
-    level2Completed: !!progress[currentArea]?.level2Completed,
-    level3Completed: !!progress[currentArea]?.level3Completed
-  };
+  const area = progress[currentArea] || {};
+  const result = {};
+  const maxLevels = Math.max(4, levelMarkers.length);
+  for (let i = 1; i <= maxLevels; i++) result[`level${i}Completed`] = !!area[`level${i}Completed`];
+  return result;
 }
 
 function setAreaProgress(patch) {
   const progress = readProgress();
-  progress[currentArea] = {
-    level1Completed: !!progress[currentArea]?.level1Completed,
-    level2Completed: !!progress[currentArea]?.level2Completed,
-    level3Completed: !!progress[currentArea]?.level3Completed,
-    ...patch
-  };
+  const area = progress[currentArea] || {};
+  const next = {};
+  const maxLevels = Math.max(4, levelMarkers.length);
+  for (let i = 1; i <= maxLevels; i++) next[`level${i}Completed`] = !!area[`level${i}Completed`];
+  progress[currentArea] = { ...next, ...patch };
   writeProgress(progress);
 }
 
@@ -361,8 +360,9 @@ function saveCurrentNode(node) {
 
 function initialNodeFromProgress() {
   const progress = getAreaProgress();
-  if (progress.level2Completed) return levelMarkers[1] ? 'level2' : 'level1';
-  if (progress.level1Completed) return 'level1';
+  for (let i = levelMarkers.length; i >= 1; i--) {
+    if (progress[`level${i}Completed`] && levelMarkers[i - 1]) return `level${i}`;
+  }
   return 'start';
 }
 
@@ -550,13 +550,36 @@ async function handleLevelTwo() {
 async function handleLevelThree() {
   const progress = getAreaProgress();
   if (!progress.level2Completed) {
-    showLevelPopup('Noch gesperrt', 'Du musst zuerst die Bossbegegnung schaffen, bevor das Finale startet.');
+    showLevelPopup('Noch gesperrt', 'Du musst zuerst die Bossbegegnung schaffen, bevor du weiter zum Schloss kannst.');
     return;
   }
   await moveToNode('level3');
+  if (!progress.level3Completed) {
+    showLevelPopup(
+      levelMarkers[2]?.dataset.title || 'Vor dem Schloss',
+      `<div class="visual-notice"><div class="visual-notice-icon">🏰</div><p>${levelMarkers[2]?.dataset.text || 'Der Weg zum letzten Tor ist frei.'}</p></div>`,
+      'Weiter',
+      () => {
+        setAreaProgress({ level3Completed: true });
+        saveCurrentNode('level3');
+        applyMarkerStates();
+      }
+    );
+    return;
+  }
+  showLevelPopup(levelMarkers[2]?.dataset.title || 'Vor dem Schloss', 'Dieser Punkt ist geschafft. Das finale Tor ist freigeschaltet.', 'OK');
+}
+
+async function handleLevelFour() {
+  const progress = getAreaProgress();
+  if (!progress.level3Completed) {
+    showLevelPopup('Noch gesperrt', 'Du musst zuerst den Punkt vor dem Schloss erreichen.');
+    return;
+  }
+  await moveToNode('level4');
   showLevelPopup(
-    levelMarkers[2]?.dataset.title || 'Finale',
-    `<div class="visual-notice"><div class="visual-notice-icon">✨🏰</div><p>${levelMarkers[2]?.dataset.text || 'Hier startet später das Finale.'}</p></div>`,
+    levelMarkers[3]?.dataset.title || 'Finale',
+    `<div class="visual-notice"><div class="visual-notice-icon">✨🏰</div><p>${levelMarkers[3]?.dataset.text || 'Hier startet später das Finale.'}</p></div>`,
     'OK'
   );
 }
@@ -565,7 +588,8 @@ async function moveLevelKnightTo(marker, index) {
   if (marker.disabled || marker.classList.contains('movement-disabled')) return;
   if (index === 0) await handleLevelOne();
   else if (index === 1) await handleLevelTwo();
-  else await handleLevelThree();
+  else if (index === 2) await handleLevelThree();
+  else await handleLevelFour();
 }
 
 levelMarkers.forEach((marker, index) => {
