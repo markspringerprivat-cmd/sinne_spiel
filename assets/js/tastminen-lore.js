@@ -170,9 +170,36 @@
       popup.innerHTML = `
         <div>
           <h1>Schienenbruch</h1>
-          <p>Fahre mit der Lore durch die Tastminen und weiche Lücken in den Schienen aus.</p>
-          <p>Nach jedem Abschnitt stoppt die Lore vor einer Schlucht. Ziehe die richtigen Materialien in den Baukasten und baue rechtzeitig eine Brücke.</p>
-          <p class="small-note">Steuerung: Pfeiltasten, A/D oder Wischen. In der Bauphase: Materialien ziehen.</p>
+          <div class="mini-guide-wrap">
+            <p class="mini-guide-hint">Fahren, ausweichen, Brücken bauen.</p>
+            <div class="mini-guide-slider" aria-label="Tastminen Anleitung">
+              <article class="mini-guide-card">
+                <div class="mini-guide-icon"><img src="../assets/images/minigame/cart_normal.png" alt="Lore"></div>
+                <p class="mini-guide-title">Fahren</p>
+                <p class="mini-guide-text">Wechsle die Spur bei Schienenlücken.</p>
+              </article>
+              <article class="mini-guide-card">
+                <div class="mini-guide-icon">⬅️➡️</div>
+                <p class="mini-guide-title">Steuern</p>
+                <p class="mini-guide-text">Tippe links/rechts oder wische.</p>
+              </article>
+              <article class="mini-guide-card">
+                <div class="mini-guide-icon">🧱🪵⛓️</div>
+                <p class="mini-guide-title">Brücke</p>
+                <p class="mini-guide-text">Ziehe passende Materialien in die Felder.</p>
+              </article>
+              <article class="mini-guide-card">
+                <div class="mini-guide-icon">🧽🍄🌿</div>
+                <p class="mini-guide-title">Ablenkung</p>
+                <p class="mini-guide-text">Nicht alles eignet sich zum Bauen.</p>
+              </article>
+              <article class="mini-guide-card">
+                <div class="mini-guide-icon">❤️❤️❤️</div>
+                <p class="mini-guide-title">Leben</p>
+                <p class="mini-guide-text">Absturz oder falsche Brücke kostet ein Herz.</p>
+              </article>
+            </div>
+          </div>
           <div class="mine-popup-actions">
             <button id="startMineGame" class="mine-button" type="button">Starten</button>
             <button id="leaveMineGame" class="mine-button secondary" type="button">Zurück</button>
@@ -187,8 +214,8 @@
       popup.innerHTML = `
         <div>
           <h2>Geschafft!</h2>
-          <p>Du hast alle Schienenbrüche überwunden und die Brücken rechtzeitig gebaut.</p>
-          <p>Level 1 in den Tastminen ist abgeschlossen.</p>
+          <div class="mini-guide-icon"><img src="../assets/images/minigame/cart_normal.png" alt="Lore"></div>
+          <p>Alle Schienenbrüche überwunden.</p>
           <div class="mine-popup-actions">
             <button id="returnToMine" class="mine-button" type="button">Zurück zu den Tastminen</button>
           </div>
@@ -200,8 +227,8 @@
     popup.innerHTML = `
       <div>
         <h2>Abgestürzt!</h2>
-        <p>Die Lore ist zu oft in die Schienenlücken geraten.</p>
-        <p class="small-note">Wechsle früher die Spur und baue die Brücken zügig.</p>
+        <div class="mini-guide-icon">💥</div>
+        <p>Wechsle früher die Spur.</p>
         <div class="mine-popup-actions">
           <button id="retryMineGame" class="mine-button" type="button">Nochmal spielen</button>
           <button id="returnToMine" class="mine-button secondary" type="button">Zurück</button>

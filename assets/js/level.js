@@ -152,7 +152,8 @@ function pauseLevelMusic() {
 function showLevelPopup(title, text, buttonLabel = 'Weiter', onClose = null) {
   if (!levelPopup || !levelPopupTitle || !levelPopupText || !levelPopupClose) return;
   levelPopupTitle.textContent = title || 'Level';
-  levelPopupText.textContent = text || 'Inhalt folgt später.';
+  if (text && /<[a-z][\s\S]*>/i.test(text)) levelPopupText.innerHTML = text;
+  else levelPopupText.textContent = text || 'Inhalt folgt später.';
   levelPopupClose.textContent = buttonLabel || 'Weiter';
   popupCloseHandler = onClose;
   levelPopup.classList.remove('hidden');
@@ -781,8 +782,21 @@ function showQuizResult() {
 function showWinResultSlide(result, reward, slide, fragmentStatus = {}) {
   if (slide === 1) {
     result.innerHTML = `
-      <h2>Gewonnen!</h2>
-      <p>Du hast ${activeQuiz.correct} von ${activeQuiz.data.questions.length} Fragen richtig beantwortet.</p>
+      <h2>Quiz geschafft</h2>
+      <div class="mini-guide-wrap">
+        <div class="mini-guide-slider" aria-label="Quiz Ergebnis">
+          <article class="mini-guide-card">
+            <div class="mini-guide-icon">✅</div>
+            <p class="mini-guide-title">${activeQuiz.correct}/${activeQuiz.data.questions.length}</p>
+            <p class="mini-guide-text">Fragen richtig beantwortet.</p>
+          </article>
+          <article class="mini-guide-card">
+            <div class="mini-guide-icon">💎</div>
+            <p class="mini-guide-title">Kristall</p>
+            <p class="mini-guide-text">Deine Belohnung wartet.</p>
+          </article>
+        </div>
+      </div>
       <div class="quiz-result-actions single-action">
         <button id="winNextButton" class="primary-button" type="button">Weiter</button>
       </div>
@@ -795,18 +809,18 @@ function showWinResultSlide(result, reward, slide, fragmentStatus = {}) {
       <div class="fragment-reward-box simple-fragment-box" aria-label="Kristall-Belohnung">
         <strong>Kristall erhalten</strong>
         <img class="fragment-mini-image floating-fragment" src="${reward.image}" alt="${reward.name}">
-        <p>Der Kristall wird automatisch auf der Weltkarte angezeigt.</p>
+        <p>Kristall erhalten.</p>
       </div>
     `
-    : `<p>Der Kristall wird automatisch auf der Weltkarte angezeigt.</p>`;
+    : `<p>Kristall erhalten.</p>`;
   const afterText = fragmentStatus.allCollected
-    ? 'Du hast alle Sinnes-Kristalle gesammelt. Jetzt kannst du zum Zauberschloss gehen und die Magie der Sinne zurückholen.'
-    : 'Dieses Gebiet ist abgeschlossen. Kehre zur Weltkarte zurück, um weitere Kristalle zu sammeln.';
+    ? 'Alle Kristalle gesammelt. Geh zum Zauberschloss.'
+    : 'Gebiet abgeschlossen. Zur Weltkarte zurück.';
   result.innerHTML = `
     ${rewardBlock}
     <p>${afterText}</p>
     <div class="quiz-result-actions single-action">
-      <button id="closeQuizButton" class="primary-button" type="button">Zur Weltkarte</button>
+      <button id="closeQuizButton" class="primary-button" type="button">Weiter</button>
     </div>
   `;
   document.getElementById('closeQuizButton').addEventListener('click', returnToOverworld);

@@ -110,9 +110,32 @@
     if (type === 'intro') {
       popup.innerHTML = `
         <div>
-          <h1>Klangwald-Minispiel</h1>
-          <p>Spiele die Musikbox-Melodie nach. Drücke die passende Klangtaste, wenn eine Note den goldenen Zielkreis erreicht.</p>
-          <p class="small-note">Tastatur: A, S, D, F. Auf dem Handy nutzt du die vier großen Tasten unten.</p>
+          <h1>Klangwald</h1>
+          <div class="mini-guide-wrap">
+            <p class="mini-guide-hint">Triff die Töne im Zielkreis.</p>
+            <div class="mini-guide-slider" aria-label="Klangwald Anleitung">
+              <article class="mini-guide-card">
+                <div class="mini-guide-icon">🎵</div>
+                <p class="mini-guide-title">Noten fallen</p>
+                <p class="mini-guide-text">Beobachte die vier Spuren.</p>
+              </article>
+              <article class="mini-guide-card">
+                <div class="mini-guide-icon">⭕</div>
+                <p class="mini-guide-title">Zielkreis</p>
+                <p class="mini-guide-text">Drücke erst, wenn die Note im Kreis ist.</p>
+              </article>
+              <article class="mini-guide-card">
+                <div class="mini-guide-icon">A S D F</div>
+                <p class="mini-guide-title">Tasten</p>
+                <p class="mini-guide-text">Am Handy nutzt du die vier Knöpfe unten.</p>
+              </article>
+              <article class="mini-guide-card">
+                <div class="mini-guide-icon">⚡</div>
+                <p class="mini-guide-title">Energie</p>
+                <p class="mini-guide-text">Zu viele Fehler leeren die Leiste.</p>
+              </article>
+            </div>
+          </div>
           <div class="rhythm-popup-actions">
             <button id="startRhythmGame" class="rhythm-button" type="button">Starten</button>
             <button id="leaveRhythmGame" class="rhythm-button secondary" type="button">Zurück</button>
@@ -130,8 +153,9 @@
       popup.innerHTML = `
         <div>
           <h2>Klangfolge geschafft!</h2>
-          <p>Du hast ${game.hits} von ${game.notes.length} Tönen getroffen.</p>
-          <p class="small-note">Trefferquote: ${hitRate} %. Beste Serie: ${game.maxCombo}.</p>
+          <div class="mini-guide-icon">🎵</div>
+          <p>${game.hits}/${game.notes.length} Töne getroffen.</p>
+          <p class="small-note">Beste Serie: ${game.maxCombo}</p>
           <div class="rhythm-popup-actions">
             <button id="returnToKlangwald" class="rhythm-button" type="button">Zurück zum Klangwald</button>
           </div>
@@ -145,8 +169,8 @@
     popup.innerHTML = `
       <div>
         <h2>Klangfolge verpasst</h2>
-        <p>Die Melodie ist aus dem Takt geraten.</p>
-        <p class="small-note">Drücke die Taste erst, wenn die Note genau am Zielkreis ankommt.</p>
+        <div class="mini-guide-icon">⭕</div>
+        <p>Drücke näher am Zielkreis.</p>
         <div class="rhythm-popup-actions">
           <button id="retryRhythmGame" class="rhythm-button" type="button">Nochmal spielen</button>
           <button id="returnToKlangwald" class="rhythm-button secondary" type="button">Zurück</button>

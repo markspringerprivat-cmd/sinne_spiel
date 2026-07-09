@@ -80,16 +80,16 @@ const fragmentAreas = Object.keys(fragmentMeta);
 
 const introSlides = [
   {
-    title: 'Die Suche beginnt',
-    text: 'Der Zauberer hat fünf Kristallfragmente in verschiedenen Bereichen des Königreichs versteckt. Finde sie, öffne sein Schloss und hole die Sinnesmagie zurück.'
+    title: 'Sinnesmagie',
+    text: '<span class="intro-visual">✨🧩✨</span><br>Finde die fünf Sinnes-Kristalle.'
   },
   {
-    title: 'So schaltest du Level frei',
-    text: 'An den Stationen im Raum findest du QR-Codes. Scanne sie, um Level freizuschalten und die Kristalle zu erspielen.'
+    title: 'QR-Code',
+    text: '<span class="intro-visual">📱 🔓</span><br>Scanne Stationen, um Gebiete freizuschalten.'
   },
   {
-    title: 'Spielfeld bedienen',
-    text: 'Tippe auf ein Gebiet, um dorthin zu reisen. Unten rechts findest du die Einstellungen, zum Beispiel für die Lautstärke.'
+    title: 'Spielen',
+    text: '<span class="intro-visual">🗺️ ⚙️</span><br>Tippe Gebiete an. Lautstärke unten rechts.'
   }
 ];
 
@@ -240,10 +240,15 @@ function completedAreaMessage(area) {
 }
 
 function showCompletedAreaInfo(area) {
+  const meta = fragmentMeta[area];
+  const allDone = allPlayableAreasCompleted();
+  const visual = meta
+    ? `<div class="simple-fragment-box"><img class="fragment-mini-image floating-fragment" src="${meta.image}" alt="${meta.label}"><strong>${meta.label}</strong></div>`
+    : '<div class="intro-visual">✓</div>';
   showInfo(
     `${areaNames[area] || 'Gebiet'} abgeschlossen`,
-    completedAreaMessage(area),
-    { showScanButton: !allPlayableAreasCompleted() }
+    `${visual}<p>${completedAreaMessage(area)}</p>`,
+    { showScanButton: !allDone, html: true }
   );
 }
 
@@ -304,7 +309,8 @@ function renderInfoActions(options = {}) {
 
 function showInfo(title, text, options = {}) {
   infoModalTitle.textContent = title;
-  infoModalText.textContent = text;
+  if (options.html) infoModalText.innerHTML = text;
+  else infoModalText.textContent = text;
   renderInfoActions(options);
   infoModal.classList.remove('hidden');
 }
@@ -584,7 +590,7 @@ function applyUnlockFromUrl() {
 function renderIntro() {
   const slide = introSlides[introIndex];
   introTitle.textContent = slide.title;
-  introText.textContent = slide.text;
+  introText.innerHTML = slide.text;
   introBackButton.classList.toggle('hidden', introIndex === 0);
   introNextButton.textContent = introIndex === introSlides.length - 1 ? 'Abenteuer beginnen' : 'Weiter';
   introDots.innerHTML = introSlides.map((_, index) => `<span class="slider-dot ${index === introIndex ? 'active' : ''}"></span>`).join('');

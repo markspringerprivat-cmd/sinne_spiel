@@ -172,15 +172,41 @@
       popup.innerHTML = `
         <div>
           <h1>Blütensprung</h1>
-          <p>Der Ritter springt im Duftgarten nur nach vorne – immer 1 oder 2 Felder weit. Insgesamt warten 100 Felder. Hinter ihm kommt ein stinkender Käfer näher.</p>
-          <ul>
-            <li><strong>Normale pinke Blüte:</strong> sicherer Stand.</li>
-            <li><strong>Vergammelte Blüte:</strong> lässt den Ritter schrumpfen und wirft ihn 1 Feld zurück.</li>
-            <li><strong>Blüte mit grünen Flecken:</strong> macht alle Sprünge 3 Sekunden lang 50 % langsamer.</li>
-            <li><strong>Gestankwolke:</strong> 2 Sekunden betäubt.</li>
-            <li><strong>Goldene Blüte:</strong> Ziel erreicht!</li>
-          </ul>
-          <p>Du hast 3 Sekunden Vorsprung. Danach springt der Käfer schnell hinterher und holt sofort auf, wenn er mehr als 5 Felder zurückliegt.</p>
+          <div class="mini-guide-wrap">
+            <p class="mini-guide-hint">Wische durch die Karten.</p>
+            <div class="mini-guide-slider" aria-label="Blumentypen">
+              <article class="mini-guide-card">
+                <div class="mini-guide-icon"><img src="../assets/images/minigame/duftgarten/flower_normal.png" alt="Normale Blüte"></div>
+                <p class="mini-guide-title">Springen</p>
+                <p class="mini-guide-text">Wähle 1 oder 2 Felder nach vorne.</p>
+              </article>
+              <article class="mini-guide-card">
+                <div class="mini-guide-icon"><img src="../assets/images/minigame/duftgarten/beetle_stink.png" alt="Käfer"></div>
+                <p class="mini-guide-title">Käfer</p>
+                <p class="mini-guide-text">Er läuft hinterher. Bleib höchstens 5 Felder vor ihm.</p>
+              </article>
+              <article class="mini-guide-card">
+                <div class="mini-guide-icon"><img src="../assets/images/minigame/duftgarten/flower_rotten.png" alt="Faule Blüte"></div>
+                <p class="mini-guide-title">Faule Blüte</p>
+                <p class="mini-guide-text">Du schrumpfst und fällst 1 Feld zurück.</p>
+              </article>
+              <article class="mini-guide-card">
+                <div class="mini-guide-icon"><img src="../assets/images/minigame/duftgarten/flower_slime.png" alt="Klebrige Blüte"></div>
+                <p class="mini-guide-title">Klebrig</p>
+                <p class="mini-guide-text">3 Sekunden lang springst du langsamer.</p>
+              </article>
+              <article class="mini-guide-card">
+                <div class="mini-guide-icon"><img src="../assets/images/minigame/duftgarten/cloud_stink.png" alt="Gestankwolke"></div>
+                <p class="mini-guide-title">Nebel</p>
+                <p class="mini-guide-text">2 Sekunden betäubt.</p>
+              </article>
+              <article class="mini-guide-card">
+                <div class="mini-guide-icon"><img src="../assets/images/minigame/duftgarten/flower_gold.png" alt="Goldene Blüte"></div>
+                <p class="mini-guide-title">Ziel</p>
+                <p class="mini-guide-text">Erreiche die goldene Blüte.</p>
+              </article>
+            </div>
+          </div>
           <div class="duft-popup-actions">
             <button id="startDuftGame" class="duft-button" type="button">Starten</button>
             <button id="leaveDuftGame" class="duft-button secondary" type="button">Zurück</button>
@@ -195,8 +221,8 @@
       popup.innerHTML = `
         <div>
           <h2>Geschafft!</h2>
-          <p>Der Ritter hat die goldene Blüte erreicht, bevor der Käfer ihn eingeholt hat.</p>
-          <p>Level 1 im Duftgarten ist abgeschlossen.</p>
+          <div class="mini-guide-icon"><img src="../assets/images/minigame/duftgarten/flower_gold.png" alt="Goldene Blüte"></div>
+          <p>Goldene Blüte erreicht.</p>
           <div class="duft-popup-actions">
             <button id="returnDuft" class="duft-button" type="button">Zurück zum Duftgarten</button>
           </div>
@@ -208,8 +234,8 @@
     popup.innerHTML = `
       <div>
         <h2>Erwischt!</h2>
-        <p>Der Käfer hat den Ritter eingeholt.</p>
-        <p>Springe schneller weiter und nutze 2-Feld-Sprünge geschickt.</p>
+        <div class="mini-guide-icon"><img src="../assets/images/minigame/duftgarten/beetle_stink.png" alt="Käfer"></div>
+        <p>Der Käfer war zu nah.</p>
         <div class="duft-popup-actions">
           <button id="retryDuft" class="duft-button" type="button">Nochmal spielen</button>
           <button id="returnDuft" class="duft-button secondary" type="button">Zurück</button>

@@ -145,10 +145,32 @@
     if (type === 'intro') {
       popup.innerHTML = `
         <div>
-          <h1>Farben-Memory</h1>
-          <p>Du siehst 5 Sekunden lang ein farbiges Muster.</p>
-          <p>Danach zeichnest du es mit Blau, Rot, Gelb und Grün möglichst genau nach.</p>
-          <p>Ab 50 Prozent gibt es einen Punkt, darunter verlierst du ein Leben.</p>
+          <h1>Farbenreich</h1>
+          <div class="mini-guide-wrap">
+            <p class="mini-guide-hint">Merken, malen, Runde abschließen.</p>
+            <div class="mini-guide-slider" aria-label="Farbenreich Anleitung">
+              <article class="mini-guide-card">
+                <div class="mini-guide-icon">👀</div>
+                <p class="mini-guide-title">Merken</p>
+                <p class="mini-guide-text">Schau dir das Muster kurz an.</p>
+              </article>
+              <article class="mini-guide-card">
+                <div class="mini-guide-icon">🟦🔺</div>
+                <p class="mini-guide-title">Nachmalen</p>
+                <p class="mini-guide-text">Setze Formen und Farben passend.</p>
+              </article>
+              <article class="mini-guide-card">
+                <div class="mini-guide-icon">✅</div>
+                <p class="mini-guide-title">Prüfen</p>
+                <p class="mini-guide-text">Drücke „Runde abschließen“.</p>
+              </article>
+              <article class="mini-guide-card">
+                <div class="mini-guide-icon">⏱️</div>
+                <p class="mini-guide-title">Zeit</p>
+                <p class="mini-guide-text">Schaffe alle Muster rechtzeitig.</p>
+              </article>
+            </div>
+          </div>
           <div class="paint-actions">
             <button id="startPaintGame" class="paint-button" type="button">Starten</button>
             <button id="leavePaintGame" class="paint-button secondary" type="button">Zurück</button>
@@ -181,8 +203,8 @@
       popup.innerHTML = `
         <div>
           <h2>Geschafft!</h2>
-          <p>Du hast ${game.points} von ${TOTAL_ROUNDS} Mustern ausreichend genau nachgezeichnet.</p>
-          <p>Level 1 im Farbenreich ist abgeschlossen.</p>
+          <div class="mini-guide-icon">🎨</div>
+          <p>${game.points}/${TOTAL_ROUNDS} Muster geschafft.</p>
           <div class="paint-actions">
             <button id="returnColorMap" class="paint-button" type="button">Zurück zum Farbenreich</button>
           </div>

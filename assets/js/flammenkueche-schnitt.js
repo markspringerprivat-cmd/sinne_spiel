@@ -146,15 +146,32 @@
     if (type === 'intro') {
       popup.innerHTML = `
         <div>
-          <h1>Flammenküchen-Schnippelchaos</h1>
-          <p>Schneide Gemüse mit einer Wischbewegung. Ungenießbare Sachen dürfen nicht getroffen werden.</p>
-          <p class="small-note"><strong>Punkte nach Größe:</strong><br>
-            Paprika: groß, 1 Punkt · Zwiebel: groß, 2 Punkte · Karotte: mittel, 3 Punkte · Tomate: klein, 5 Punkte
-          </p>
-          <p class="small-note"><strong>Leben:</strong><br>
-            Du hast 5 Leben. Verpasstes Gemüse kostet ¼ Leben. Ungenießbar getroffen kostet 1 Leben.
-          </p>
-          <p class="small-note"><strong>Ungenießbar:</strong> Käfer, Socke und Fliegenpilz. Alle sind gleich groß.</p>
+          <h1>Schnippelchaos</h1>
+          <div class="mini-guide-wrap">
+            <p class="mini-guide-hint">Wische über gute Zutaten.</p>
+            <div class="mini-guide-slider" aria-label="Flammenküche Anleitung">
+              <article class="mini-guide-card">
+                <div class="mini-guide-icon">🥕🍅</div>
+                <p class="mini-guide-title">Schneiden</p>
+                <p class="mini-guide-text">Gemüse mit einer Wischbewegung treffen.</p>
+              </article>
+              <article class="mini-guide-card">
+                <div class="mini-guide-icon">🧦🐞🍄</div>
+                <p class="mini-guide-title">Nicht treffen</p>
+                <p class="mini-guide-text">Ungenießbares kostet ein Leben.</p>
+              </article>
+              <article class="mini-guide-card">
+                <div class="mini-guide-icon">❤️❤️❤️</div>
+                <p class="mini-guide-title">Leben</p>
+                <p class="mini-guide-text">Verpasstes Gemüse kostet nur wenig.</p>
+              </article>
+              <article class="mini-guide-card">
+                <div class="mini-guide-icon">⭐</div>
+                <p class="mini-guide-title">Ziel</p>
+                <p class="mini-guide-text">Sammle genug Punkte, bevor die Zeit endet.</p>
+              </article>
+            </div>
+          </div>
           <div class="slice-popup-actions">
             <button id="startSliceGame" class="slice-button" type="button">Starten</button>
             <button id="leaveSliceGame" class="slice-button secondary" type="button">Zurück</button>
@@ -171,7 +188,7 @@
       popup.innerHTML = `
         <div>
           <h2>Geschafft!</h2>
-          <p>Du hast genug gute Zutaten geschnitten und die Flammenküche gerettet.</p>
+          <div class="mini-guide-icon">🥕</div>
           <p>Punkte: ${game.score}</p>
           <div class="slice-popup-actions">
             <button id="returnToFlame" class="slice-button" type="button">Zur Flammenküche</button>
@@ -186,8 +203,8 @@
     popup.innerHTML = `
       <div>
         <h2>Verloren!</h2>
-        <p>Du hast keine Leben mehr übrig.</p>
-        <p class="small-note">Schneide Gemüse und lass Käfer, Socke und Fliegenpilz vorbeifliegen.</p>
+        <div class="mini-guide-icon">🧦</div>
+        <p>Lass Ungenießbares vorbeifliegen.</p>
         <div class="slice-popup-actions">
           <button id="retrySliceGame" class="slice-button" type="button">Nochmal spielen</button>
           <button id="returnToFlame" class="slice-button secondary" type="button">Zurück</button>
