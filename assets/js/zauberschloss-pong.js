@@ -42,6 +42,7 @@
   let redBalls = [];
   let ball = { x: 0.5, y: 0.29, vx: 0.09, vy: 0.23, speed: 1 };
   const BASE_BALL_VECTOR_SPEED = Math.hypot(0.09, 0.23);
+  const INITIAL_BALL_SPEED_MULTIPLIER = 1.35;
   let lastObstacleHit = null;
   let obstacleCooldown = 0;
 
@@ -162,9 +163,9 @@
     ballEl.classList.remove('hidden');
     ball.x = mageX;
     ball.y = 0.29;
-    ball.speed = 1;
+    ball.speed = INITIAL_BALL_SPEED_MULTIPLIER;
     const side = first ? (Math.random() < 0.5 ? -1 : 1) : (knightX < 0.5 ? 1 : -1);
-    setBallVector(side * (0.075 + Math.random() * 0.04), 0.23, BASE_BALL_VECTOR_SPEED);
+    setBallVector(side * (0.085 + Math.random() * 0.045), 0.26, BASE_BALL_VECTOR_SPEED * INITIAL_BALL_SPEED_MULTIPLIER);
     lastObstacleHit = null;
     obstacleCooldown = 0;
     updateSprites();
@@ -259,10 +260,10 @@
     const el = document.createElement('div');
     el.className = 'pong-red-ball';
     redBallLayer.appendChild(el);
-    const target = knightX + (Math.random() - 0.5) * 0.22;
-    const startX = clamp(mageX + (Math.random() - 0.5) * 0.12, 0.08, 0.92);
-    const vx = clamp((target - startX) * 0.24, -0.08, 0.08);
-    redBalls.push({ el, x: startX, y: 0.29, vx, vy: 0.33 });
+    const startX = clamp(mageX, 0.08, 0.92);
+    const direction = Math.random() < 0.5 ? -1 : 1;
+    const redSpeed = 0.198; // 40 % langsamer als vorher und im 45°-Winkel
+    redBalls.push({ el, x: startX, y: 0.29, vx: direction * redSpeed, vy: redSpeed });
   }
 
   function clearRedBalls() {
@@ -309,7 +310,7 @@
 
     const targetX = clamp(ballVisible ? ball.x : 0.5, 0.13, 0.87);
     const diff = targetX - mageX;
-    const mageBaseSpeed = 0.175 + Math.min(playerHits, 14) * 0.0035;
+    const mageBaseSpeed = (0.175 + Math.min(playerHits, 14) * 0.0035) * 0.8;
     const maxStep = mageBaseSpeed * dt;
     mageX += clamp(diff, -maxStep, maxStep);
     mageX = clamp(mageX, 0.13, 0.87);
