@@ -1044,6 +1044,17 @@ if (backButton) {
   });
 }
 
+
+function ensureLevelKnightVisible() {
+  if (!levelKnight) return;
+  levelKnight.style.display = 'block';
+  levelKnight.style.visibility = 'visible';
+  levelKnight.style.opacity = '1';
+  levelKnight.style.zIndex = '32';
+}
+ensureLevelKnightVisible();
+setKnightSprite(JUMP_ASSETS.stand);
+
 preloadLevelJumpSprites();
 currentNode = initialNodeFromProgress();
 saveCurrentNode(currentNode);

@@ -180,6 +180,10 @@
   function stageRect() { return stage.getBoundingClientRect(); }
   function clamp(v, min, max) { return Math.min(max, Math.max(min, v)); }
 
+  function accelerateGreenBall() {
+    ball.speed *= 1.05;
+  }
+
   function rect01(el) {
     const s = stageRect();
     const r = el.getBoundingClientRect();
@@ -226,6 +230,7 @@
     ball.vy -= 2 * dot * ny;
     ball.x = cx + nx * (cr + 0.022);
     ball.y = cy + ny * (cr + 0.022);
+    accelerateGreenBall();
     playImpact(540, .045);
   }
 
@@ -308,7 +313,7 @@
         const offset = clamp((ball.x - knightX) / 0.105, -1, 1);
         ball.vx = offset * 0.22;
         ball.vy = -Math.abs(ball.vy || 0.23);
-        ball.speed *= 1.10;
+        accelerateGreenBall();
         playerHits += 1;
         playImpact(620, .06);
       }
@@ -318,6 +323,7 @@
         const offset = clamp((ball.x - mageX) / 0.14, -1, 1);
         ball.vx = offset * 0.18;
         ball.vy = Math.abs(ball.vy || 0.23);
+        accelerateGreenBall();
         playImpact(420, .055);
       }
 

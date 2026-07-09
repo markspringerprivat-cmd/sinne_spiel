@@ -795,6 +795,16 @@ settingsModal.addEventListener('click', event => { if (event.target === settings
 scannerModal.addEventListener('click', event => { if (event.target === scannerModal) closeScanner(); });
 settingsButton.addEventListener('click', openSettings);
 
+
+function ensureKnightVisible() {
+  if (!knight) return;
+  knight.style.display = 'block';
+  knight.style.visibility = 'visible';
+  knight.style.opacity = '1';
+  knight.style.zIndex = '32';
+}
+ensureKnightVisible();
+
 const savedX = localStorage.getItem(STORAGE_POS_X);
 const savedY = localStorage.getItem(STORAGE_POS_Y);
 if (savedX && savedY) {
