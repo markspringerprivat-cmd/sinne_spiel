@@ -3851,3 +3851,115 @@ p { line-height: 1.5; }
     top: 2% !important;
   }
 }
+
+
+/* ===== v76 Zauberschloss: Busch-Reaktionsspiel ===== */
+.quiz-battle-zone.castle-bush-mode {
+  top: 16% !important;
+  height: 68% !important;
+  left: 4% !important;
+  right: 4% !important;
+  --castle-player-left: 14%;
+  --castle-bush-mage-left: 8%;
+}
+.quiz-battle-zone.castle-bush-mode .knight-battle,
+.quiz-battle-zone.castle-bush-mode .enemy-battle {
+  opacity: 1 !important;
+  pointer-events: none !important;
+  object-fit: contain !important;
+}
+.quiz-battle-zone.castle-bush-mode .knight-battle {
+  left: var(--castle-player-left, 14%) !important;
+  top: 80% !important;
+  bottom: auto !important;
+  right: auto !important;
+  width: var(--castle-combat-size) !important;
+  height: var(--castle-combat-size) !important;
+  z-index: 12 !important;
+  transform: translate(-50%, -50%);
+}
+.quiz-battle-zone.castle-bush-mode .enemy-battle {
+  left: var(--castle-bush-mage-left, 8%) !important;
+  top: 64% !important;
+  bottom: auto !important;
+  right: auto !important;
+  width: var(--castle-sky-size) !important;
+  height: var(--castle-sky-size) !important;
+  z-index: 11 !important;
+  transform: translate(-50%, -50%);
+  transition: left .62s linear, opacity .24s ease !important;
+}
+.castle-bush-panel .castle-clone-hud-title,
+.castle-bush-panel .castle-clone-hud #castleCloneRound {
+  min-height: 36px;
+}
+.castle-bush-playfield {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.castle-bush-slot {
+  position: absolute;
+  left: 50%;
+  bottom: 3%;
+  width: min(27vw, 180px);
+  height: min(27vw, 180px);
+  transform: translateX(-50%);
+  z-index: 13;
+  pointer-events: none;
+}
+.castle-bush-slot.hidden {
+  display: none !important;
+}
+.castle-bush-base,
+.castle-bush-reveal {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.castle-bush-base {
+  object-fit: contain;
+  display: block;
+  filter: drop-shadow(0 8px 10px rgba(0,0,0,.22));
+}
+.castle-bush-base.hidden {
+  display: none !important;
+}
+.castle-bush-reveal {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  opacity: 0;
+  pointer-events: none;
+  cursor: pointer;
+  transition: opacity .24s ease;
+}
+.castle-bush-reveal.hidden {
+  display: none !important;
+}
+.castle-bush-reveal.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+.castle-bush-reveal img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  filter: drop-shadow(0 8px 10px rgba(0,0,0,.22));
+}
+.castle-bush-hit-blink {
+  animation: castleBushHitBlink .18s steps(2) 4;
+}
+@keyframes castleBushHitBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .2; }
+}
+@media (max-width: 520px) {
+  .castle-bush-slot {
+    width: min(25vw, 122px);
+    height: min(25vw, 122px);
+    bottom: 7%;
+  }
+}
