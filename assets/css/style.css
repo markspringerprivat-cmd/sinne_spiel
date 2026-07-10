@@ -3270,3 +3270,23 @@ p { line-height: 1.5; }
 .quiz-battle-zone.castle-final-hit-mode .enemy-battle.castle-final-damage-blink {
   animation: castleDodgeMageFloat 2.4s ease-in-out infinite, castleFinalDamageBlink .18s linear 7 !important;
 }
+
+/* ===== v68 Zauberschloss: Laufanimation, Schutzschild, finaler Sprung mit Spezialbild ===== */
+.quiz-modal.castle-quiz-modal:not(.hidden) .battle-sprite {
+  -webkit-user-drag: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+.quiz-battle-zone.castle-dodge-mode .knight-battle.castle-walking {
+  object-fit: contain !important;
+}
+.quiz-battle-zone.castle-dodge-mode .castle-projectile {
+  border-radius: 50% !important;
+}
+.quiz-battle-zone.castle-final-hit-mode .knight-battle {
+  z-index: 7 !important;
+}
+.quiz-battle-zone.castle-final-hit-mode .enemy-battle {
+  z-index: 6 !important;
+}
