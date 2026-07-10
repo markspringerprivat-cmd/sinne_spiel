@@ -2740,3 +2740,24 @@ p { line-height: 1.5; }
     min-height: 50px;
   }
 }
+
+/* ===== v64 Test: zweiter Zauberschloss-Kampf läuft direkt im Quiz-Popup ===== */
+.quiz-battle-zone.castle-dodge-mode .knight-battle {
+  left: var(--castle-player-left, 50%) !important;
+  width: 25% !important;
+  bottom: -1% !important;
+}
+.quiz-battle-zone.castle-dodge-mode .enemy-battle {
+  left: var(--castle-mage-left, -7%) !important;
+  right: auto !important;
+  width: 27% !important;
+  bottom: 49% !important;
+}
+.quiz-battle-zone.castle-dodge-mode .castle-projectile {
+  width: clamp(18px, 3vmin, 30px);
+  height: clamp(18px, 3vmin, 30px);
+}
+.quiz-modal:not(.hidden) .castle-dodge-panel {
+  bottom: max(1.4%, env(safe-area-inset-bottom)) !important;
+  min-height: 20% !important;
+}

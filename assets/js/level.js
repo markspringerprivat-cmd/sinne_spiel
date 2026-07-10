@@ -24,8 +24,8 @@ const ATTACK_IMPACT_MS = 320;
 const ENEMY_IMPACT_MS = 320;
 const MOVE_MS = 560;
 const CASTLE_QUIZ_QUESTION_COUNT = 3;
-const CASTLE_DODGE_DURATION_MS = 10000;
-const CASTLE_PROJECTILE_SPAWN_MS = 1050;
+const CASTLE_DODGE_DURATION_MS = 30000;
+const CASTLE_PROJECTILE_SPAWN_MS = 3400;
 const CASTLE_FLIGHT_SWAP_MS = 1200;
 const CASTLE_STUN_MS = 900;
 
@@ -773,7 +773,7 @@ function ensureQuizModal() {
       <div id="castleDodgePanel" class="quiz-panel castle-dodge-panel hidden">
         <div class="castle-dodge-top">
           <strong>Ausweichen!</strong>
-          <span id="castleDodgeTimer">10.0</span>
+          <span id="castleDodgeTimer">30.0</span>
         </div>
         <p class="castle-dodge-info">Weiche den lilanen Bällen aus.</p>
         <div id="castleDodgeFeedback" class="castle-dodge-feedback hidden"></div>
@@ -785,10 +785,6 @@ function ensureQuizModal() {
       <div id="quizResult" class="quiz-result quiz-panel hidden"></div>
     </div>`;
   document.body.appendChild(modal);
-  const leftBtn = modal.querySelector('#castleMoveLeft');
-  const rightBtn = modal.querySelector('#castleMoveRight');
-  if (leftBtn) leftBtn.addEventListener('click', () => moveCastleKnight(-1));
-  if (rightBtn) rightBtn.addEventListener('click', () => moveCastleKnight(1));
   return modal;
 }
 
@@ -1138,19 +1134,26 @@ async function startCastlePostQuizSequence() {
   enemy.src = castleEnemyAsset('flyLeft');
   enemy.classList.add('castle-flight-left');
   await wait(1150);
+  enemy.classList.remove('castle-flight-left');
 
-  pauseBossMusic();
-  window.location.href = 'zauberschloss-dodge.html';
+  await startCastleDodgeGame();
+}
+
+function setCastleMoveDir(direction) {
+  if (!activeQuiz?.castleDodge || !activeQuiz.castleDodge.running) return;
+  const state = activeQuiz.castleDodge;
+  if (performance.now() < state.stunnedUntil) return;
+  state.moveDir = direction;
+}
+
+function stopCastleMoveDir(direction) {
+  if (!activeQuiz?.castleDodge) return;
+  const state = activeQuiz.castleDodge;
+  if (state.moveDir === direction) state.moveDir = 0;
 }
 
 function moveCastleKnight(direction) {
-  if (!activeQuiz?.castleDodge || !activeQuiz.castleDodge.running) return;
-  const state = activeQuiz.castleDodge;
-  if (state.stunned) return;
-  state.lane = Math.max(0, Math.min(state.lanes.length - 1, state.lane + direction));
-  const knight = document.getElementById('quizKnight');
-  if (!knight) return;
-  knight.style.transform = `translateX(${state.lanes[state.lane]}%)`;
+  setCastleMoveDir(direction);
 }
 
 function spawnCastleProjectile() {
@@ -1160,33 +1163,30 @@ function spawnCastleProjectile() {
   if (!layer) return;
   const el = document.createElement('div');
   el.className = 'castle-projectile';
-  const x = state.spawnXs[Math.floor(Math.random() * state.spawnXs.length)];
+  const x = Math.max(10, Math.min(90, state.mageX + 15 + (Math.random() * 14 - 7)));
   el.style.left = `${x}%`;
+  el.style.top = '10%';
   layer.appendChild(el);
-  state.projectiles.push({ el, x, y: -6, speed: 23 + Math.random() * 5 });
+  state.projectiles.push({ el, x, y: 10, speed: 31 + Math.random() * 4 });
 }
 
-function setCastleMagePass(side) {
+function setCastleMagePosition() {
   const enemy = document.getElementById('quizEnemy');
-  if (!enemy || !activeQuiz?.castleDodge) return;
-  enemy.classList.remove('castle-pass-left', 'castle-pass-right');
-  if (side === 'left') {
-    enemy.src = castleEnemyAsset('flyLeft');
-    enemy.classList.add('castle-pass-left');
-    activeQuiz.castleDodge.spawnXs = [22, 34, 46];
-  } else {
-    enemy.src = castleEnemyAsset('flyRight');
-    enemy.classList.add('castle-pass-right');
-    activeQuiz.castleDodge.spawnXs = [30, 42, 54];
-  }
+  const state = activeQuiz?.castleDodge;
+  if (!enemy || !state) return;
+  const zone = document.getElementById('quizBattleZone');
+  if (zone) zone.style.setProperty('--castle-mage-left', `${state.mageX}%`);
+  enemy.style.right = 'auto';
+  enemy.src = state.mageDir >= 0 ? castleEnemyAsset('flyRight') : castleEnemyAsset('flyLeft');
 }
 
 function castleKnightHit() {
   const state = activeQuiz?.castleDodge;
   const knight = document.getElementById('quizKnight');
   const feedback = document.getElementById('castleDodgeFeedback');
-  if (!state || state.stunned || !knight) return;
-  state.stunned = true;
+  if (!state || performance.now() < state.stunnedUntil || !knight) return;
+  state.stunnedUntil = performance.now() + CASTLE_STUN_MS;
+  state.moveDir = 0;
   knight.classList.add('castle-knight-hit');
   if (feedback) {
     feedback.textContent = 'Getroffen!';
@@ -1195,21 +1195,18 @@ function castleKnightHit() {
   setTimeout(() => {
     if (feedback) feedback.classList.add('hidden');
     knight.classList.remove('castle-knight-hit');
-    if (activeQuiz?.castleDodge) activeQuiz.castleDodge.stunned = false;
   }, CASTLE_STUN_MS);
 }
 
-function updateCastleProjectiles(now) {
+function updateCastleProjectiles(deltaSeconds) {
   const state = activeQuiz?.castleDodge;
   if (!state || !state.running) return;
-  const zone = document.getElementById('quizBattleZone');
   const knight = document.getElementById('quizKnight');
-  if (!zone || !knight) return;
-  const zoneRect = zone.getBoundingClientRect();
+  if (!knight) return;
   const knightRect = knight.getBoundingClientRect();
 
   state.projectiles = state.projectiles.filter(projectile => {
-    projectile.y += projectile.speed * (state.lastFrameDelta / 1000);
+    projectile.y += projectile.speed * deltaSeconds;
     projectile.el.style.top = `${projectile.y}%`;
     if (projectile.y > 108) {
       projectile.el.remove();
@@ -1229,18 +1226,61 @@ function updateCastleProjectiles(now) {
 function castleDodgeFrame(now) {
   const state = activeQuiz?.castleDodge;
   if (!state || !state.running) return;
-  const delta = Math.min(40, now - (state.lastFrame || now));
+  const delta = Math.min(0.05, (now - (state.lastFrame || now)) / 1000 || 0);
   state.lastFrame = now;
-  state.lastFrameDelta = delta;
   const remaining = Math.max(0, state.endTime - now);
   const timer = document.getElementById('castleDodgeTimer');
+  const knight = document.getElementById('quizKnight');
   if (timer) timer.textContent = formatCastleDodgeTime(remaining);
-  updateCastleProjectiles(now);
+
+  if (now >= state.stunnedUntil) {
+    state.playerX += state.moveDir * 56 * delta;
+    state.playerX = Math.max(5, Math.min(74, state.playerX));
+    if (knight) {
+      const zone = document.getElementById('quizBattleZone');
+      if (zone) zone.style.setProperty('--castle-player-left', `${state.playerX}%`);
+      knight.style.transform = 'translateX(0)';
+    }
+  }
+
+  state.mageX += state.mageDir * 18 * delta;
+  if (state.mageX > 78) {
+    state.mageX = 78;
+    state.mageDir = -1;
+  } else if (state.mageX < -7) {
+    state.mageX = -7;
+    state.mageDir = 1;
+  }
+  setCastleMagePosition();
+  updateCastleProjectiles(delta);
+
   if (remaining <= 0) {
     finishCastleDodgeGame();
     return;
   }
   state.rafId = requestAnimationFrame(castleDodgeFrame);
+}
+
+function installCastleHoldControls() {
+  const left = document.getElementById('castleMoveLeft');
+  const right = document.getElementById('castleMoveRight');
+  if (!left || !right || left.dataset.holdReady === '1') return;
+  const bind = (button, dir) => {
+    button.dataset.holdReady = '1';
+    button.addEventListener('pointerdown', event => {
+      event.preventDefault();
+      button.setPointerCapture?.(event.pointerId);
+      setCastleMoveDir(dir);
+    });
+    button.addEventListener('pointerup', event => {
+      event.preventDefault();
+      stopCastleMoveDir(dir);
+    });
+    button.addEventListener('pointercancel', () => stopCastleMoveDir(dir));
+    button.addEventListener('pointerleave', () => stopCastleMoveDir(dir));
+  };
+  bind(left, -1);
+  bind(right, 1);
 }
 
 async function startCastleDodgeGame() {
@@ -1252,39 +1292,39 @@ async function startCastleDodgeGame() {
   const enemy = document.getElementById('quizEnemy');
   if (!zone || !layer || !dodgePanel || !knight || !enemy) return;
 
+  installCastleHoldControls();
   zone.classList.remove('castle-boss-mode');
   zone.classList.add('castle-dodge-mode');
   layer.classList.remove('hidden');
   dodgePanel.classList.remove('hidden');
   knight.src = knightAsset('normal');
   knight.classList.add('castle-runner');
-  enemy.classList.remove('castle-hovering');
+  enemy.classList.remove('castle-hovering', 'castle-flight-left', 'castle-flight-right');
   enemy.classList.add('castle-flyer');
+  clearCastleProjectiles();
 
   activeQuiz.castleDodge = {
     running: true,
-    lane: 1,
-    lanes: [0, 55, 110],
+    playerX: 50,
+    moveDir: 0,
+    mageX: -7,
+    mageDir: 1,
     projectiles: [],
-    spawnXs: [30, 42, 54],
-    stunned: false,
+    stunnedUntil: 0,
     endTime: performance.now() + CASTLE_DODGE_DURATION_MS,
     lastFrame: 0,
-    lastFrameDelta: 16,
     spawnTimer: null,
-    flightTimer: null,
     rafId: null
   };
-  knight.style.transform = `translateX(${activeQuiz.castleDodge.lanes[activeQuiz.castleDodge.lane]}%)`;
+  zone.style.setProperty('--castle-player-left', '50%');
+  zone.style.setProperty('--castle-mage-left', '-7%');
+  knight.style.transform = 'translateX(0)';
+  setCastleMagePosition();
+  const timer = document.getElementById('castleDodgeTimer');
+  if (timer) timer.textContent = '30.0';
 
-  let side = 'right';
-  setCastleMagePass(side);
-  activeQuiz.castleDodge.flightTimer = setInterval(() => {
-    if (!activeQuiz?.castleDodge?.running) return;
-    side = side === 'right' ? 'left' : 'right';
-    setCastleMagePass(side);
-  }, CASTLE_FLIGHT_SWAP_MS);
   activeQuiz.castleDodge.spawnTimer = setInterval(spawnCastleProjectile, CASTLE_PROJECTILE_SPAWN_MS);
+  setTimeout(spawnCastleProjectile, 900);
   activeQuiz.castleDodge.rafId = requestAnimationFrame(castleDodgeFrame);
 }
 
