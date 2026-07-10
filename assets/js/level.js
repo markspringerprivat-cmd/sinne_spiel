@@ -1284,6 +1284,7 @@ function showCastleTasteFeedback(message, duration = 900) {
 function buildCastleTastePanel() {
   const dodgePanel = document.getElementById('castleDodgePanel');
   if (!dodgePanel) return;
+  dodgePanel.className = 'quiz-panel castle-dodge-panel castle-taste-panel';
   dodgePanel.innerHTML = `
     <div class="castle-dodge-top">
       <strong>Geschmack sammeln!</strong>
@@ -1530,7 +1531,7 @@ async function startCastleDodgeGame() {
     running: false,
     playerX: 50,
     moveDir: 0,
-    mageX: 0,
+    mageX: 10,
     mageDir: 1,
     projectiles: [],
     stunnedUntil: 0,
@@ -1545,7 +1546,7 @@ async function startCastleDodgeGame() {
     finishing: false
   };
   zone.style.setProperty('--castle-player-left', '50%');
-  zone.style.setProperty('--castle-mage-left', '0%');
+  zone.style.setProperty('--castle-mage-left', '10%');
   knight.style.transform = 'translateX(0)';
   setCastleMagePosition();
   updateCastleTasteStatus();

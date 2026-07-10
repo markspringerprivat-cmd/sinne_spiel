@@ -3749,3 +3749,105 @@ p { line-height: 1.5; }
     padding: 14px 16px;
   }
 }
+
+
+/* ===== v75 Zauberschloss: Geschmacksspiel sauber im Bild ===== */
+.castle-taste-panel {
+  inset: 0 !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+  z-index: 12 !important;
+}
+.castle-taste-panel.hidden {
+  display: none !important;
+}
+.castle-taste-panel .castle-dodge-top {
+  position: absolute;
+  top: 1.5%;
+  right: 1.5%;
+  z-index: 16;
+  display: flex !important;
+  gap: 8px;
+  align-items: center;
+  pointer-events: none;
+}
+.castle-taste-panel .castle-dodge-top strong,
+.castle-taste-panel #castleDodgeTimer {
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 8px 13px;
+  border-radius: 999px;
+  background: rgba(255,247,214,.94);
+  color: #4b2a16;
+  font-weight: 950;
+  box-shadow: 0 8px 18px rgba(0,0,0,.18);
+}
+.castle-taste-panel #castleDodgeTimer {
+  background: rgba(255,255,255,.92);
+  color: #5b268b;
+}
+.castle-taste-panel .castle-dodge-info {
+  display: none !important;
+}
+.castle-taste-panel .castle-dodge-feedback {
+  position: absolute;
+  left: 50%;
+  top: 20%;
+  transform: translateX(-50%);
+  z-index: 16;
+  display: inline-flex !important;
+  pointer-events: none;
+}
+.castle-taste-panel .castle-dodge-feedback.hidden {
+  display: none !important;
+}
+.castle-taste-panel .castle-dodge-controls {
+  position: absolute;
+  left: 50%;
+  bottom: max(2%, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  width: 100%;
+  display: flex !important;
+  justify-content: center !important;
+  gap: clamp(18px, 7vw, 48px) !important;
+  pointer-events: auto;
+  z-index: 16;
+}
+.castle-taste-panel .castle-taste-dialog {
+  top: 4% !important;
+  z-index: 17;
+  pointer-events: auto;
+}
+@media (max-width: 520px) {
+  .castle-taste-panel .castle-dodge-top {
+    top: 1%;
+    right: 1%;
+    gap: 6px;
+  }
+  .castle-taste-panel .castle-dodge-top strong,
+  .castle-taste-panel #castleDodgeTimer {
+    min-height: 32px;
+    padding: 6px 10px;
+    font-size: .8rem;
+  }
+  .castle-taste-panel .castle-dodge-feedback {
+    top: 18%;
+    max-width: 88%;
+    text-align: center;
+  }
+  .castle-taste-panel .castle-taste-dialog {
+    top: 2% !important;
+  }
+}
