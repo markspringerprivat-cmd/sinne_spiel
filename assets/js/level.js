@@ -794,6 +794,7 @@ function ensureQuizModal() {
 }
 
 function setQuizScene(modal, data, quizId) {
+  modal.classList.toggle('castle-quiz-modal', isCastleBossQuiz(quizId));
   const bg = modal.querySelector('#quizBattleBg');
   bg.src = battleBackgroundAsset(quizId);
   bg.alt = `${data.title} Kampfhintergrund`;
