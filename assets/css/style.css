@@ -3853,58 +3853,44 @@ p { line-height: 1.5; }
 }
 
 
-/* ===== v76 Zauberschloss: Busch-Reaktionsspiel ===== */
+/* ===== v77 Zauberschloss: Tastphase mit Büschen ===== */
 .quiz-battle-zone.castle-bush-mode {
-  top: 16% !important;
-  height: 68% !important;
+  top: 19% !important;
+  height: 60% !important;
   left: 4% !important;
   right: 4% !important;
-  --castle-player-left: 14%;
-  --castle-bush-mage-left: 8%;
 }
 .quiz-battle-zone.castle-bush-mode .knight-battle,
 .quiz-battle-zone.castle-bush-mode .enemy-battle {
-  opacity: 1 !important;
-  pointer-events: none !important;
   object-fit: contain !important;
+  max-width: none !important;
+  max-height: none !important;
+  transform-origin: center center !important;
 }
 .quiz-battle-zone.castle-bush-mode .knight-battle {
-  left: var(--castle-player-left, 14%) !important;
-  top: 80% !important;
-  bottom: auto !important;
-  right: auto !important;
-  width: var(--castle-combat-size) !important;
-  height: var(--castle-combat-size) !important;
+  width: clamp(84px, 22vmin, 146px) !important;
+  height: clamp(84px, 22vmin, 146px) !important;
   z-index: 12 !important;
-  transform: translate(-50%, -50%);
 }
 .quiz-battle-zone.castle-bush-mode .enemy-battle {
-  left: var(--castle-bush-mage-left, 8%) !important;
-  top: 64% !important;
-  bottom: auto !important;
-  right: auto !important;
-  width: var(--castle-sky-size) !important;
-  height: var(--castle-sky-size) !important;
+  width: clamp(90px, 23vmin, 156px) !important;
+  height: clamp(90px, 23vmin, 156px) !important;
   z-index: 11 !important;
-  transform: translate(-50%, -50%);
-  transition: left .62s linear, opacity .24s ease !important;
+  transition: left .62s linear, top .62s linear !important;
 }
 .castle-bush-panel .castle-clone-hud-title,
 .castle-bush-panel .castle-clone-hud #castleCloneRound {
-  min-height: 36px;
+  min-height: 38px;
 }
 .castle-bush-playfield {
-  position: absolute;
   inset: 0;
   pointer-events: none;
 }
 .castle-bush-slot {
   position: absolute;
-  left: 50%;
-  bottom: 3%;
-  width: min(27vw, 180px);
-  height: min(27vw, 180px);
-  transform: translateX(-50%);
+  width: min(18vw, 120px);
+  height: min(18vw, 120px);
+  transform: translate(-50%, -50%);
   z-index: 13;
   pointer-events: none;
 }
@@ -3919,9 +3905,9 @@ p { line-height: 1.5; }
   height: 100%;
 }
 .castle-bush-base {
-  object-fit: contain;
   display: block;
-  filter: drop-shadow(0 8px 10px rgba(0,0,0,.22));
+  object-fit: contain;
+  filter: drop-shadow(0 6px 7px rgba(0,0,0,.25));
 }
 .castle-bush-base.hidden {
   display: none !important;
@@ -3932,8 +3918,7 @@ p { line-height: 1.5; }
   background: transparent;
   opacity: 0;
   pointer-events: none;
-  cursor: pointer;
-  transition: opacity .24s ease;
+  transition: opacity .12s ease;
 }
 .castle-bush-reveal.hidden {
   display: none !important;
@@ -3946,20 +3931,18 @@ p { line-height: 1.5; }
   width: 100%;
   height: 100%;
   object-fit: contain;
-  pointer-events: none;
-  filter: drop-shadow(0 8px 10px rgba(0,0,0,.22));
+  filter: drop-shadow(0 6px 7px rgba(0,0,0,.25));
 }
 .castle-bush-hit-blink {
   animation: castleBushHitBlink .18s steps(2) 4;
 }
 @keyframes castleBushHitBlink {
   0%, 100% { opacity: 1; }
-  50% { opacity: .2; }
+  50% { opacity: .18; }
 }
 @media (max-width: 520px) {
   .castle-bush-slot {
-    width: min(25vw, 122px);
-    height: min(25vw, 122px);
-    bottom: 7%;
+    width: min(20vw, 92px);
+    height: min(20vw, 92px);
   }
 }
