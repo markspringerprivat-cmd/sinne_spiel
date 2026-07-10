@@ -38,8 +38,9 @@ const CASTLE_CLONE_ROUNDS_TOTAL = 3;
 const CASTLE_CLONE_COUNT = 15;
 const CASTLE_BUSH_TARGET_HITS = 3;
 const CASTLE_BUSH_REVEAL_MS = 2000;
-const CASTLE_BUSH_DELAY_MIN_MS = 1800;
-const CASTLE_BUSH_DELAY_MAX_MS = 3200;
+const CASTLE_BUSH_DELAY_MIN_MS = 750;
+const CASTLE_BUSH_DELAY_MAX_MS = 1450;
+const CASTLE_BUSH_INTRO_FLIGHT_MS = 2900;
 
 const currentArea = window.location.pathname.split('/').pop().replace('.html', '');
 const AREA_TITLES = {
@@ -196,32 +197,66 @@ function cleanupCastleBushGame() {
     state.running = false;
     if (state.revealTimer) clearTimeout(state.revealTimer);
     if (state.sequenceTimer) clearTimeout(state.sequenceTimer);
+    if (state.fadeTimer) clearTimeout(state.fadeTimer);
   }
   if (activeQuiz) activeQuiz.castleBush = null;
+
+  const layer = document.getElementById('castleBushLayer');
+  if (layer) {
+    layer.classList.add('hidden');
+    layer.innerHTML = '';
+  }
+
   const panel = document.getElementById('castleClonePanel');
-  if (panel && panel.classList.contains('castle-bush-panel')) {
+  if (panel?.classList.contains('castle-bush-panel')) {
     panel.classList.add('hidden');
     panel.innerHTML = '';
   }
+
   const zone = document.getElementById('quizBattleZone');
-  if (zone) zone.classList.remove('castle-bush-mode');
-  const enemy = document.getElementById('quizEnemy');
-  if (enemy) {
-    enemy.classList.remove('castle-clone-hidden');
-    enemy.style.removeProperty('left');
-    enemy.style.removeProperty('top');
-    enemy.style.removeProperty('right');
-    enemy.style.removeProperty('bottom');
-    enemy.style.removeProperty('opacity');
+  if (zone) {
+    zone.classList.remove('castle-bush-mode');
+    ['--bush-knight-x', '--bush-knight-bottom', '--bush-mage-x', '--bush-mage-bottom'].forEach(name => zone.style.removeProperty(name));
   }
+
   const knight = document.getElementById('quizKnight');
   if (knight) {
+    knight.classList.remove('castle-bush-knight-damage');
     knight.style.removeProperty('left');
     knight.style.removeProperty('top');
     knight.style.removeProperty('right');
     knight.style.removeProperty('bottom');
     knight.style.removeProperty('transform');
+    knight.style.removeProperty('transition');
   }
+
+  const enemy = document.getElementById('quizEnemy');
+  if (enemy) {
+    enemy.classList.remove('castle-bush-hidden');
+    enemy.style.removeProperty('left');
+    enemy.style.removeProperty('top');
+    enemy.style.removeProperty('right');
+    enemy.style.removeProperty('bottom');
+    enemy.style.removeProperty('opacity');
+    enemy.style.removeProperty('transform');
+    enemy.style.removeProperty('transition');
+  }
+}
+
+function restoreCastleStandardBattlePose() {
+  const zone = document.getElementById('quizBattleZone');
+  const knight = document.getElementById('quizKnight');
+  const enemy = document.getElementById('quizEnemy');
+  if (!zone || !knight || !enemy) return;
+
+  cleanupCastleBushGame();
+  zone.classList.remove('castle-boss-mode', 'castle-dodge-mode', 'castle-final-question-mode', 'castle-final-hit-mode', 'castle-clone-mode');
+  zone.classList.add('castle-stand-off-mode');
+  knight.className = 'battle-sprite knight-battle';
+  enemy.className = 'battle-sprite enemy-battle';
+  knight.src = castleKnightAsset('normal');
+  enemy.src = castleEnemyAsset('laugh');
+  hideCastleSpeech();
 }
 
 function showCastleSpeech(html) {
@@ -870,7 +905,9 @@ function preloadQuizAssets(data, quizId) {
     preloadImage(castleKnightAsset('attack'));
     preloadImage(castleKnightAsset('finalAttack'));
     ['runLeft1', 'runLeft2', 'runRight1', 'runRight2'].forEach(state => preloadImage(castleKnightAsset(state)));
+    [JUMP_ASSETS.right.jump, JUMP_ASSETS.right.fall, JUMP_ASSETS.left.jump, JUMP_ASSETS.left.fall].forEach(preloadImage);
     ['shield', 'laugh', 'surprised', 'flyLeft', 'flyRight', 'hover'].forEach(state => preloadImage(castleEnemyAsset(state)));
+    ['bush', 'real', 'fake'].forEach(kind => preloadImage(castleBushAsset(kind)));
   }
   if (FRAGMENT_REWARDS[quizId]) preloadImage(FRAGMENT_REWARDS[quizId].image);
 }
@@ -888,6 +925,7 @@ function ensureQuizModal() {
       <div id="quizBattleZone" class="quiz-battle-zone" aria-hidden="true">
         <img id="quizKnight" class="battle-sprite knight-battle" alt="Ritter" draggable="false">
         <img id="quizEnemy" class="battle-sprite enemy-battle" alt="Gegner" draggable="false">
+        <div id="castleBushLayer" class="castle-bush-layer hidden"></div>
         <div id="castleProjectileLayer" class="castle-projectile-layer hidden"></div>
         <div id="castleBeam" class="castle-beam hidden"></div>
         <div id="castleSpeech" class="castle-speech hidden"></div>
@@ -2067,10 +2105,18 @@ async function finishCastleCloneSearch() {
 async function startCastleBushSearchSequence() {
   cleanupCastleBushGame();
   const panel = document.getElementById('castleClonePanel');
+  const layer = document.getElementById('castleBushLayer');
   const zone = document.getElementById('quizBattleZone');
   const knight = document.getElementById('quizKnight');
   const enemy = document.getElementById('quizEnemy');
-  if (!activeQuiz || !panel || !zone || !knight || !enemy) return;
+  if (!activeQuiz || !panel || !layer || !zone || !knight || !enemy) return;
+
+  const modal = ensureQuizModal();
+  modal.querySelector('#quizGame')?.classList.add('hidden');
+  modal.querySelector('#quizIntro')?.classList.add('hidden');
+  modal.querySelector('#quizResult')?.classList.add('hidden');
+  modal.querySelector('#castleDodgePanel')?.classList.add('hidden');
+  modal.querySelector('#castleFinalQuestionPanel')?.classList.add('hidden');
 
   activeQuiz.castleBush = {
     running: true,
@@ -2078,22 +2124,27 @@ async function startCastleBushSearchSequence() {
     targetHits: CASTLE_BUSH_TARGET_HITS,
     revealTimer: null,
     sequenceTimer: null,
+    fadeTimer: null,
     currentReveals: [],
-    locked: false,
-    homeX: 10.5,
-    knightX: 10.5,
-    slots: [38, 57, 76],
-    groundY: 72,
-    bushY: 72,
-    mageY: 66
+    locked: true,
+    homeX: 8.5,
+    knightX: 8.5,
+    groundBottom: 4,
+    slots: [34, 58, 82],
+    mageBottom: 11,
+    dropped: [false, false, false],
+    appearancePattern: ['fake', 'real', 'fake', 'fake', 'real', 'fake', 'fake', 'real', 'fake'],
+    appearanceIndex: 0,
+    lastPrimarySlot: -1
   };
 
   zone.classList.remove('castle-stand-off-mode', 'castle-clone-mode', 'castle-final-hit-mode');
   zone.classList.add('castle-bush-mode');
+  layer.classList.remove('hidden');
   knight.src = castleKnightAsset('normal');
-  knight.classList.remove('castle-final-jump', 'castle-walking', 'castle-knight-hit');
-  enemy.classList.remove('castle-final-damage-blink', 'castle-flight-left', 'castle-flight-right', 'castle-clone-hidden');
-  enemy.src = castleEnemyAsset('hover');
+  knight.classList.remove('castle-final-jump', 'castle-walking', 'castle-knight-hit', 'castle-bush-knight-damage');
+  enemy.classList.remove('castle-final-damage-blink', 'castle-flight-left', 'castle-flight-right', 'castle-clone-hidden', 'castle-bush-hidden');
+  enemy.src = castleEnemyAsset('flyRight');
 
   panel.className = 'quiz-panel castle-clone-panel castle-bush-panel';
   panel.innerHTML = `
@@ -2102,22 +2153,21 @@ async function startCastleBushSearchSequence() {
       <span id="castleCloneRound">Treffer 0 / ${CASTLE_BUSH_TARGET_HITS}</span>
     </div>
     <div id="castleCloneDialog" class="castle-clone-dialog" role="dialog" aria-modal="true" aria-label="Hinweis zur Tastphase">
-      <p>Vertraue jetzt deinem Tastsinn. Springe nur auf den echten Magier, wenn er kurz hinter einem Busch erscheint.</p>
-      <p>Triffst du die spitze Attrappe, tut das weh.</p>
+      <p>Vertraue jetzt deinem Tastsinn. Springe nur auf den echten Magier, sobald er hinter einem Busch erscheint.</p>
+      <p>Die spitze Magier-Attrappe fühlt sich gefährlich an – ein Sprung darauf tut weh.</p>
       <button id="castleCloneStartButton" class="primary-button" type="button">OK</button>
     </div>
-    <div id="castleClonePlayfield" class="castle-clone-playfield castle-bush-playfield hidden" aria-live="polite"></div>
   `;
   panel.classList.remove('hidden');
   buildCastleBushSlots();
   updateCastleBushLabel();
-  setCastleBushKnightHome();
-  setCastleBushMage(64, 72);
+  setCastleBushKnightPosition(activeQuiz.castleBush.homeX, activeQuiz.castleBush.groundBottom);
+  setCastleBushMagePosition(-28, activeQuiz.castleBush.mageBottom);
   hideCastleSpeech();
 
   document.getElementById('castleCloneStartButton')?.addEventListener('click', async () => {
     document.getElementById('castleCloneDialog')?.classList.add('hidden');
-    document.getElementById('castleClonePlayfield')?.classList.remove('hidden');
+    unlockSfxForMobile();
     await playCastleBushIntroFlight();
   }, { once: true });
 }
@@ -2131,82 +2181,106 @@ function updateCastleBushLabel() {
 
 function buildCastleBushSlots() {
   const state = activeQuiz?.castleBush;
-  const field = document.getElementById('castleClonePlayfield');
-  if (!state || !field) return;
-  field.innerHTML = '';
-  state.slots.forEach((left, index) => {
+  const layer = document.getElementById('castleBushLayer');
+  if (!state || !layer) return;
+  layer.innerHTML = '';
+
+  state.slots.forEach((x, index) => {
     const slot = document.createElement('div');
     slot.className = 'castle-bush-slot hidden';
     slot.dataset.index = String(index);
-    slot.style.left = `${left}%`;
-    slot.style.top = `${state.bushY}%`;
+    slot.style.setProperty('--bush-slot-x', `${x}%`);
     slot.innerHTML = `
       <img class="castle-bush-base" src="${castleBushAsset('bush')}" alt="Busch" draggable="false">
-      <button type="button" class="castle-bush-reveal hidden" data-index="${index}" aria-label="Figur hinter Busch antippen">
+      <button type="button" class="castle-bush-reveal" data-index="${index}" aria-label="Figur hinter dem Busch antippen" disabled>
         <img src="${castleBushAsset('fake')}" alt="Figur hinter dem Busch" draggable="false">
       </button>
     `;
-    field.appendChild(slot);
+    layer.appendChild(slot);
   });
-  [...field.querySelectorAll('.castle-bush-reveal')].forEach(btn => btn.addEventListener('click', () => handleCastleBushPick(Number(btn.dataset.index))));
+
+  [...layer.querySelectorAll('.castle-bush-reveal')].forEach(button => {
+    button.addEventListener('pointerdown', event => {
+      event.preventDefault();
+      handleCastleBushPick(Number(button.dataset.index));
+    });
+  });
 }
 
 function getCastleBushSlot(index) {
-  return document.querySelector(`.castle-bush-slot[data-index="${index}"]`);
+  return document.querySelector(`#castleBushLayer .castle-bush-slot[data-index="${index}"]`);
 }
 
-function setCastleBushKnightPosition(leftPercent, topPercent) {
-  const knight = document.getElementById('quizKnight');
-  if (!knight) return;
-  knight.style.left = `${leftPercent}%`;
-  knight.style.top = `${topPercent}%`;
-  knight.style.right = 'auto';
-  knight.style.bottom = 'auto';
-  knight.style.transform = 'translate(-50%, -50%) scale(0.82)';
-}
-
-function setCastleBushKnightHome() {
+function setCastleBushKnightPosition(xPercent, bottomPercent) {
   const state = activeQuiz?.castleBush;
-  if (!state) return;
-  state.knightX = state.homeX;
-  setCastleBushKnightPosition(state.homeX, state.groundY);
+  const zone = document.getElementById('quizBattleZone');
+  if (!state || !zone) return;
+  state.knightX = xPercent;
+  zone.style.setProperty('--bush-knight-x', `${xPercent}%`);
+  zone.style.setProperty('--bush-knight-bottom', `${bottomPercent}%`);
 }
 
-function setCastleBushMage(leftPercent, topPercent = null) {
+function setCastleBushMagePosition(xPercent, bottomPercent) {
+  const zone = document.getElementById('quizBattleZone');
+  if (!zone) return;
+  zone.style.setProperty('--bush-mage-x', `${xPercent}%`);
+  zone.style.setProperty('--bush-mage-bottom', `${bottomPercent}%`);
+}
+
+function revealDroppedBush(index) {
   const state = activeQuiz?.castleBush;
-  const enemy = document.getElementById('quizEnemy');
-  if (!enemy || !state) return;
-  enemy.classList.remove('castle-clone-hidden');
-  enemy.style.opacity = '1';
-  enemy.style.left = `${leftPercent}%`;
-  enemy.style.top = `${topPercent ?? state.mageY}%`;
-  enemy.style.right = 'auto';
-  enemy.style.bottom = 'auto';
-  enemy.style.transform = 'translate(-50%, -50%)';
+  const slot = getCastleBushSlot(index);
+  if (!state || !slot || state.dropped[index]) return;
+  state.dropped[index] = true;
+  slot.classList.remove('hidden');
+  slot.classList.remove('castle-bush-drop-in');
+  void slot.offsetWidth;
+  slot.classList.add('castle-bush-drop-in');
 }
 
 async function playCastleBushIntroFlight() {
   const state = activeQuiz?.castleBush;
   const enemy = document.getElementById('quizEnemy');
-  if (!state || !enemy) return;
+  if (!state || !state.running || !enemy) return;
 
-  setCastleBushKnightHome();
-  enemy.classList.remove('castle-clone-hidden');
+  state.locked = true;
   enemy.src = castleEnemyAsset('flyRight');
-  setCastleBushMage(24, state.mageY);
-  await wait(220);
+  enemy.classList.remove('castle-bush-hidden');
+  const startX = -28;
+  const endX = 130;
+  const duration = CASTLE_BUSH_INTRO_FLIGHT_MS;
+  const startTime = performance.now();
 
-  for (let i = 0; i < state.slots.length; i += 1) {
-    setCastleBushMage(state.slots[i], state.mageY);
-    await wait(430);
-    const slot = getCastleBushSlot(i);
-    slot?.classList.remove('hidden');
-    await wait(130);
-  }
+  await new Promise(resolve => {
+    function frame(now) {
+      if (!activeQuiz?.castleBush?.running) {
+        resolve();
+        return;
+      }
+      const progress = Math.min(1, (now - startTime) / duration);
+      const eased = progress < 0.5
+        ? 2 * progress * progress
+        : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+      const x = startX + (endX - startX) * eased;
+      const bob = Math.sin(progress * Math.PI * 5) * 1.15;
+      setCastleBushMagePosition(x, state.mageBottom + bob);
 
-  setCastleBushMage(118, state.mageY);
-  await wait(820);
-  enemy.classList.add('castle-clone-hidden');
+      state.slots.forEach((slotX, index) => {
+        if (!state.dropped[index] && x >= slotX - 1.5) revealDroppedBush(index);
+      });
+
+      if (progress < 1) {
+        requestAnimationFrame(frame);
+      } else {
+        resolve();
+      }
+    }
+    requestAnimationFrame(frame);
+  });
+
+  if (!activeQuiz?.castleBush?.running) return;
+  enemy.classList.add('castle-bush-hidden');
+  state.locked = false;
   scheduleCastleBushReveal();
 }
 
@@ -2217,43 +2291,53 @@ function scheduleCastleBushReveal() {
   state.sequenceTimer = setTimeout(showCastleBushReveal, delay);
 }
 
-function chooseCastleBushAppearance() {
+function shuffledCastleBushIndices() {
   const state = activeQuiz?.castleBush;
   if (!state) return [];
-  const slots = [...state.slots.keys()].sort(() => Math.random() - 0.5);
-  const revealCount = Math.random() < 0.34 ? 2 : 1;
-  if (revealCount === 1) {
-    return [{ slotIndex: slots[0], kind: Math.random() < 0.36 ? 'real' : 'fake' }];
+  const indices = state.slots.map((_, index) => index);
+  for (let i = indices.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [indices[i], indices[j]] = [indices[j], indices[i]];
   }
-  if (Math.random() < 0.44) {
-    return [
-      { slotIndex: slots[0], kind: 'real' },
-      { slotIndex: slots[1], kind: 'fake' }
-    ];
+  if (indices[0] === state.lastPrimarySlot && indices.length > 1) {
+    [indices[0], indices[1]] = [indices[1], indices[0]];
   }
-  return [
-    { slotIndex: slots[0], kind: 'fake' },
-    { slotIndex: slots[1], kind: 'fake' }
-  ];
+  return indices;
+}
+
+function chooseCastleBushAppearances() {
+  const state = activeQuiz?.castleBush;
+  if (!state) return [];
+  const primaryKind = state.appearancePattern[state.appearanceIndex % state.appearancePattern.length];
+  state.appearanceIndex += 1;
+  const indices = shuffledCastleBushIndices();
+  state.lastPrimarySlot = indices[0];
+  const appearances = [{ slotIndex: indices[0], kind: primaryKind }];
+
+  if (Math.random() < 0.38) {
+    appearances.push({ slotIndex: indices[1], kind: 'fake' });
+  }
+  return appearances;
 }
 
 function showCastleBushReveal() {
   const state = activeQuiz?.castleBush;
   if (!state || !state.running || state.locked) return;
-  const reveals = chooseCastleBushAppearance();
-  if (!reveals.length) return;
-  state.currentReveals = reveals;
+  hideAllCastleBushReveals(true);
+  const appearances = chooseCastleBushAppearances();
+  state.currentReveals = appearances;
 
-  reveals.forEach(revealState => {
-    const slot = getCastleBushSlot(revealState.slotIndex);
+  appearances.forEach(appearance => {
+    const slot = getCastleBushSlot(appearance.slotIndex);
     const base = slot?.querySelector('.castle-bush-base');
-    const reveal = slot?.querySelector('.castle-bush-reveal');
-    const img = reveal?.querySelector('img');
-    if (!slot || !base || !reveal || !img) return;
-    img.src = castleBushAsset(revealState.kind);
-    base.classList.add('hidden');
-    reveal.classList.remove('hidden');
-    requestAnimationFrame(() => reveal.classList.add('visible'));
+    const button = slot?.querySelector('.castle-bush-reveal');
+    const image = button?.querySelector('img');
+    if (!slot || !base || !button || !image) return;
+    image.src = castleBushAsset(appearance.kind);
+    button.dataset.kind = appearance.kind;
+    button.disabled = false;
+    slot.classList.add('castle-bush-showing');
+    requestAnimationFrame(() => button.classList.add('visible'));
   });
 
   state.revealTimer = setTimeout(() => {
@@ -2262,58 +2346,76 @@ function showCastleBushReveal() {
   }, CASTLE_BUSH_REVEAL_MS);
 }
 
-function hideAllCastleBushReveals() {
+function hideAllCastleBushReveals(immediate = false) {
   const state = activeQuiz?.castleBush;
   if (!state) return;
-  (state.currentReveals || []).forEach(revealState => {
-    const slot = getCastleBushSlot(revealState.slotIndex);
-    const base = slot?.querySelector('.castle-bush-base');
-    const reveal = slot?.querySelector('.castle-bush-reveal');
-    reveal?.classList.remove('visible');
-    if (reveal) reveal.classList.add('hidden');
-    base?.classList.remove('hidden');
+  const active = [...(state.currentReveals || [])];
+  active.forEach(appearance => {
+    const slot = getCastleBushSlot(appearance.slotIndex);
+    const button = slot?.querySelector('.castle-bush-reveal');
+    if (button) {
+      button.disabled = true;
+      button.classList.remove('visible');
+    }
+    slot?.classList.remove('castle-bush-showing');
   });
   state.currentReveals = [];
   if (state.revealTimer) {
     clearTimeout(state.revealTimer);
     state.revealTimer = null;
   }
+  if (immediate) return;
+  if (state.fadeTimer) clearTimeout(state.fadeTimer);
+  state.fadeTimer = setTimeout(() => {
+    active.forEach(appearance => {
+      const button = getCastleBushSlot(appearance.slotIndex)?.querySelector('.castle-bush-reveal');
+      button?.classList.remove('visible');
+    });
+  }, 140);
 }
 
 function getCastleBushReveal(index) {
   const state = activeQuiz?.castleBush;
-  if (!state) return null;
-  return (state.currentReveals || []).find(revealState => revealState.slotIndex === index) || null;
+  return state?.currentReveals?.find(item => item.slotIndex === index) || null;
 }
 
-async function animateCastleBushJump(targetX, isReturnJump = false) {
+async function animateCastleBushKnightJump(targetX, isReturn = false) {
   const state = activeQuiz?.castleBush;
   const knight = document.getElementById('quizKnight');
   if (!state || !knight) return;
-  const startX = Number(state.knightX ?? state.homeX);
-  const startY = state.groundY;
-  const duration = isReturnJump ? 520 : 650;
-  const arc = isReturnJump ? 8 : 13;
+
+  const startX = state.knightX;
+  const direction = targetX >= startX ? 'right' : 'left';
+  const assets = JUMP_ASSETS[direction];
+  const distance = Math.abs(targetX - startX);
+  const duration = isReturn
+    ? Math.max(480, Math.min(650, distance * 11 + 330))
+    : Math.max(620, Math.min(850, distance * 13 + 390));
+  const arc = isReturn ? 10 : 18;
   const startTime = performance.now();
 
-  return new Promise(resolve => {
+  await new Promise(resolve => {
     function frame(now) {
+      if (!activeQuiz?.castleBush?.running) {
+        resolve();
+        return;
+      }
       const progress = Math.min(1, (now - startTime) / duration);
       const eased = progress < 0.5
         ? 2 * progress * progress
         : 1 - Math.pow(-2 * progress + 2, 2) / 2;
       const x = startX + (targetX - startX) * eased;
-      const y = startY - Math.sin(Math.PI * eased) * arc;
-      setCastleBushKnightPosition(x, y);
-      knight.src = progress > 0.72 ? castleKnightAsset('attack') : castleKnightAsset('normal');
+      const bottom = state.groundBottom + Math.sin(Math.PI * eased) * arc;
+      knight.src = progress < 0.5 ? assets.jump : assets.fall;
+      setCastleBushKnightPosition(x, bottom);
+
       if (progress < 1) {
         requestAnimationFrame(frame);
-        return;
+      } else {
+        setCastleBushKnightPosition(targetX, state.groundBottom);
+        knight.src = castleKnightAsset('normal');
+        resolve();
       }
-      state.knightX = targetX;
-      setCastleBushKnightPosition(targetX, state.groundY);
-      knight.src = castleKnightAsset('normal');
-      resolve();
     }
     requestAnimationFrame(frame);
   });
@@ -2323,39 +2425,37 @@ async function handleCastleBushPick(index) {
   const state = activeQuiz?.castleBush;
   const knight = document.getElementById('quizKnight');
   if (!state || !state.running || state.locked || !knight) return;
-  const revealState = getCastleBushReveal(index);
-  if (!revealState) return;
+  const selected = getCastleBushReveal(index);
+  if (!selected) return;
 
   state.locked = true;
   if (state.sequenceTimer) clearTimeout(state.sequenceTimer);
   if (state.revealTimer) clearTimeout(state.revealTimer);
+  [...document.querySelectorAll('#castleBushLayer .castle-bush-reveal')].forEach(button => button.disabled = true);
 
   const targetX = state.slots[index];
-  const isReal = revealState.kind === 'real';
-  const slot = getCastleBushSlot(index);
-  const revealImg = slot?.querySelector('.castle-bush-reveal img');
-
-  await animateCastleBushJump(targetX, false);
+  const image = getCastleBushSlot(index)?.querySelector('.castle-bush-reveal img');
+  await animateCastleBushKnightJump(targetX, false);
   if (!activeQuiz?.castleBush?.running) return;
 
-  if (isReal) {
+  if (selected.kind === 'real') {
     playSfx(sfxCorrect);
-    revealImg?.classList.add('castle-bush-hit-blink');
-    await wait(460);
-    revealImg?.classList.remove('castle-bush-hit-blink');
+    image?.classList.add('castle-bush-hit-blink');
+    await wait(520);
+    image?.classList.remove('castle-bush-hit-blink');
     state.hits += 1;
     updateCastleBushLabel();
   } else {
     playSfx(sfxWrong);
-    knight.classList.add('castle-knight-hit');
-    await wait(460);
-    knight.classList.remove('castle-knight-hit');
+    knight.classList.add('castle-bush-knight-damage');
+    await wait(520);
+    knight.classList.remove('castle-bush-knight-damage');
   }
 
-  hideAllCastleBushReveals();
-  await animateCastleBushJump(state.homeX, true);
+  hideAllCastleBushReveals(true);
+  await animateCastleBushKnightJump(state.homeX, true);
   if (!activeQuiz?.castleBush?.running) return;
-  setCastleBushKnightHome();
+  knight.src = castleKnightAsset('normal');
   state.locked = false;
 
   if (state.hits >= state.targetHits) {
@@ -2368,45 +2468,15 @@ async function handleCastleBushPick(index) {
 async function finishCastleBushSearch() {
   const state = activeQuiz?.castleBush;
   const panel = document.getElementById('castleClonePanel');
-  const zone = document.getElementById('quizBattleZone');
-  const knight = document.getElementById('quizKnight');
-  const enemy = document.getElementById('quizEnemy');
-  if (!state || !state.running || !zone || !knight || !enemy) return;
-
+  if (!state || !state.running) return;
   state.running = false;
-  hideAllCastleBushReveals();
   if (state.sequenceTimer) clearTimeout(state.sequenceTimer);
   if (state.revealTimer) clearTimeout(state.revealTimer);
+  hideAllCastleBushReveals(true);
 
-  enemy.classList.remove('castle-clone-hidden');
-  enemy.src = castleEnemyAsset('flyLeft');
-  setCastleBushMage(116, state.mageY);
-  await wait(100);
-  setCastleBushMage(64, 72);
-  await wait(760);
-
-  if (panel) panel.classList.add('hidden');
-  cleanupCastleBushGame();
-
-  zone.classList.remove('castle-bush-mode');
-  zone.classList.add('castle-stand-off-mode');
-  knight.classList.remove('castle-knight-hit', 'castle-final-jump', 'castle-walking');
-  knight.style.removeProperty('left');
-  knight.style.removeProperty('top');
-  knight.style.removeProperty('bottom');
-  knight.style.removeProperty('right');
-  knight.style.removeProperty('transform');
-  knight.src = castleKnightAsset('normal');
-
-  enemy.classList.remove('castle-clone-hidden', 'castle-flight-left', 'castle-flight-right');
-  enemy.style.removeProperty('left');
-  enemy.style.removeProperty('top');
-  enemy.style.removeProperty('right');
-  enemy.style.removeProperty('bottom');
-  enemy.style.removeProperty('opacity');
-  enemy.style.removeProperty('transform');
-  enemy.src = castleEnemyAsset('laugh');
-  hideCastleSpeech();
+  panel?.classList.add('hidden');
+  await wait(180);
+  restoreCastleStandardBattlePose();
 }
 
 function showQuizEndPanel() {

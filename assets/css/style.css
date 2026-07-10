@@ -2926,16 +2926,16 @@ p { line-height: 1.5; }
 }
 
 /* ===== v66 Zauberschloss-Kampf: kleinere Figuren, ruhigeres Layout, reine Pfeilsteuerung ===== */
-.quiz-modal.castle-quiz-modal:not(.hidden) .quiz-battle-zone:not(.castle-dodge-mode):not(.castle-boss-mode):not(.castle-final-question-mode):not(.castle-final-hit-mode):not(.castle-stand-off-mode) .battle-sprite {
+.quiz-modal.castle-quiz-modal:not(.hidden) .quiz-battle-zone:not(.castle-dodge-mode):not(.castle-boss-mode):not(.castle-final-question-mode):not(.castle-final-hit-mode):not(.castle-stand-off-mode):not(.castle-bush-mode) .battle-sprite {
   width: 20% !important;
   height: 54% !important;
   object-fit: contain !important;
 }
-.quiz-modal.castle-quiz-modal:not(.hidden) .quiz-battle-zone:not(.castle-dodge-mode):not(.castle-boss-mode):not(.castle-final-question-mode):not(.castle-final-hit-mode):not(.castle-stand-off-mode) .knight-battle {
+.quiz-modal.castle-quiz-modal:not(.hidden) .quiz-battle-zone:not(.castle-dodge-mode):not(.castle-boss-mode):not(.castle-final-question-mode):not(.castle-final-hit-mode):not(.castle-stand-off-mode):not(.castle-bush-mode) .knight-battle {
   left: 20% !important;
   bottom: -2% !important;
 }
-.quiz-modal.castle-quiz-modal:not(.hidden) .quiz-battle-zone:not(.castle-dodge-mode):not(.castle-boss-mode):not(.castle-final-question-mode):not(.castle-final-hit-mode):not(.castle-stand-off-mode) .enemy-battle {
+.quiz-modal.castle-quiz-modal:not(.hidden) .quiz-battle-zone:not(.castle-dodge-mode):not(.castle-boss-mode):not(.castle-final-question-mode):not(.castle-final-hit-mode):not(.castle-stand-off-mode):not(.castle-bush-mode) .enemy-battle {
   left: 59% !important;
   right: auto !important;
   bottom: -2% !important;
@@ -3048,7 +3048,7 @@ p { line-height: 1.5; }
   100% { transform: translate(0, 0) scale(1); }
 }
 @media (max-width: 520px) {
-  .quiz-modal.castle-quiz-modal:not(.hidden) .quiz-battle-zone:not(.castle-dodge-mode):not(.castle-boss-mode):not(.castle-final-question-mode):not(.castle-final-hit-mode):not(.castle-stand-off-mode) .battle-sprite,
+  .quiz-modal.castle-quiz-modal:not(.hidden) .quiz-battle-zone:not(.castle-dodge-mode):not(.castle-boss-mode):not(.castle-final-question-mode):not(.castle-final-hit-mode):not(.castle-stand-off-mode):not(.castle-bush-mode) .battle-sprite,
   .quiz-battle-zone.castle-boss-mode .knight-battle,
   .quiz-battle-zone.castle-boss-mode .enemy-battle,
   .quiz-battle-zone.castle-final-question-mode .knight-battle,
@@ -3060,7 +3060,7 @@ p { line-height: 1.5; }
     width: 18% !important;
     height: 48% !important;
   }
-  .quiz-modal.castle-quiz-modal:not(.hidden) .quiz-battle-zone:not(.castle-dodge-mode):not(.castle-boss-mode):not(.castle-final-question-mode):not(.castle-final-hit-mode):not(.castle-stand-off-mode) .knight-battle,
+  .quiz-modal.castle-quiz-modal:not(.hidden) .quiz-battle-zone:not(.castle-dodge-mode):not(.castle-boss-mode):not(.castle-final-question-mode):not(.castle-final-hit-mode):not(.castle-stand-off-mode):not(.castle-bush-mode) .knight-battle,
   .quiz-battle-zone.castle-boss-mode .knight-battle,
   .quiz-battle-zone.castle-final-question-mode .knight-battle,
   .quiz-battle-zone.castle-final-hit-mode .knight-battle,
@@ -3068,7 +3068,7 @@ p { line-height: 1.5; }
     left: 20% !important;
     bottom: -2% !important;
   }
-  .quiz-modal.castle-quiz-modal:not(.hidden) .quiz-battle-zone:not(.castle-dodge-mode):not(.castle-boss-mode):not(.castle-final-question-mode):not(.castle-final-hit-mode):not(.castle-stand-off-mode) .enemy-battle,
+  .quiz-modal.castle-quiz-modal:not(.hidden) .quiz-battle-zone:not(.castle-dodge-mode):not(.castle-boss-mode):not(.castle-final-question-mode):not(.castle-final-hit-mode):not(.castle-stand-off-mode):not(.castle-bush-mode) .enemy-battle,
   .quiz-battle-zone.castle-boss-mode .enemy-battle,
   .quiz-battle-zone.castle-final-question-mode .enemy-battle,
   .quiz-battle-zone.castle-final-hit-mode .enemy-battle,
@@ -3112,7 +3112,7 @@ p { line-height: 1.5; }
   --castle-sky-size: clamp(96px, 25vmin, 172px);
 }
 
-.quiz-modal.castle-quiz-modal:not(.hidden) .quiz-battle-zone:not(.castle-dodge-mode):not(.castle-boss-mode):not(.castle-final-question-mode):not(.castle-final-hit-mode):not(.castle-stand-off-mode),
+.quiz-modal.castle-quiz-modal:not(.hidden) .quiz-battle-zone:not(.castle-dodge-mode):not(.castle-boss-mode):not(.castle-final-question-mode):not(.castle-final-hit-mode):not(.castle-stand-off-mode):not(.castle-bush-mode),
 .quiz-battle-zone.castle-boss-mode,
 .quiz-battle-zone.castle-final-question-mode,
 .quiz-battle-zone.castle-final-hit-mode,
@@ -3123,7 +3123,7 @@ p { line-height: 1.5; }
   right: 4% !important;
 }
 
-.quiz-modal.castle-quiz-modal:not(.hidden) .quiz-battle-zone:not(.castle-dodge-mode):not(.castle-boss-mode):not(.castle-final-question-mode):not(.castle-final-hit-mode):not(.castle-stand-off-mode) .battle-sprite,
+.quiz-modal.castle-quiz-modal:not(.hidden) .quiz-battle-zone:not(.castle-dodge-mode):not(.castle-boss-mode):not(.castle-final-question-mode):not(.castle-final-hit-mode):not(.castle-stand-off-mode):not(.castle-bush-mode) .battle-sprite,
 .quiz-battle-zone.castle-boss-mode .knight-battle,
 .quiz-battle-zone.castle-boss-mode .enemy-battle,
 .quiz-battle-zone.castle-final-question-mode .knight-battle,
@@ -3140,14 +3140,14 @@ p { line-height: 1.5; }
   transform-origin: center bottom !important;
 }
 
-.quiz-modal.castle-quiz-modal:not(.hidden) .quiz-battle-zone:not(.castle-dodge-mode):not(.castle-boss-mode):not(.castle-final-question-mode):not(.castle-final-hit-mode):not(.castle-stand-off-mode) .knight-battle,
+.quiz-modal.castle-quiz-modal:not(.hidden) .quiz-battle-zone:not(.castle-dodge-mode):not(.castle-boss-mode):not(.castle-final-question-mode):not(.castle-final-hit-mode):not(.castle-stand-off-mode):not(.castle-bush-mode) .knight-battle,
 .quiz-battle-zone.castle-boss-mode .knight-battle,
 .quiz-battle-zone.castle-stand-off-mode .knight-battle {
   left: calc(31% - (var(--castle-combat-size) / 2)) !important;
   right: auto !important;
   bottom: 4% !important;
 }
-.quiz-modal.castle-quiz-modal:not(.hidden) .quiz-battle-zone:not(.castle-dodge-mode):not(.castle-boss-mode):not(.castle-final-question-mode):not(.castle-final-hit-mode):not(.castle-stand-off-mode) .enemy-battle,
+.quiz-modal.castle-quiz-modal:not(.hidden) .quiz-battle-zone:not(.castle-dodge-mode):not(.castle-boss-mode):not(.castle-final-question-mode):not(.castle-final-hit-mode):not(.castle-stand-off-mode):not(.castle-bush-mode) .enemy-battle,
 .quiz-battle-zone.castle-boss-mode .enemy-battle,
 .quiz-battle-zone.castle-stand-off-mode .enemy-battle {
   left: calc(64% - (var(--castle-combat-size) / 2)) !important;
@@ -3238,7 +3238,7 @@ p { line-height: 1.5; }
     --castle-combat-size: clamp(92px, 29vw, 122px);
     --castle-sky-size: clamp(86px, 27vw, 116px);
   }
-  .quiz-modal.castle-quiz-modal:not(.hidden) .quiz-battle-zone:not(.castle-dodge-mode):not(.castle-boss-mode):not(.castle-final-question-mode):not(.castle-final-hit-mode):not(.castle-stand-off-mode),
+  .quiz-modal.castle-quiz-modal:not(.hidden) .quiz-battle-zone:not(.castle-dodge-mode):not(.castle-boss-mode):not(.castle-final-question-mode):not(.castle-final-hit-mode):not(.castle-stand-off-mode):not(.castle-bush-mode),
   .quiz-battle-zone.castle-boss-mode,
   .quiz-battle-zone.castle-final-question-mode,
   .quiz-battle-zone.castle-final-hit-mode,
@@ -3853,100 +3853,173 @@ p { line-height: 1.5; }
 }
 
 
-/* ===== v78 Zauberschloss: Tastphase mit Büschen ===== */
+/* ===== v79 Zauberschloss: Tastphase mit gemeinsamer Kampfebene ===== */
 .quiz-battle-zone.castle-bush-mode {
   top: 19% !important;
   height: 60% !important;
   left: 4% !important;
   right: 4% !important;
+  --bush-knight-x: 8.5%;
+  --bush-knight-bottom: 4%;
+  --bush-mage-x: -28%;
+  --bush-mage-bottom: 11%;
 }
+
 .quiz-battle-zone.castle-bush-mode .knight-battle,
 .quiz-battle-zone.castle-bush-mode .enemy-battle {
-  object-fit: contain !important;
+  top: auto !important;
+  right: auto !important;
   max-width: none !important;
   max-height: none !important;
-  transform-origin: center center !important;
+  object-fit: contain !important;
+  transform-origin: center bottom !important;
+  pointer-events: none !important;
 }
+
 .quiz-battle-zone.castle-bush-mode .knight-battle {
-  width: clamp(76px, 19vmin, 132px) !important;
-  height: clamp(76px, 19vmin, 132px) !important;
-  z-index: 12 !important;
+  left: var(--bush-knight-x) !important;
+  bottom: var(--bush-knight-bottom) !important;
+  width: clamp(72px, 18vmin, 126px) !important;
+  height: clamp(72px, 18vmin, 126px) !important;
+  transform: translateX(-50%) scale(.82) !important;
+  transition: none !important;
+  z-index: 22 !important;
 }
+
 .quiz-battle-zone.castle-bush-mode .enemy-battle {
-  width: clamp(86px, 21vmin, 150px) !important;
-  height: clamp(86px, 21vmin, 150px) !important;
-  z-index: 11 !important;
-  transition: left .42s linear, top .42s linear, opacity .18s linear !important;
+  left: var(--bush-mage-x) !important;
+  bottom: var(--bush-mage-bottom) !important;
+  width: clamp(88px, 22vmin, 154px) !important;
+  height: clamp(88px, 22vmin, 154px) !important;
+  transform: translateX(-50%) !important;
+  transition: opacity .15s ease !important;
+  z-index: 18 !important;
 }
-.castle-bush-panel .castle-clone-hud-title,
-.castle-bush-panel .castle-clone-hud #castleCloneRound {
-  min-height: 38px;
+
+.quiz-battle-zone.castle-bush-mode .enemy-battle.castle-bush-hidden {
+  opacity: 0 !important;
+  visibility: hidden !important;
 }
-.castle-bush-playfield {
+
+.castle-bush-layer {
   position: absolute;
   inset: 0;
+  z-index: 19;
   overflow: visible;
   pointer-events: none;
-  z-index: 13;
 }
+
+.castle-bush-layer.hidden {
+  display: none !important;
+}
+
 .castle-bush-slot {
   position: absolute;
-  width: min(22vw, 148px);
-  height: min(22vw, 148px);
-  transform: translate(-50%, -50%);
-  z-index: 13;
+  left: var(--bush-slot-x);
+  bottom: 4%;
+  width: clamp(150px, 23vmin, 190px);
+  aspect-ratio: 1186 / 1212;
+  transform: translateX(-50%);
   pointer-events: none;
 }
+
 .castle-bush-slot.hidden {
   display: none !important;
 }
-.castle-bush-base,
+
+.castle-bush-slot.castle-bush-drop-in {
+  animation: castleBushDropIn .28s cubic-bezier(.2,.85,.35,1.25) both;
+}
+
+@keyframes castleBushDropIn {
+  0% { opacity: 0; transform: translate(-50%, -22%) scale(.74); }
+  100% { opacity: 1; transform: translateX(-50%) scale(1); }
+}
+
+.castle-bush-base {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: auto;
+  display: block;
+  opacity: 1;
+  transition: opacity .1s ease;
+  filter: drop-shadow(0 7px 8px rgba(0,0,0,.26));
+  pointer-events: none;
+}
+
+.castle-bush-slot.castle-bush-showing .castle-bush-base {
+  opacity: 0;
+}
+
 .castle-bush-reveal {
   position: absolute;
-  inset: 0;
+  left: 0;
+  bottom: 0;
   width: 100%;
-  height: 100%;
-}
-.castle-bush-base {
-  display: block;
-  object-fit: contain;
-  filter: drop-shadow(0 7px 8px rgba(0,0,0,.26));
-}
-.castle-bush-base.hidden {
-  display: none !important;
-}
-.castle-bush-reveal {
+  aspect-ratio: 1186 / 1212;
   padding: 0;
+  margin: 0;
   border: 0;
   background: transparent;
   opacity: 0;
-  pointer-events: none;
-  transition: opacity .08s ease;
+  transition: opacity .1s ease;
   cursor: pointer;
+  pointer-events: none;
+  touch-action: manipulation;
 }
-.castle-bush-reveal.hidden {
-  display: none !important;
-}
+
 .castle-bush-reveal.visible {
   opacity: 1;
   pointer-events: auto;
 }
+
+.castle-bush-reveal.visible:disabled {
+  pointer-events: none;
+}
+
 .castle-bush-reveal img {
   width: 100%;
   height: 100%;
+  display: block;
   object-fit: contain;
+  pointer-events: none;
   filter: drop-shadow(0 7px 8px rgba(0,0,0,.26));
 }
+
 .castle-bush-hit-blink {
-  animation: castleBushHitBlink .18s steps(2) 4;
+  animation: castleBushHitBlink .17s steps(2) 5;
 }
+
 @keyframes castleBushHitBlink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: .18; }
+  0%, 100% { opacity: 1; filter: drop-shadow(0 7px 8px rgba(0,0,0,.26)); }
+  50% { opacity: .18; filter: brightness(1.8) drop-shadow(0 0 14px #fff4a7); }
 }
+
+.castle-bush-knight-damage {
+  animation: castleBushKnightDamage .13s steps(2) 5;
+}
+
+@keyframes castleBushKnightDamage {
+  0%, 100% { filter: none; opacity: 1; }
+  50% { filter: sepia(1) saturate(5) hue-rotate(320deg); opacity: .45; }
+}
+
+.castle-bush-panel .castle-clone-hud {
+  z-index: 25;
+}
+
+.castle-bush-panel .castle-clone-dialog {
+  z-index: 26;
+}
+
 @media (max-width: 520px) {
   .castle-bush-slot {
-    width: min(24vw, 108px);
-    height: min(24vw, 108px);
+    width: clamp(136px, 23vmin, 176px);
+  }
+  .quiz-battle-zone.castle-bush-mode .knight-battle {
+    width: clamp(68px, 17vmin, 112px) !important;
+    height: clamp(68px, 17vmin, 112px) !important;
   }
 }
