@@ -29,8 +29,8 @@ const CASTLE_PROJECTILE_SPAWN_MS = 3400;
 const CASTLE_FLIGHT_SWAP_MS = 1200;
 const CASTLE_STUN_MS = 900;
 const CASTLE_FINAL_QUESTION_INDEX = 3;
-const CASTLE_SENSE_PHASE_MS = 12000;
-const CASTLE_SENSE_PHASES_TOTAL = 3;
+const CASTLE_CLONE_ROUNDS_TOTAL = 3;
+const CASTLE_CLONE_COUNT = 20;
 
 const currentArea = window.location.pathname.split('/').pop().replace('.html', '');
 const AREA_TITLES = {
@@ -99,7 +99,7 @@ function resetCastleBattleClasses() {
   const enemy = document.getElementById('quizEnemy');
   const speech = document.getElementById('castleSpeech');
   const beam = document.getElementById('castleBeam');
-  if (zone) zone.classList.remove('castle-boss-mode', 'castle-dodge-mode', 'castle-final-question-mode', 'castle-final-hit-mode', 'castle-stand-off-mode');
+  if (zone) zone.classList.remove('castle-boss-mode', 'castle-dodge-mode', 'castle-final-question-mode', 'castle-final-hit-mode', 'castle-stand-off-mode', 'castle-clone-mode');
   if (knight) {
     knight.classList.remove('castle-runner', 'castle-knight-evade', 'castle-knight-hit', 'castle-final-jump', 'castle-walking');
     knight.style.transform = '';
@@ -140,20 +140,20 @@ function cleanupCastleDodgeGame() {
   resetCastleBattleClasses();
 }
 
-function cleanupCastleSensePhase() {
-  const state = activeQuiz?.castleSense;
+function cleanupCastleCloneSearch() {
+  const state = activeQuiz?.castleClone;
   if (state) {
     state.running = false;
-    if (state.timer) clearInterval(state.timer);
-    if (state.spawnTimer) clearInterval(state.spawnTimer);
-    if (state.timeout) clearTimeout(state.timeout);
+    (state.timers || []).forEach(timer => clearTimeout(timer));
   }
-  if (activeQuiz) activeQuiz.castleSense = null;
-  const panel = document.getElementById('castleSensePanel');
+  if (activeQuiz) activeQuiz.castleClone = null;
+  const panel = document.getElementById('castleClonePanel');
   if (panel) {
     panel.classList.add('hidden');
     panel.innerHTML = '';
   }
+  const zone = document.getElementById('quizBattleZone');
+  if (zone) zone.classList.remove('castle-clone-mode');
 }
 
 function showCastleSpeech(html) {
@@ -820,7 +820,7 @@ function ensureQuizModal() {
         </div>
       </div>
       <div id="castleFinalQuestionPanel" class="quiz-panel castle-final-question-panel hidden"></div>
-      <div id="castleSensePanel" class="quiz-panel castle-sense-panel hidden"></div>
+      <div id="castleClonePanel" class="quiz-panel castle-clone-panel hidden"></div>
       <div id="quizResult" class="quiz-result quiz-panel hidden"></div>
     </div>`;
   document.body.appendChild(modal);
@@ -856,6 +856,7 @@ async function openQuizIntro(quizId) {
   modal.querySelector('#quizResult').classList.add('hidden');
   modal.querySelector('#castleDodgePanel').classList.add('hidden');
   modal.querySelector('#castleFinalQuestionPanel')?.classList.add('hidden');
+  modal.querySelector('#castleClonePanel')?.classList.add('hidden');
   resetCastleBattleClasses();
   clearCastleProjectiles();
   setQuizScene(modal, data, quizId);
@@ -894,7 +895,8 @@ function startQuiz(quizId) {
     seconds: QUIZ_SECONDS,
     finished: false,
     transitioning: false,
-    castleDodge: null
+    castleDodge: null,
+    castleClone: null
   };
   const modal = ensureQuizModal();
   setQuizScene(modal, data, quizId);
@@ -902,6 +904,7 @@ function startQuiz(quizId) {
   modal.querySelector('#quizResult').classList.add('hidden');
   modal.querySelector('#castleDodgePanel').classList.add('hidden');
   modal.querySelector('#castleFinalQuestionPanel')?.classList.add('hidden');
+  modal.querySelector('#castleClonePanel')?.classList.add('hidden');
   const game = modal.querySelector('#quizGame');
   game.className = 'quiz-game quiz-panel hidden';
   game.style.display = '';
@@ -1531,289 +1534,195 @@ async function playCastleFinalHit() {
   zone.classList.remove('castle-final-hit-mode');
   zone.classList.add('castle-stand-off-mode');
   await wait(520);
-  startCastleSensePhase(1);
+  await startCastleCloneSearchSequence();
 }
 
 
-function castleSensePhaseConfig(phase) {
-  if (phase === 1) {
-    return {
-      title: 'Phase 1: Sehen',
-      subtitle: 'Tippe die echten Augensymbole an.',
-      type: 'vision',
-      target: 3
-    };
-  }
-  if (phase === 2) {
-    return {
-      title: 'Phase 2: Hören',
-      subtitle: 'Merke dir die Klangfolge und tippe sie nach.',
-      type: 'hearing',
-      target: 1
-    };
-  }
-  return {
-    title: 'Phase 3: Riechen',
-    subtitle: 'Sammle gute Duftwolken und meide Stinkwolken.',
-    type: 'smell',
-    target: 4
-  };
-}
 
-function startCastleSensePhase(phase) {
-  cleanupCastleSensePhase();
-  const panel = document.getElementById('castleSensePanel');
+async function startCastleCloneSearchSequence() {
+  cleanupCastleCloneSearch();
   const zone = document.getElementById('quizBattleZone');
   const knight = document.getElementById('quizKnight');
   const enemy = document.getElementById('quizEnemy');
-  if (!panel || !activeQuiz) return;
-  const config = castleSensePhaseConfig(phase);
-  activeQuiz.castleSense = {
-    phase,
-    type: config.type,
-    score: 0,
-    target: config.target,
-    running: true,
-    remaining: config.type === 'hearing' ? 15 : 12,
-    timer: null,
-    spawnTimer: null,
-    timeout: null,
-    sequence: [],
-    inputIndex: 0
-  };
-  if (zone) zone.classList.add('castle-sense-mode');
-  if (knight) knight.src = castleKnightAsset('normal');
-  if (enemy) enemy.src = castleEnemyAsset('laugh');
+  if (!activeQuiz || !zone || !knight || !enemy) return;
 
-  panel.className = 'quiz-panel castle-sense-panel';
+  zone.classList.remove('castle-final-hit-mode');
+  zone.classList.add('castle-stand-off-mode');
+  knight.src = castleKnightAsset('normal');
+  enemy.src = castleEnemyAsset('laugh');
+  await wait(420);
+
+  enemy.src = castleEnemyAsset('flyLeft');
+  enemy.classList.remove('castle-flight-left');
+  void enemy.offsetWidth;
+  enemy.classList.add('castle-flight-left');
+  await wait(1150);
+  enemy.classList.remove('castle-flight-left');
+
+  if (!activeQuiz) return;
+  zone.classList.remove('castle-stand-off-mode');
+  zone.classList.add('castle-clone-mode');
+  startCastleCloneSearch();
+}
+
+function startCastleCloneSearch() {
+  cleanupCastleCloneSearch();
+  const panel = document.getElementById('castleClonePanel');
+  const zone = document.getElementById('quizBattleZone');
+  if (!panel || !zone || !activeQuiz) return;
+
+  activeQuiz.castleClone = {
+    round: 1,
+    running: true,
+    locked: false,
+    timers: []
+  };
+  zone.classList.add('castle-clone-mode');
+  panel.className = 'quiz-panel castle-clone-panel';
   panel.innerHTML = `
-    <div class="castle-sense-head">
-      <strong>${config.title}</strong>
-      <span id="castleSenseTimer">${activeQuiz.castleSense.remaining}</span>
+    <div class="castle-clone-head">
+      <strong>Finde den ruhigen Zauberer!</strong>
+      <span id="castleCloneRound">Runde 1 / ${CASTLE_CLONE_ROUNDS_TOTAL}</span>
     </div>
-    <p>${config.subtitle}</p>
-    <div id="castleSenseStatus" class="castle-sense-status">0 / ${config.target}</div>
-    <div id="castleSensePlayfield" class="castle-sense-playfield"></div>
+    <p>19 Figuren blinken leicht. Klicke auf die einzige Figur, die nicht blinkt.</p>
+    <div id="castleClonePlayfield" class="castle-clone-playfield" aria-live="polite"></div>
   `;
   panel.classList.remove('hidden');
-
-  if (config.type === 'vision') setupCastleVisionPhase();
-  else if (config.type === 'hearing') setupCastleHearingPhase();
-  else setupCastleSmellPhase();
-
-  activeQuiz.castleSense.timer = setInterval(() => {
-    const state = activeQuiz?.castleSense;
-    if (!state || !state.running) return;
-    state.remaining -= 1;
-    const timer = document.getElementById('castleSenseTimer');
-    if (timer) timer.textContent = state.remaining;
-    if (state.remaining <= 0) completeCastleSensePhase(false);
-  }, 1000);
+  renderCastleCloneRound();
 }
 
-function updateCastleSenseStatus() {
-  const state = activeQuiz?.castleSense;
-  const status = document.getElementById('castleSenseStatus');
-  if (!state || !status) return;
-  status.textContent = `${state.score} / ${state.target}`;
+function trackCastleCloneTimer(callback, delay) {
+  const state = activeQuiz?.castleClone;
+  if (!state || !state.running) return null;
+  const timer = setTimeout(() => {
+    const current = activeQuiz?.castleClone;
+    if (!current || !current.running) return;
+    current.timers = current.timers.filter(id => id !== timer);
+    callback();
+  }, delay);
+  state.timers.push(timer);
+  return timer;
 }
 
-function castleRandomPercent(min, max) {
-  return min + Math.random() * (max - min);
-}
+function renderCastleCloneRound() {
+  const state = activeQuiz?.castleClone;
+  const field = document.getElementById('castleClonePlayfield');
+  const roundLabel = document.getElementById('castleCloneRound');
+  if (!state || !state.running || !field) return;
+  state.locked = true;
+  if (roundLabel) roundLabel.textContent = `Runde ${state.round} / ${CASTLE_CLONE_ROUNDS_TOTAL}`;
 
-function setupCastleVisionPhase() {
-  const state = activeQuiz.castleSense;
-  const field = document.getElementById('castleSensePlayfield');
-  if (!field) return;
-
-  function spawnVisionSet() {
-    if (!activeQuiz?.castleSense?.running) return;
-    field.innerHTML = '';
-    const positions = [
-      [18, 24], [48, 18], [75, 28], [28, 58], [62, 62]
-    ].sort(() => Math.random() - 0.5);
-    const realIndex = Math.floor(Math.random() * positions.length);
-    positions.forEach(([x, y], idx) => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = `castle-sense-target vision-target ${idx === realIndex ? 'real' : 'fake'}`;
-      btn.style.left = `${x}%`;
-      btn.style.top = `${y}%`;
-      btn.textContent = idx === realIndex ? '👁️' : ['◆', '✦', '☾', '✧'][idx % 4];
-      btn.addEventListener('click', () => {
-        const s = activeQuiz?.castleSense;
-        if (!s || !s.running) return;
-        if (idx === realIndex) {
-          s.score += 1;
-          playSfx(sfxCorrect);
-          updateCastleSenseStatus();
-          if (s.score >= s.target) completeCastleSensePhase(true);
-          else spawnVisionSet();
-        } else {
-          btn.classList.add('wrong-sense-target');
-          playSfx(sfxWrong);
-        }
-      });
-      field.appendChild(btn);
-    });
-  }
-
-  spawnVisionSet();
-}
-
-function setupCastleHearingPhase() {
-  const state = activeQuiz.castleSense;
-  const field = document.getElementById('castleSensePlayfield');
-  const status = document.getElementById('castleSenseStatus');
-  if (!field || !state) return;
-  state.sequence = Array.from({ length: 4 }, () => Math.floor(Math.random() * 4));
-  state.inputIndex = 0;
-  state.target = state.sequence.length;
-  state.score = 0;
-  if (status) status.textContent = 'Merken …';
-
+  field.className = 'castle-clone-playfield previewing';
   field.innerHTML = `
-    <div class="castle-simon-grid">
-      ${['♩', '♪', '♫', '♬'].map((s, i) => `<button type="button" class="castle-simon-button" data-note="${i}">${s}</button>`).join('')}
+    <div class="castle-clone-origin-wrap">
+      <img class="castle-clone-origin" src="${castleEnemyAsset('normal')}" alt="Zauberer">
     </div>
   `;
-  const buttons = [...field.querySelectorAll('.castle-simon-button')];
-  buttons.forEach(btn => btn.disabled = true);
+  const origin = field.querySelector('.castle-clone-origin');
+  requestAnimationFrame(() => origin?.classList.add('visible'));
 
-  let delay = 550;
-  state.sequence.forEach((note, idx) => {
-    setTimeout(() => {
-      const btn = buttons[note];
-      if (!btn || !activeQuiz?.castleSense?.running) return;
-      btn.classList.add('active-note');
-      setTimeout(() => btn.classList.remove('active-note'), 430);
-      if (idx === state.sequence.length - 1) {
-        setTimeout(() => {
-          if (!activeQuiz?.castleSense?.running) return;
-          buttons.forEach(b => b.disabled = false);
-          if (status) status.textContent = `0 / ${state.sequence.length}`;
-        }, 620);
-      }
-    }, delay);
-    delay += 620;
-  });
-
-  buttons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const s = activeQuiz?.castleSense;
-      if (!s || !s.running) return;
-      const note = Number(btn.dataset.note);
-      btn.classList.add('active-note');
-      setTimeout(() => btn.classList.remove('active-note'), 220);
-      if (note === s.sequence[s.inputIndex]) {
-        s.inputIndex += 1;
-        s.score = s.inputIndex;
-        playSfx(sfxCorrect);
-        if (status) status.textContent = `${s.score} / ${s.sequence.length}`;
-        if (s.inputIndex >= s.sequence.length) completeCastleSensePhase(true);
-      } else {
-        playSfx(sfxWrong);
-        s.inputIndex = 0;
-        s.score = 0;
-        if (status) status.textContent = `0 / ${s.sequence.length}`;
-        buttons.forEach(b => b.classList.add('wrong-sense-target'));
-        setTimeout(() => buttons.forEach(b => b.classList.remove('wrong-sense-target')), 380);
-      }
-    });
-  });
+  trackCastleCloneTimer(() => {
+    origin?.classList.add('splitting');
+    trackCastleCloneTimer(() => buildCastleCloneGrid(), 360);
+  }, 900);
 }
 
-function setupCastleSmellPhase() {
-  const state = activeQuiz.castleSense;
-  const field = document.getElementById('castleSensePlayfield');
-  if (!field) return;
+function buildCastleCloneGrid() {
+  const state = activeQuiz?.castleClone;
+  const field = document.getElementById('castleClonePlayfield');
+  if (!state || !state.running || !field) return;
 
-  function spawnCloud() {
-    const s = activeQuiz?.castleSense;
-    if (!s || !s.running) return;
-    const cloud = document.createElement('button');
-    const good = Math.random() > 0.38;
-    cloud.type = 'button';
-    cloud.className = `castle-sense-target smell-cloud ${good ? 'good' : 'bad'}`;
-    cloud.style.left = `${castleRandomPercent(12, 82)}%`;
-    cloud.style.top = `${castleRandomPercent(18, 72)}%`;
-    cloud.textContent = good ? '☁️' : '🟢';
-    cloud.addEventListener('click', () => {
-      const st = activeQuiz?.castleSense;
-      if (!st || !st.running) return;
-      if (good) {
-        st.score += 1;
-        playSfx(sfxCorrect);
-        updateCastleSenseStatus();
-        cloud.remove();
-        if (st.score >= st.target) completeCastleSensePhase(true);
-      } else {
-        cloud.classList.add('wrong-sense-target');
-        playSfx(sfxWrong);
-        setTimeout(() => cloud.remove(), 220);
-      }
-    });
-    field.appendChild(cloud);
-    setTimeout(() => cloud.remove(), 1600);
+  const stillIndex = Math.floor(Math.random() * CASTLE_CLONE_COUNT);
+  const grid = document.createElement('div');
+  grid.className = 'castle-clone-grid';
+
+  for (let index = 0; index < CASTLE_CLONE_COUNT; index += 1) {
+    const button = document.createElement('button');
+    const isStill = index === stillIndex;
+    button.type = 'button';
+    button.className = `castle-clone-choice ${isStill ? 'is-still' : 'is-blinking'}`;
+    button.style.setProperty('--clone-delay', `${(index % 7) * -0.11}s`);
+    button.setAttribute('aria-label', isStill ? 'Nicht blinkender Zauberer' : 'Blinkender Zauberer');
+    button.innerHTML = `<img src="${castleEnemyAsset('normal')}" alt="">`;
+    button.addEventListener('click', () => handleCastleCloneChoice(button, isStill));
+    grid.appendChild(button);
   }
 
-  spawnCloud();
-  state.spawnTimer = setInterval(spawnCloud, 850);
+  field.className = 'castle-clone-playfield choosing';
+  field.innerHTML = '';
+  field.appendChild(grid);
+  requestAnimationFrame(() => grid.classList.add('visible'));
+  trackCastleCloneTimer(() => {
+    const current = activeQuiz?.castleClone;
+    if (current?.running) current.locked = false;
+  }, 360);
 }
 
-async function completeCastleSensePhase(success = true) {
-  const state = activeQuiz?.castleSense;
+async function handleCastleCloneChoice(button, isStill) {
+  const state = activeQuiz?.castleClone;
+  if (!state || !state.running || state.locked) return;
+
+  if (!isStill) {
+    playSfx(sfxWrong);
+    button.classList.remove('wrong-clone-choice');
+    void button.offsetWidth;
+    button.classList.add('wrong-clone-choice');
+    trackCastleCloneTimer(() => button.classList.remove('wrong-clone-choice'), 420);
+    return;
+  }
+
+  state.locked = true;
+  playSfx(sfxCorrect);
+  const choices = [...document.querySelectorAll('.castle-clone-choice')];
+  choices.forEach(choice => {
+    choice.disabled = true;
+    choice.classList.remove('is-blinking');
+  });
+  button.classList.add('found-clone-choice');
+
+  await wait(650);
+  const current = activeQuiz?.castleClone;
+  if (!current || !current.running) return;
+  if (current.round < CASTLE_CLONE_ROUNDS_TOTAL) {
+    current.round += 1;
+    renderCastleCloneRound();
+  } else {
+    await finishCastleCloneSearch();
+  }
+}
+
+async function finishCastleCloneSearch() {
+  const state = activeQuiz?.castleClone;
+  const panel = document.getElementById('castleClonePanel');
   if (!state || !state.running) return;
   state.running = false;
-  if (state.timer) clearInterval(state.timer);
-  if (state.spawnTimer) clearInterval(state.spawnTimer);
-  const panel = document.getElementById('castleSensePanel');
-  const config = castleSensePhaseConfig(state.phase);
+
   if (panel) {
     panel.innerHTML = `
-      <div class="castle-sense-complete">
-        <h2>${success ? 'Geschafft!' : 'Weiter!'}</h2>
-        <p>${config.title} abgeschlossen.</p>
+      <div class="castle-clone-complete">
+        <h2>Geschafft!</h2>
+        <p>Du hast den nicht blinkenden Zauberer dreimal gefunden.</p>
       </div>
     `;
   }
-  await wait(780);
-  const next = state.phase + 1;
-  cleanupCastleSensePhase();
-  if (next <= CASTLE_SENSE_PHASES_TOTAL) {
-    startCastleSensePhase(next);
-  } else {
-    showCastleStandoffResult();
-  }
-}
+  await wait(760);
 
-function showCastleStandoffResult() {
   const zone = document.getElementById('quizBattleZone');
   const knight = document.getElementById('quizKnight');
   const enemy = document.getElementById('quizEnemy');
+  cleanupCastleCloneSearch();
   if (zone) {
-    zone.classList.remove('castle-sense-mode', 'castle-final-hit-mode');
+    zone.classList.remove('castle-clone-mode', 'castle-final-hit-mode');
     zone.classList.add('castle-stand-off-mode');
   }
   if (knight) knight.src = castleKnightAsset('normal');
   if (enemy) enemy.src = castleEnemyAsset('laugh');
+  if (activeQuiz) {
+    activeQuiz.cloneSearchCompleted = true;
+    activeQuiz.transitioning = false;
+  }
   setAreaProgress({ level2Completed: true });
   applyMarkerStates();
-  const result = document.getElementById('quizResult');
-  if (result) {
-    result.className = 'quiz-result quiz-panel quiz-final-result castle-standoff-result';
-    result.classList.remove('hidden');
-    result.innerHTML = `
-      <h2>Treffer gelandet</h2>
-      <p>Der Ritter hat den Zauberer erreicht und die ersten Sinnesprüfungen bestanden.</p>
-      <div class="quiz-result-actions single-action">
-        <button id="closeQuizButton" class="primary-button" type="button">Zur Weltkarte</button>
-      </div>
-    `;
-    const btn = document.getElementById('closeQuizButton');
-    if (btn) btn.addEventListener('click', returnToOverworld);
-  }
 }
 
 
@@ -1930,7 +1839,7 @@ function showWinResultSlide(result, reward, slide, fragmentStatus = {}) {
 
 async function returnToOverworld() {
   cleanupCastleDodgeGame();
-  cleanupCastleSensePhase();
+  cleanupCastleCloneSearch();
   const modal = ensureQuizModal();
   modal.classList.add('hidden');
   pauseBossMusic();
@@ -1942,7 +1851,7 @@ async function returnToOverworld() {
 
 async function exitLevel() {
   cleanupCastleDodgeGame();
-  cleanupCastleSensePhase();
+  cleanupCastleCloneSearch();
   pauseBossMusic();
   pauseLevelMusic();
   await moveToNode('start');
