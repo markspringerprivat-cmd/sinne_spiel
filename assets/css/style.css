@@ -3481,3 +3481,196 @@ p { line-height: 1.5; }
     height: min(100%, 66px);
   }
 }
+
+
+/* ===== v71 Zauberschloss: Sehphase als Pop-up auf dem Kampfhintergrund ===== */
+.quiz-battle-zone.castle-clone-mode {
+  top: 19% !important;
+  height: 60% !important;
+  left: 4% !important;
+  right: 4% !important;
+  --castle-player-left: 31%;
+  --castle-clone-mage-left: 64%;
+  --castle-clone-mage-top: 22%;
+}
+.quiz-battle-zone.castle-clone-mode .knight-battle,
+.quiz-battle-zone.castle-clone-mode .enemy-battle {
+  opacity: 1 !important;
+  pointer-events: none !important;
+  object-fit: contain !important;
+}
+.quiz-battle-zone.castle-clone-mode .knight-battle {
+  left: calc(var(--castle-player-left, 31%) - (var(--castle-combat-size) / 2)) !important;
+  right: auto !important;
+  bottom: 4% !important;
+  width: var(--castle-combat-size) !important;
+  height: var(--castle-combat-size) !important;
+  z-index: 8 !important;
+  transition: left .55s linear, transform .2s ease !important;
+}
+.quiz-battle-zone.castle-clone-mode .enemy-battle {
+  left: calc(var(--castle-clone-mage-left, 64%) - (var(--castle-sky-size) / 2)) !important;
+  right: auto !important;
+  top: var(--castle-clone-mage-top, 22%) !important;
+  bottom: auto !important;
+  width: var(--castle-sky-size) !important;
+  height: var(--castle-sky-size) !important;
+  z-index: 9 !important;
+  transition: left .35s ease, top .35s ease, opacity .25s ease !important;
+  animation: castleDodgeMageFloat 2.4s ease-in-out infinite !important;
+}
+.quiz-battle-zone.castle-clone-mode .enemy-battle.castle-clone-hidden {
+  opacity: 0 !important;
+}
+.quiz-battle-zone.castle-clone-mode .enemy-battle.castle-clone-mage-enter {
+  animation: castleCloneMageEnter .9s ease-out both, castleDodgeMageFloat 2.4s ease-in-out .9s infinite !important;
+}
+@keyframes castleCloneMageEnter {
+  0% { transform: translate(-250%, -18%) scale(.88); opacity: 0; }
+  55% { opacity: 1; }
+  100% { transform: translate(0, 0) scale(1); opacity: 1; }
+}
+.castle-clone-panel {
+  inset: 0 !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  overflow: hidden !important;
+  z-index: 12 !important;
+  pointer-events: none;
+}
+.castle-clone-panel::before,
+.castle-clone-panel::after {
+  display: none !important;
+}
+.castle-clone-panel.hidden {
+  display: none !important;
+}
+.castle-clone-hud {
+  position: absolute;
+  top: 1.5%;
+  right: 1.5%;
+  z-index: 14;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+}
+.castle-clone-hud-title,
+.castle-clone-hud #castleCloneRound {
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 8px 13px;
+  border-radius: 999px;
+  background: rgba(255,247,214,.94);
+  color: #4b2a16;
+  font-weight: 950;
+  box-shadow: 0 8px 18px rgba(0,0,0,.18);
+}
+.castle-clone-hud #castleCloneRound {
+  background: rgba(255,255,255,.92);
+  color: #5b268b;
+}
+.castle-clone-dialog {
+  position: absolute;
+  left: 50%;
+  top: 3%;
+  transform: translateX(-50%);
+  width: min(78%, 560px);
+  display: grid;
+  gap: 14px;
+  padding: 18px 22px;
+  border-radius: 24px;
+  background: rgba(255,250,236,.97);
+  border: 2px solid rgba(255,255,255,.85);
+  box-shadow: 0 18px 36px rgba(0,0,0,.26);
+  color: #3e2a17;
+  font-weight: 850;
+  line-height: 1.35;
+  pointer-events: auto;
+  z-index: 15;
+}
+.castle-clone-dialog.hidden {
+  display: none !important;
+}
+.castle-clone-dialog p {
+  margin: 0;
+  font-size: clamp(.92rem, 2.5vmin, 1.06rem);
+}
+.castle-clone-dialog .primary-button {
+  justify-self: center;
+}
+.castle-clone-playfield {
+  position: absolute;
+  inset: 0;
+  z-index: 13;
+  background: transparent !important;
+  pointer-events: auto;
+}
+.castle-clone-playfield.hidden {
+  display: none !important;
+}
+.castle-clone-choice {
+  position: absolute;
+  width: clamp(70px, 13vmin, 102px);
+  height: clamp(70px, 13vmin, 102px);
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 18px;
+  background: transparent;
+  box-shadow: none;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.castle-clone-choice:hover:not(:disabled),
+.castle-clone-choice:focus-visible:not(:disabled) {
+  outline: 2px solid rgba(255, 241, 178, .95);
+  outline-offset: 2px;
+  background: rgba(255,255,255,.08);
+}
+.castle-clone-choice img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  filter: drop-shadow(0 7px 8px rgba(31, 8, 50, .32));
+}
+.castle-clone-choice.is-blinking img {
+  animation: castleCloneSoftBlink 1.05s ease-in-out infinite;
+  animation-delay: var(--clone-delay, 0s);
+}
+@media (max-width: 520px) {
+  .castle-clone-dialog {
+    width: min(92%, 560px);
+    top: 2%;
+    padding: 14px 16px;
+  }
+  .castle-clone-hud {
+    top: 1%;
+    right: 1%;
+    gap: 6px;
+  }
+  .castle-clone-hud-title,
+  .castle-clone-hud #castleCloneRound {
+    min-height: 32px;
+    padding: 6px 10px;
+    font-size: .8rem;
+  }
+  .castle-clone-choice {
+    width: min(24vw, 84px);
+    height: min(24vw, 84px);
+  }
+}
