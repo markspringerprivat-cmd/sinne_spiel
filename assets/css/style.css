@@ -2761,3 +2761,166 @@ p { line-height: 1.5; }
   bottom: max(1.4%, env(safe-area-inset-bottom)) !important;
   min-height: 20% !important;
 }
+
+/* ===== v65 Zauberschloss: Größen, iPhone-Bedienung und Finale im Popup ===== */
+.quiz-modal:not(.hidden),
+.quiz-modal:not(.hidden) * {
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none !important;
+}
+.castle-dodge-controls,
+.castle-dodge-controls button,
+.castle-arrow-button {
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none !important;
+  touch-action: none !important;
+  -webkit-tap-highlight-color: transparent;
+}
+.castle-arrow-button {
+  width: min(38%, 150px) !important;
+  min-height: 58px !important;
+  border-radius: 999px !important;
+  font-size: clamp(2rem, 8vmin, 3.2rem) !important;
+  line-height: 1 !important;
+  padding: 4px 16px !important;
+}
+.quiz-battle-zone.castle-boss-mode .knight-battle,
+.quiz-battle-zone.castle-boss-mode .enemy-battle,
+.quiz-battle-zone.castle-final-question-mode .knight-battle,
+.quiz-battle-zone.castle-final-question-mode .enemy-battle,
+.quiz-battle-zone.castle-final-hit-mode .knight-battle,
+.quiz-battle-zone.castle-final-hit-mode .enemy-battle,
+.quiz-battle-zone.castle-stand-off-mode .knight-battle,
+.quiz-battle-zone.castle-stand-off-mode .enemy-battle {
+  width: 28% !important;
+  height: 72% !important;
+  object-fit: contain !important;
+}
+.quiz-battle-zone.castle-boss-mode .knight-battle {
+  left: 12% !important;
+  right: auto !important;
+  bottom: -2% !important;
+}
+.quiz-battle-zone.castle-boss-mode .enemy-battle {
+  left: 58% !important;
+  right: auto !important;
+  bottom: 14% !important;
+}
+.quiz-battle-zone.castle-dodge-mode .knight-battle {
+  left: var(--castle-player-left, 50%) !important;
+  width: 22% !important;
+  height: 60% !important;
+  bottom: -3% !important;
+}
+.quiz-battle-zone.castle-dodge-mode .enemy-battle {
+  left: var(--castle-mage-left, -7%) !important;
+  right: auto !important;
+  width: 22% !important;
+  height: 58% !important;
+  bottom: 64% !important;
+}
+.quiz-battle-zone.castle-dodge-mode .castle-projectile {
+  width: clamp(16px, 2.7vmin, 28px) !important;
+  height: clamp(16px, 2.7vmin, 28px) !important;
+}
+.quiz-battle-zone.castle-final-question-mode .knight-battle,
+.quiz-battle-zone.castle-final-hit-mode .knight-battle {
+  left: 18% !important;
+  right: auto !important;
+  bottom: -3% !important;
+}
+.quiz-battle-zone.castle-final-question-mode .enemy-battle,
+.quiz-battle-zone.castle-final-hit-mode .enemy-battle {
+  left: 55% !important;
+  right: auto !important;
+  bottom: 32% !important;
+}
+.quiz-battle-zone.castle-stand-off-mode .knight-battle {
+  left: 27% !important;
+  right: auto !important;
+  bottom: -3% !important;
+}
+.quiz-battle-zone.castle-stand-off-mode .enemy-battle {
+  left: 50% !important;
+  right: auto !important;
+  bottom: -3% !important;
+}
+.castle-final-question-panel {
+  top: auto !important;
+  bottom: max(1.2%, env(safe-area-inset-bottom)) !important;
+  min-height: 29% !important;
+  z-index: 10 !important;
+  display: grid;
+  align-content: center;
+  gap: 8px;
+}
+.castle-final-question-panel.hidden {
+  display: none !important;
+}
+.castle-final-question-panel h2 {
+  margin: 0 !important;
+  font-size: clamp(1.35rem, 4.6vmin, 2rem);
+}
+.castle-final-question-text {
+  margin: 0 auto 4px !important;
+  max-width: 34rem;
+  font-weight: 900;
+}
+.castle-final-answers {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.castle-final-jump {
+  animation: castleFinalJump 1.15s ease-in-out both;
+  z-index: 9 !important;
+}
+@keyframes castleFinalJump {
+  0% { transform: translate(0, 0) scale(1); }
+  42% { transform: translate(95%, -78%) scale(1.06); }
+  58% { transform: translate(108%, -88%) scale(1.08); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+.castle-final-damage-blink {
+  animation: castleFinalDamageBlink .18s linear 7;
+}
+@keyframes castleFinalDamageBlink {
+  0%, 100% { filter: drop-shadow(0 12px 13px rgba(0,0,0,.33)) brightness(1); opacity: 1; }
+  50% { filter: drop-shadow(0 0 22px rgba(210, 112, 255, .92)) brightness(1.75); opacity: .55; }
+}
+.castle-standoff-result {
+  min-height: 27% !important;
+  max-height: 31% !important;
+}
+@media (max-width: 520px) {
+  .quiz-battle-zone.castle-boss-mode .knight-battle,
+  .quiz-battle-zone.castle-boss-mode .enemy-battle,
+  .quiz-battle-zone.castle-final-question-mode .knight-battle,
+  .quiz-battle-zone.castle-final-question-mode .enemy-battle,
+  .quiz-battle-zone.castle-final-hit-mode .knight-battle,
+  .quiz-battle-zone.castle-final-hit-mode .enemy-battle,
+  .quiz-battle-zone.castle-stand-off-mode .knight-battle,
+  .quiz-battle-zone.castle-stand-off-mode .enemy-battle {
+    width: 32% !important;
+  }
+  .quiz-battle-zone.castle-dodge-mode .knight-battle,
+  .quiz-battle-zone.castle-dodge-mode .enemy-battle {
+    width: 26% !important;
+  }
+  .castle-final-answers {
+    gap: 6px;
+  }
+  .castle-final-question-panel {
+    left: 3% !important;
+    right: 3% !important;
+    min-height: 32% !important;
+    padding: 12px !important;
+  }
+  .castle-final-question-panel .quiz-answer {
+    padding: 7px 8px !important;
+    min-height: 38px !important;
+    font-size: .9rem !important;
+  }
+}

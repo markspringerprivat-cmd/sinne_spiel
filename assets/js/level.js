@@ -28,6 +28,7 @@ const CASTLE_DODGE_DURATION_MS = 30000;
 const CASTLE_PROJECTILE_SPAWN_MS = 3400;
 const CASTLE_FLIGHT_SWAP_MS = 1200;
 const CASTLE_STUN_MS = 900;
+const CASTLE_FINAL_QUESTION_INDEX = 3;
 
 const currentArea = window.location.pathname.split('/').pop().replace('.html', '');
 const AREA_TITLES = {
@@ -85,13 +86,13 @@ function resetCastleBattleClasses() {
   const enemy = document.getElementById('quizEnemy');
   const speech = document.getElementById('castleSpeech');
   const beam = document.getElementById('castleBeam');
-  if (zone) zone.classList.remove('castle-boss-mode', 'castle-dodge-mode');
+  if (zone) zone.classList.remove('castle-boss-mode', 'castle-dodge-mode', 'castle-final-question-mode', 'castle-final-hit-mode', 'castle-stand-off-mode');
   if (knight) {
-    knight.classList.remove('castle-runner', 'castle-knight-evade', 'castle-knight-hit');
+    knight.classList.remove('castle-runner', 'castle-knight-evade', 'castle-knight-hit', 'castle-final-jump');
     knight.style.transform = '';
   }
   if (enemy) {
-    enemy.classList.remove('castle-boss-dodge', 'castle-boss-smirk', 'castle-flight-left', 'castle-flight-right', 'castle-hover-drop', 'castle-hovering', 'castle-flyer', 'castle-pass-left', 'castle-pass-right');
+    enemy.classList.remove('castle-boss-dodge', 'castle-boss-smirk', 'castle-flight-left', 'castle-flight-right', 'castle-hover-drop', 'castle-hovering', 'castle-flyer', 'castle-pass-left', 'castle-pass-right', 'castle-final-damage-blink');
     enemy.style.transform = '';
   }
   if (speech) {
@@ -99,7 +100,10 @@ function resetCastleBattleClasses() {
     speech.innerHTML = '';
   }
   if (beam) beam.classList.add('hidden');
+  const finalPanel = document.getElementById('castleFinalQuestionPanel');
+  if (finalPanel) finalPanel.classList.add('hidden');
 }
+
 
 function clearCastleProjectiles() {
   const layer = document.getElementById('castleProjectileLayer');
@@ -778,10 +782,11 @@ function ensureQuizModal() {
         <p class="castle-dodge-info">Weiche den lilanen Bällen aus.</p>
         <div id="castleDodgeFeedback" class="castle-dodge-feedback hidden"></div>
         <div class="castle-dodge-controls">
-          <button id="castleMoveLeft" class="ghost-button" type="button">← Links</button>
-          <button id="castleMoveRight" class="primary-button" type="button">Rechts →</button>
+          <button id="castleMoveLeft" class="ghost-button castle-arrow-button" type="button" aria-label="Nach links laufen">←</button>
+          <button id="castleMoveRight" class="primary-button castle-arrow-button" type="button" aria-label="Nach rechts laufen">→</button>
         </div>
       </div>
+      <div id="castleFinalQuestionPanel" class="quiz-panel castle-final-question-panel hidden"></div>
       <div id="quizResult" class="quiz-result quiz-panel hidden"></div>
     </div>`;
   document.body.appendChild(modal);
@@ -815,6 +820,7 @@ async function openQuizIntro(quizId) {
   modal.querySelector('#quizGame').classList.add('hidden');
   modal.querySelector('#quizResult').classList.add('hidden');
   modal.querySelector('#castleDodgePanel').classList.add('hidden');
+  modal.querySelector('#castleFinalQuestionPanel')?.classList.add('hidden');
   resetCastleBattleClasses();
   clearCastleProjectiles();
   setQuizScene(modal, data, quizId);
@@ -860,6 +866,7 @@ function startQuiz(quizId) {
   modal.querySelector('#quizIntro').classList.add('hidden');
   modal.querySelector('#quizResult').classList.add('hidden');
   modal.querySelector('#castleDodgePanel').classList.add('hidden');
+  modal.querySelector('#castleFinalQuestionPanel')?.classList.add('hidden');
   const game = modal.querySelector('#quizGame');
   game.className = 'quiz-game quiz-panel hidden';
   game.style.display = '';
@@ -1165,9 +1172,9 @@ function spawnCastleProjectile() {
   el.className = 'castle-projectile';
   const x = Math.max(10, Math.min(90, state.mageX + 15 + (Math.random() * 14 - 7)));
   el.style.left = `${x}%`;
-  el.style.top = '10%';
+  el.style.top = '6%';
   layer.appendChild(el);
-  state.projectiles.push({ el, x, y: 10, speed: 31 + Math.random() * 4 });
+  state.projectiles.push({ el, x, y: 6, speed: 31 + Math.random() * 4 });
 }
 
 function setCastleMagePosition() {
@@ -1267,6 +1274,9 @@ function installCastleHoldControls() {
   if (!left || !right || left.dataset.holdReady === '1') return;
   const bind = (button, dir) => {
     button.dataset.holdReady = '1';
+    button.addEventListener('contextmenu', event => event.preventDefault());
+    button.addEventListener('selectstart', event => event.preventDefault());
+    button.addEventListener('touchstart', event => event.preventDefault(), { passive: false });
     button.addEventListener('pointerdown', event => {
       event.preventDefault();
       button.setPointerCapture?.(event.pointerId);
@@ -1328,27 +1338,140 @@ async function startCastleDodgeGame() {
   activeQuiz.castleDodge.rafId = requestAnimationFrame(castleDodgeFrame);
 }
 
+function stopCastleDodgeLoop() {
+  if (!activeQuiz?.castleDodge) return;
+  const state = activeQuiz.castleDodge;
+  state.running = false;
+  if (state.spawnTimer) clearInterval(state.spawnTimer);
+  if (state.flightTimer) clearInterval(state.flightTimer);
+  if (state.rafId) cancelAnimationFrame(state.rafId);
+  state.moveDir = 0;
+}
+
 function finishCastleDodgeGame() {
   if (!activeQuiz) return;
-  cleanupCastleDodgeGame();
+  stopCastleDodgeLoop();
+  clearCastleProjectiles();
+  const dodgePanel = document.getElementById('castleDodgePanel');
+  const layer = document.getElementById('castleProjectileLayer');
+  const zone = document.getElementById('quizBattleZone');
+  const knight = document.getElementById('quizKnight');
+  const enemy = document.getElementById('quizEnemy');
+  if (dodgePanel) dodgePanel.classList.add('hidden');
+  if (layer) layer.classList.add('hidden');
+  if (zone) {
+    zone.classList.remove('castle-dodge-mode');
+    zone.classList.add('castle-final-question-mode');
+    zone.style.setProperty('--castle-player-left', '50%');
+    zone.style.setProperty('--castle-mage-left', '50%');
+  }
+  if (knight) {
+    knight.src = knightAsset('normal');
+    knight.classList.remove('castle-runner', 'castle-knight-hit');
+    knight.style.transform = '';
+  }
+  if (enemy) {
+    enemy.src = castleEnemyAsset('hover');
+    enemy.classList.remove('castle-flyer', 'castle-pass-left', 'castle-pass-right');
+    enemy.style.transform = '';
+  }
+  showCastleFinalQuestion();
+}
+
+function showCastleFinalQuestion() {
+  const panel = document.getElementById('castleFinalQuestionPanel');
+  if (!panel || !activeQuiz) return;
+  const fallback = [
+    'Welche Aussage über die Sinne ist richtig?',
+    ['Mehrere Sinne helfen gemeinsam beim Wahrnehmen.', 'Nur ein Sinn ist im Alltag wichtig.', 'Sinne braucht man nur beim Essen.', 'Geräusche sieht man mit der Haut.'],
+    0
+  ];
+  const q = activeQuiz.data.questions[CASTLE_FINAL_QUESTION_INDEX] || activeQuiz.data.questions[activeQuiz.data.questions.length - 1] || fallback;
+  activeQuiz.finalQuestion = q;
+  panel.innerHTML = `
+    <h2>Letzte Chance!</h2>
+    <p class="castle-final-question-text">${q[0]}</p>
+    <div class="quiz-answers castle-final-answers"></div>
+  `;
+  const answers = panel.querySelector('.castle-final-answers');
+  q[1].forEach((answer, idx) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'quiz-answer';
+    btn.textContent = answer;
+    btn.addEventListener('click', () => answerCastleFinalQuestion(idx));
+    answers.appendChild(btn);
+  });
+  panel.classList.remove('hidden');
+}
+
+async function answerCastleFinalQuestion(idx) {
+  if (!activeQuiz || activeQuiz.finalAnswered) return;
+  activeQuiz.finalAnswered = true;
+  const panel = document.getElementById('castleFinalQuestionPanel');
+  const q = activeQuiz.finalQuestion;
+  const correct = idx === q[2];
+  const buttons = panel ? [...panel.querySelectorAll('.quiz-answer')] : [];
+  buttons.forEach((btn, i) => {
+    btn.disabled = true;
+    if (i === q[2]) btn.classList.add('correct-answer');
+    if (i === idx && !correct) btn.classList.add('wrong-answer');
+  });
+
+  if (!correct) {
+    await wait(900);
+    activeQuiz.finalAnswered = false;
+    buttons.forEach(btn => {
+      btn.disabled = false;
+      btn.classList.remove('correct-answer', 'wrong-answer');
+    });
+    return;
+  }
+
+  playSfx(sfxCorrect);
+  await wait(520);
+  if (panel) panel.classList.add('hidden');
+  await playCastleFinalHit();
+}
+
+async function playCastleFinalHit() {
+  const zone = document.getElementById('quizBattleZone');
+  const knight = document.getElementById('quizKnight');
+  const enemy = document.getElementById('quizEnemy');
+  if (!zone || !knight || !enemy) return;
+  zone.classList.remove('castle-final-question-mode');
+  zone.classList.add('castle-final-hit-mode');
+  knight.src = knightAsset('attack');
+  enemy.src = castleEnemyAsset('hover');
+  knight.classList.remove('castle-final-jump');
+  enemy.classList.remove('castle-final-damage-blink');
+  void knight.offsetWidth;
+  knight.classList.add('castle-final-jump');
+  await wait(520);
+  enemy.classList.add('castle-final-damage-blink');
+  await wait(1050);
+  knight.classList.remove('castle-final-jump');
+  enemy.classList.remove('castle-final-damage-blink');
+  knight.src = knightAsset('normal');
+  enemy.src = castleEnemyAsset('laugh');
+  zone.classList.remove('castle-final-hit-mode');
+  zone.classList.add('castle-stand-off-mode');
   setAreaProgress({ level2Completed: true });
   applyMarkerStates();
-  const modal = ensureQuizModal();
-  modal.querySelector('#quizGame').classList.add('hidden');
-  modal.querySelector('#quizIntro').classList.add('hidden');
-  const result = modal.querySelector('#quizResult');
-  result.className = 'quiz-result quiz-panel quiz-final-result';
-  result.classList.remove('hidden');
-  result.innerHTML = `
-    <h2>Fortsetzung folgt</h2>
-    <p>Du hast den ersten Angriff des Zauberers überstanden.</p>
-    <p>Der Kampf im Zauberschloss geht bald weiter.</p>
-    <div class="quiz-result-actions single-action">
-      <button id="closeQuizButton" class="primary-button" type="button">Zur Weltkarte</button>
-    </div>
-  `;
-  const btn = document.getElementById('closeQuizButton');
-  if (btn) btn.addEventListener('click', returnToOverworld);
+  const result = document.getElementById('quizResult');
+  if (result) {
+    result.className = 'quiz-result quiz-panel quiz-final-result castle-standoff-result';
+    result.classList.remove('hidden');
+    result.innerHTML = `
+      <h2>Treffer gelandet</h2>
+      <p>Der Zauberer lacht noch, aber zum ersten Mal hat ihn der Ritter erreicht.</p>
+      <div class="quiz-result-actions single-action">
+        <button id="closeQuizButton" class="primary-button" type="button">Zur Weltkarte</button>
+      </div>
+    `;
+    const btn = document.getElementById('closeQuizButton');
+    if (btn) btn.addEventListener('click', returnToOverworld);
+  }
 }
 
 function showQuizEndPanel() {
