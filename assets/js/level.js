@@ -63,12 +63,17 @@ function isCastleBossQuiz(quizId = activeQuiz?.quizId) {
 }
 
 function castleEnemyAsset(state = 'normal') {
-  if (state === 'laugh') return '../assets/images/enemies/zauberer_laugh.png';
-  if (state === 'surprised') return '../assets/images/enemies/zauberer_surprised.png';
-  if (state === 'flyLeft') return '../assets/images/enemies/zauberer_fly_left.png';
-  if (state === 'flyRight') return '../assets/images/enemies/zauberer_fly_right.png';
-  if (state === 'hover') return '../assets/images/enemies/zauberer_hover.png';
-  return '../assets/images/enemies/zauberer.png';
+  if (state === 'laugh') return '../assets/images/castle-combat/mage_laugh.png';
+  if (state === 'surprised') return '../assets/images/castle-combat/mage_surprised.png';
+  if (state === 'flyLeft') return '../assets/images/castle-combat/mage_fly_left.png';
+  if (state === 'flyRight') return '../assets/images/castle-combat/mage_fly_right.png';
+  if (state === 'hover') return '../assets/images/castle-combat/mage_hover.png';
+  return '../assets/images/castle-combat/mage.png';
+}
+
+function castleKnightAsset(state = 'normal') {
+  if (state === 'attack') return '../assets/images/castle-combat/knight_attack.png';
+  return '../assets/images/castle-combat/knight.png';
 }
 
 function activeQuizQuestions() {
@@ -228,7 +233,7 @@ async function preloadQuizAssetsAsync(data, quizId) {
     FRAGMENT_REWARDS[quizId]?.image
   ].filter(Boolean);
   if (isCastleBossQuiz(quizId)) {
-    imgs.push(castleEnemyAsset('laugh'), castleEnemyAsset('surprised'), castleEnemyAsset('flyLeft'), castleEnemyAsset('flyRight'), castleEnemyAsset('hover'));
+    imgs.push(castleKnightAsset('normal'), castleKnightAsset('attack'), castleEnemyAsset('laugh'), castleEnemyAsset('surprised'), castleEnemyAsset('flyLeft'), castleEnemyAsset('flyRight'), castleEnemyAsset('hover'));
   }
   await Promise.race([
     Promise.all(imgs.map(preloadImageAsync)),
@@ -741,6 +746,8 @@ function preloadQuizAssets(data, quizId) {
   ['normal', 'damage', 'defeated'].forEach(state => preloadImage(enemyAsset(data.enemy, state)));
   preloadImage(enemyAttackAsset(data.enemy));
   if (isCastleBossQuiz(quizId)) {
+    preloadImage(castleKnightAsset('normal'));
+    preloadImage(castleKnightAsset('attack'));
     ['laugh', 'surprised', 'flyLeft', 'flyRight', 'hover'].forEach(state => preloadImage(castleEnemyAsset(state)));
   }
   if (FRAGMENT_REWARDS[quizId]) preloadImage(FRAGMENT_REWARDS[quizId].image);
@@ -798,8 +805,8 @@ function setQuizScene(modal, data, quizId) {
   const bg = modal.querySelector('#quizBattleBg');
   bg.src = battleBackgroundAsset(quizId);
   bg.alt = `${data.title} Kampfhintergrund`;
-  modal.querySelector('#quizKnight').src = knightAsset('normal');
-  modal.querySelector('#quizEnemy').src = enemyAsset(data.enemy, 'normal');
+  modal.querySelector('#quizKnight').src = isCastleBossQuiz(quizId) ? castleKnightAsset('normal') : knightAsset('normal');
+  modal.querySelector('#quizEnemy').src = isCastleBossQuiz(quizId) ? castleEnemyAsset('normal') : enemyAsset(data.enemy, 'normal');
   modal.querySelector('#battleFeedback').classList.add('hidden');
 }
 
@@ -914,8 +921,8 @@ function renderQuestion(entrance = 'none') {
   document.getElementById('quizCounter').textContent = `Frage ${activeQuiz.index + 1} / ${questions.length}`;
   document.getElementById('quizTimer').textContent = activeQuiz.seconds;
   document.getElementById('quizQuestion').textContent = q[0];
-  document.getElementById('quizKnight').src = knightAsset('normal');
-  document.getElementById('quizEnemy').src = enemyAsset(activeQuiz.data.enemy, 'normal');
+  document.getElementById('quizKnight').src = isCastleBossQuiz() ? castleKnightAsset('normal') : knightAsset('normal');
+  document.getElementById('quizEnemy').src = isCastleBossQuiz() ? castleEnemyAsset('normal') : enemyAsset(activeQuiz.data.enemy, 'normal');
   document.getElementById('battleFeedback').classList.add('hidden');
   renderHearts();
 
@@ -1087,7 +1094,7 @@ async function playCastleQuizAnimation(correct, idx) {
   if (correct) {
     activeQuiz.correct += 1;
     feedback.textContent = 'Richtig!';
-    knight.src = knightAsset('attack');
+    knight.src = castleKnightAsset('attack');
     knight.classList.add('knight-attack-pose');
     enemy.src = castleEnemyAsset('surprised');
     void knight.offsetWidth;
@@ -1106,8 +1113,8 @@ async function playCastleQuizAnimation(correct, idx) {
 
   knight.classList.remove('knight-strike', 'knight-attack-pose');
   enemy.classList.remove('castle-boss-dodge', 'castle-boss-smirk');
-  knight.src = knightAsset('normal');
-  enemy.src = enemyAsset(activeQuiz.data.enemy, 'normal');
+  knight.src = castleKnightAsset('normal');
+  enemy.src = castleEnemyAsset('normal');
   feedback.classList.add('hidden');
 
   if (activeQuiz.index >= activeQuizQuestions().length - 1) {
@@ -1132,7 +1139,7 @@ async function startCastlePostQuizSequence() {
   modal.querySelector('#quizIntro').classList.add('hidden');
   modal.querySelector('#quizResult').classList.add('hidden');
   zone.classList.add('castle-boss-mode');
-  knight.src = knightAsset('normal');
+  knight.src = castleKnightAsset('normal');
   enemy.src = castleEnemyAsset('laugh');
 
   showCastleSpeech('<strong>Ha!</strong><br>Deine Schläge können mir nichts anhaben.<br>Nichts wird die Magie zurück ins Königreich bringen!');
@@ -1252,11 +1259,11 @@ function castleDodgeFrame(now) {
   }
 
   state.mageX += state.mageDir * 18 * delta;
-  if (state.mageX > 78) {
-    state.mageX = 78;
+  if (state.mageX > 88) {
+    state.mageX = 88;
     state.mageDir = -1;
-  } else if (state.mageX < -7) {
-    state.mageX = -7;
+  } else if (state.mageX < -18) {
+    state.mageX = -18;
     state.mageDir = 1;
   }
   setCastleMagePosition();
@@ -1308,7 +1315,7 @@ async function startCastleDodgeGame() {
   zone.classList.add('castle-dodge-mode');
   layer.classList.remove('hidden');
   dodgePanel.classList.remove('hidden');
-  knight.src = knightAsset('normal');
+  knight.src = castleKnightAsset('normal');
   knight.classList.add('castle-runner');
   enemy.classList.remove('castle-hovering', 'castle-flight-left', 'castle-flight-right');
   enemy.classList.add('castle-flyer');
@@ -1318,7 +1325,7 @@ async function startCastleDodgeGame() {
     running: true,
     playerX: 50,
     moveDir: 0,
-    mageX: -7,
+    mageX: -18,
     mageDir: 1,
     projectiles: [],
     stunnedUntil: 0,
@@ -1328,7 +1335,7 @@ async function startCastleDodgeGame() {
     rafId: null
   };
   zone.style.setProperty('--castle-player-left', '50%');
-  zone.style.setProperty('--castle-mage-left', '-7%');
+  zone.style.setProperty('--castle-mage-left', '-18%');
   knight.style.transform = 'translateX(0)';
   setCastleMagePosition();
   const timer = document.getElementById('castleDodgeTimer');
@@ -1367,7 +1374,7 @@ function finishCastleDodgeGame() {
     zone.style.setProperty('--castle-mage-left', '50%');
   }
   if (knight) {
-    knight.src = knightAsset('normal');
+    knight.src = castleKnightAsset('normal');
     knight.classList.remove('castle-runner', 'castle-knight-hit');
     knight.style.transform = '';
   }
@@ -1442,7 +1449,7 @@ async function playCastleFinalHit() {
   if (!zone || !knight || !enemy) return;
   zone.classList.remove('castle-final-question-mode');
   zone.classList.add('castle-final-hit-mode');
-  knight.src = knightAsset('attack');
+  knight.src = castleKnightAsset('attack');
   enemy.src = castleEnemyAsset('hover');
   knight.classList.remove('castle-final-jump');
   enemy.classList.remove('castle-final-damage-blink');
@@ -1453,7 +1460,7 @@ async function playCastleFinalHit() {
   await wait(1050);
   knight.classList.remove('castle-final-jump');
   enemy.classList.remove('castle-final-damage-blink');
-  knight.src = knightAsset('normal');
+  knight.src = castleKnightAsset('normal');
   enemy.src = castleEnemyAsset('laugh');
   zone.classList.remove('castle-final-hit-mode');
   zone.classList.add('castle-stand-off-mode');

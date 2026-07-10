@@ -3105,3 +3105,168 @@ p { line-height: 1.5; }
     font-size: clamp(2rem, 11vw, 3.2rem) !important;
   }
 }
+
+/* ===== v67 Zauberschloss-Kampf: gleiche Figurengröße, echtes Herausfliegen, vertikaler Finaltreffer ===== */
+.quiz-modal.castle-quiz-modal:not(.hidden) .quiz-battle-zone {
+  --castle-combat-size: clamp(102px, 27vmin, 184px);
+  --castle-sky-size: clamp(96px, 25vmin, 172px);
+}
+
+.quiz-modal.castle-quiz-modal:not(.hidden) .quiz-battle-zone:not(.castle-dodge-mode):not(.castle-boss-mode):not(.castle-final-question-mode):not(.castle-final-hit-mode):not(.castle-stand-off-mode),
+.quiz-battle-zone.castle-boss-mode,
+.quiz-battle-zone.castle-final-question-mode,
+.quiz-battle-zone.castle-final-hit-mode,
+.quiz-battle-zone.castle-stand-off-mode {
+  top: 19% !important;
+  height: 60% !important;
+  left: 4% !important;
+  right: 4% !important;
+}
+
+.quiz-modal.castle-quiz-modal:not(.hidden) .quiz-battle-zone:not(.castle-dodge-mode):not(.castle-boss-mode):not(.castle-final-question-mode):not(.castle-final-hit-mode):not(.castle-stand-off-mode) .battle-sprite,
+.quiz-battle-zone.castle-boss-mode .knight-battle,
+.quiz-battle-zone.castle-boss-mode .enemy-battle,
+.quiz-battle-zone.castle-final-question-mode .knight-battle,
+.quiz-battle-zone.castle-final-question-mode .enemy-battle,
+.quiz-battle-zone.castle-final-hit-mode .knight-battle,
+.quiz-battle-zone.castle-final-hit-mode .enemy-battle,
+.quiz-battle-zone.castle-stand-off-mode .knight-battle,
+.quiz-battle-zone.castle-stand-off-mode .enemy-battle {
+  width: var(--castle-combat-size) !important;
+  height: var(--castle-combat-size) !important;
+  max-width: none !important;
+  max-height: none !important;
+  object-fit: contain !important;
+  transform-origin: center bottom !important;
+}
+
+.quiz-modal.castle-quiz-modal:not(.hidden) .quiz-battle-zone:not(.castle-dodge-mode):not(.castle-boss-mode):not(.castle-final-question-mode):not(.castle-final-hit-mode):not(.castle-stand-off-mode) .knight-battle,
+.quiz-battle-zone.castle-boss-mode .knight-battle,
+.quiz-battle-zone.castle-stand-off-mode .knight-battle {
+  left: calc(31% - (var(--castle-combat-size) / 2)) !important;
+  right: auto !important;
+  bottom: 4% !important;
+}
+.quiz-modal.castle-quiz-modal:not(.hidden) .quiz-battle-zone:not(.castle-dodge-mode):not(.castle-boss-mode):not(.castle-final-question-mode):not(.castle-final-hit-mode):not(.castle-stand-off-mode) .enemy-battle,
+.quiz-battle-zone.castle-boss-mode .enemy-battle,
+.quiz-battle-zone.castle-stand-off-mode .enemy-battle {
+  left: calc(64% - (var(--castle-combat-size) / 2)) !important;
+  right: auto !important;
+  bottom: 4% !important;
+}
+
+.castle-speech {
+  left: 50% !important;
+  right: auto !important;
+  top: 4% !important;
+  transform: translateX(-50%) !important;
+  max-width: min(72%, 560px) !important;
+  z-index: 12 !important;
+}
+
+.castle-flight-left {
+  animation: castleFlightLeftOutFull 1.22s ease-in forwards !important;
+}
+@keyframes castleFlightLeftOutFull {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  92% { transform: translate(-265%, -132%) scale(.9); opacity: 1; }
+  100% { transform: translate(-285%, -145%) scale(.9); opacity: 0; }
+}
+
+.quiz-battle-zone.castle-dodge-mode {
+  --castle-combat-size: clamp(96px, 25vmin, 172px);
+  top: 3.5% !important;
+  height: 78% !important;
+  left: 5% !important;
+  right: 5% !important;
+}
+.quiz-battle-zone.castle-dodge-mode .knight-battle {
+  left: calc(var(--castle-player-left, 50%) - (var(--castle-combat-size) / 2)) !important;
+  width: var(--castle-combat-size) !important;
+  height: var(--castle-combat-size) !important;
+  bottom: 0 !important;
+  object-fit: contain !important;
+}
+.quiz-battle-zone.castle-dodge-mode .enemy-battle {
+  left: calc(var(--castle-mage-left, -18%) - (var(--castle-combat-size) / 2)) !important;
+  right: auto !important;
+  width: var(--castle-sky-size) !important;
+  height: var(--castle-sky-size) !important;
+  bottom: 79% !important;
+  object-fit: contain !important;
+  animation: castleDodgeMageFloat 2.4s ease-in-out infinite !important;
+}
+@keyframes castleDodgeMageFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+.quiz-battle-zone.castle-dodge-mode .castle-projectile {
+  width: clamp(24px, 4.6vmin, 44px) !important;
+  height: clamp(24px, 4.6vmin, 44px) !important;
+  background: radial-gradient(circle at 34% 28%, rgba(255,255,255,.96) 0 8%, rgba(225,161,255,.95) 18%, rgba(166,70,247,.86) 42%, rgba(96,25,178,.68) 70%, rgba(44,8,90,.38) 100%) !important;
+  border: 2px solid rgba(243,198,255,.94) !important;
+  box-shadow: 0 0 18px rgba(201,97,255,.96), 0 0 32px rgba(118,30,190,.42), inset 0 0 18px rgba(255,241,255,.58) !important;
+}
+
+.quiz-battle-zone.castle-final-question-mode .knight-battle,
+.quiz-battle-zone.castle-final-hit-mode .knight-battle {
+  left: calc(50% - (var(--castle-combat-size) / 2)) !important;
+  bottom: 3% !important;
+}
+.quiz-battle-zone.castle-final-question-mode .enemy-battle,
+.quiz-battle-zone.castle-final-hit-mode .enemy-battle {
+  left: calc(50% - (var(--castle-combat-size) / 2)) !important;
+  bottom: 59% !important;
+  animation: castleDodgeMageFloat 2.4s ease-in-out infinite !important;
+}
+.quiz-battle-zone.castle-final-hit-mode .enemy-battle {
+  animation: castleDodgeMageFloat 2.4s ease-in-out infinite, castleFinalDamageBlink .18s linear 7 !important;
+}
+
+@keyframes castleFinalJump {
+  0% { transform: translateY(0) scale(1); }
+  44% { transform: translateY(-142%) scale(1.04); }
+  58% { transform: translateY(-156%) scale(1.06); }
+  100% { transform: translateY(0) scale(1); }
+}
+.castle-final-jump {
+  animation: castleFinalJump 1.15s ease-in-out both !important;
+}
+
+@media (max-width: 520px) {
+  .quiz-modal.castle-quiz-modal:not(.hidden) .quiz-battle-zone {
+    --castle-combat-size: clamp(92px, 29vw, 122px);
+    --castle-sky-size: clamp(86px, 27vw, 116px);
+  }
+  .quiz-modal.castle-quiz-modal:not(.hidden) .quiz-battle-zone:not(.castle-dodge-mode):not(.castle-boss-mode):not(.castle-final-question-mode):not(.castle-final-hit-mode):not(.castle-stand-off-mode),
+  .quiz-battle-zone.castle-boss-mode,
+  .quiz-battle-zone.castle-final-question-mode,
+  .quiz-battle-zone.castle-final-hit-mode,
+  .quiz-battle-zone.castle-stand-off-mode {
+    top: 21% !important;
+    height: 59% !important;
+  }
+  .castle-speech {
+    top: 5% !important;
+    max-width: 74% !important;
+  }
+  .quiz-battle-zone.castle-dodge-mode {
+    top: 3% !important;
+    height: 79% !important;
+  }
+  .quiz-battle-zone.castle-dodge-mode .enemy-battle {
+    bottom: 82% !important;
+  }
+  .quiz-battle-zone.castle-final-question-mode .enemy-battle,
+  .quiz-battle-zone.castle-final-hit-mode .enemy-battle {
+    bottom: 62% !important;
+  }
+}
+
+/* v67 Nachkorrektur: Blinken erst beim tatsächlichen Treffer */
+.quiz-battle-zone.castle-final-hit-mode .enemy-battle {
+  animation: castleDodgeMageFloat 2.4s ease-in-out infinite !important;
+}
+.quiz-battle-zone.castle-final-hit-mode .enemy-battle.castle-final-damage-blink {
+  animation: castleDodgeMageFloat 2.4s ease-in-out infinite, castleFinalDamageBlink .18s linear 7 !important;
+}
