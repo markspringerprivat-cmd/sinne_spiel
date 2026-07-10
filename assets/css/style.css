@@ -3201,8 +3201,8 @@ p { line-height: 1.5; }
   50% { transform: translateY(-12px); }
 }
 .quiz-battle-zone.castle-dodge-mode .castle-projectile {
-  width: clamp(24px, 4.6vmin, 44px) !important;
-  height: clamp(24px, 4.6vmin, 44px) !important;
+  width: clamp(36px, 6.9vmin, 66px) !important;
+  height: clamp(36px, 6.9vmin, 66px) !important;
   background: radial-gradient(circle at 34% 28%, rgba(255,255,255,.96) 0 8%, rgba(225,161,255,.95) 18%, rgba(166,70,247,.86) 42%, rgba(96,25,178,.68) 70%, rgba(44,8,90,.38) 100%) !important;
   border: 2px solid rgba(243,198,255,.94) !important;
   box-shadow: 0 0 18px rgba(201,97,255,.96), 0 0 32px rgba(118,30,190,.42), inset 0 0 18px rgba(255,241,255,.58) !important;
