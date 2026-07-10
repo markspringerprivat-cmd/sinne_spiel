@@ -32,7 +32,7 @@ const CASTLE_TASTE_GOAL = 5;
 const CASTLE_GOOD_THROW_MS = 5000;
 const CASTLE_BAD_THROW_MIN_MS = 3000;
 const CASTLE_BAD_THROW_MAX_MS = 4000;
-const CASTLE_GOOD_FOODS = ['🥕', '🥒', '🥦', '🌽', '🍅'];
+const CASTLE_GOOD_FOODS = ['🍎'];
 const CASTLE_FINAL_QUESTION_INDEX = 3;
 const CASTLE_CLONE_ROUNDS_TOTAL = 3;
 const CASTLE_CLONE_COUNT = 15;
@@ -297,6 +297,7 @@ let currentNode = 'start';
 
 const sfxCorrect = new Audio('../assets/audio/richtig_1.mp3');
 const sfxWrong = new Audio('../assets/audio/falsch_3.mp3');
+const sfxClick = new Audio('../assets/audio/slice_cut.mp3');
 
 const bossMusic = new Audio('../assets/audio/bossencounter.mp3');
 bossMusic.loop = true;
@@ -311,6 +312,33 @@ function playSfx(audio) {
     audio.volume = currentVolume();
     audio.play().catch(() => {});
   } catch {}
+}
+
+
+let sfxUnlocked = false;
+function unlockSfxForMobile() {
+  if (sfxUnlocked) return;
+  sfxUnlocked = true;
+  [sfxCorrect, sfxWrong, sfxClick].forEach(audio => {
+    if (!audio) return;
+    try {
+      audio.volume = 0;
+      const played = audio.play();
+      if (played && typeof played.then === 'function') {
+        played.then(() => {
+          audio.pause();
+          audio.currentTime = 0;
+          audio.volume = currentVolume();
+        }).catch(() => {
+          audio.volume = currentVolume();
+        });
+      } else {
+        audio.pause();
+        audio.currentTime = 0;
+        audio.volume = currentVolume();
+      }
+    } catch {}
+  });
 }
 
 function currentVolume() {
@@ -1252,6 +1280,45 @@ function showCastleTasteFeedback(message, duration = 900) {
   }, duration);
 }
 
+
+function buildCastleTastePanel() {
+  const dodgePanel = document.getElementById('castleDodgePanel');
+  if (!dodgePanel) return;
+  dodgePanel.innerHTML = `
+    <div class="castle-dodge-top">
+      <strong>Geschmack sammeln!</strong>
+      <span id="castleDodgeTimer">0 / 5</span>
+    </div>
+    <p class="castle-dodge-info">Nutze den Sinn des Geschmacks, um die scharfen Chilis von den süßen Äpfeln zu trennen. Sammle die Äpfel und stärke dich für den Kampf gegen den Zauberer.</p>
+    <div id="castleDodgeFeedback" class="castle-dodge-feedback hidden"></div>
+    <div id="castleTasteIntro" class="castle-taste-dialog" role="dialog" aria-modal="true" aria-label="Geschmackssinn Hinweis">
+      <p>Nutze den Sinn des Geschmacks, um die scharfen Chilis von den süßen Äpfeln zu trennen.</p>
+      <p>Sammle die Äpfel und stärke dich für den Kampf gegen den Zauberer.</p>
+      <button id="castleTasteStartButton" class="primary-button" type="button">OK</button>
+    </div>
+    <div class="castle-dodge-controls">
+      <button id="castleMoveLeft" class="ghost-button castle-arrow-button" type="button" aria-label="Nach links laufen">←</button>
+      <button id="castleMoveRight" class="primary-button castle-arrow-button" type="button" aria-label="Nach rechts laufen">→</button>
+    </div>
+  `;
+}
+
+function waitForCastleTasteStart() {
+  return new Promise(resolve => {
+    const button = document.getElementById('castleTasteStartButton');
+    const dialog = document.getElementById('castleTasteIntro');
+    if (!button) {
+      resolve();
+      return;
+    }
+    button.addEventListener('click', () => {
+      unlockSfxForMobile();
+      dialog?.classList.add('hidden');
+      resolve();
+    }, { once: true });
+  });
+}
+
 function spawnCastleTasteItem(kind = 'good') {
   if (!activeQuiz?.castleDodge || !activeQuiz.castleDodge.running) return;
   const state = activeQuiz.castleDodge;
@@ -1343,9 +1410,9 @@ function updateCastleProjectiles(deltaSeconds) {
       projectile.el.remove();
       if (projectile.kind === 'good') {
         state.goodCollected = Math.min(state.goal, state.goodCollected + 1);
-        playSfx(sfxCorrect);
+        playSfx(sfxClick);
         updateCastleTasteStatus();
-        showCastleTasteFeedback(`Lecker! ${state.goodCollected} von ${state.goal} gesammelt.`, 850);
+        showCastleTasteFeedback(`Apfel gesammelt! ${state.goodCollected} von ${state.goal}.`, 850);
         if (state.goodCollected >= state.goal) {
           finishCastleDodgeGame();
         }
@@ -1392,7 +1459,7 @@ function castleDodgeFrame(now) {
 
   if (now >= state.stunnedUntil) {
     state.playerX += state.moveDir * 56 * delta;
-    state.playerX = Math.max(5, Math.min(74, state.playerX));
+    state.playerX = Math.max(0, Math.min(100, state.playerX));
     if (knight) {
       const zone = document.getElementById('quizBattleZone');
       if (zone) zone.style.setProperty('--castle-player-left', `${state.playerX}%`);
@@ -1401,11 +1468,11 @@ function castleDodgeFrame(now) {
   }
 
   state.mageX += state.mageDir * 22.5 * delta;
-  if (state.mageX > 88) {
-    state.mageX = 88;
+  if (state.mageX > 106) {
+    state.mageX = 106;
     state.mageDir = -1;
-  } else if (state.mageX < -18) {
-    state.mageX = -18;
+  } else if (state.mageX < -6) {
+    state.mageX = -6;
     state.mageDir = 1;
   }
   setCastleMagePosition();
@@ -1447,6 +1514,7 @@ async function startCastleDodgeGame() {
   const enemy = document.getElementById('quizEnemy');
   if (!zone || !layer || !dodgePanel || !knight || !enemy) return;
 
+  buildCastleTastePanel();
   installCastleHoldControls();
   zone.classList.remove('castle-boss-mode');
   zone.classList.add('castle-dodge-mode');
@@ -1459,10 +1527,10 @@ async function startCastleDodgeGame() {
   clearCastleProjectiles();
 
   activeQuiz.castleDodge = {
-    running: true,
+    running: false,
     playerX: 50,
     moveDir: 0,
-    mageX: -18,
+    mageX: 0,
     mageDir: 1,
     projectiles: [],
     stunnedUntil: 0,
@@ -1477,12 +1545,15 @@ async function startCastleDodgeGame() {
     finishing: false
   };
   zone.style.setProperty('--castle-player-left', '50%');
-  zone.style.setProperty('--castle-mage-left', '-18%');
+  zone.style.setProperty('--castle-mage-left', '0%');
   knight.style.transform = 'translateX(0)';
   setCastleMagePosition();
   updateCastleTasteStatus();
-  showCastleTasteFeedback('Sammle 5 leckere Sachen!', 1400);
 
+  await waitForCastleTasteStart();
+  if (!activeQuiz?.castleDodge) return;
+  activeQuiz.castleDodge.running = true;
+  showCastleTasteFeedback('Sammle 5 Äpfel!', 1400);
   activeQuiz.castleDodge.spawnTimer = setInterval(spawnCastleGoodFood, CASTLE_GOOD_THROW_MS);
   setTimeout(spawnCastleGoodFood, 1100);
   scheduleCastleBadFood();
@@ -1736,11 +1807,11 @@ function startCastleCloneSearch() {
   startButton?.addEventListener('click', async () => {
     const dialog = document.getElementById('castleCloneDialog');
     if (dialog) dialog.classList.add('hidden');
-    await beginCastleCloneAttempt();
+    await beginCastleCloneAttempt(true);
   });
 }
 
-async function beginCastleCloneAttempt() {
+async function beginCastleCloneAttempt(showMageEnter = true) {
   const state = activeQuiz?.castleClone;
   const field = document.getElementById('castleClonePlayfield');
   const enemy = document.getElementById('quizEnemy');
@@ -1753,7 +1824,12 @@ async function beginCastleCloneAttempt() {
   hideCastleSpeech();
   setCastleCloneKnightX(Number(state.playerX) || 31);
   setCastleCloneMagePoint(64, 22);
-  enemy.classList.remove('castle-clone-hidden', 'castle-final-damage-blink', 'castle-clone-mage-enter');
+  enemy.classList.remove('castle-clone-hidden', 'castle-final-damage-blink', 'castle-clone-mage-enter', 'castle-flight-left');
+  if (!showMageEnter) {
+    enemy.classList.add('castle-clone-hidden');
+    buildCastleCloneChoices();
+    return;
+  }
   enemy.src = castleEnemyAsset('flyRight');
   void enemy.offsetWidth;
   enemy.classList.add('castle-clone-mage-enter');
@@ -1857,7 +1933,13 @@ async function playCastleCloneSuccess(point) {
   setCastleCloneMagePoint(64, 22);
   await animateCastleCloneKnightRun(31);
   if (!activeQuiz?.castleClone?.running) return;
-  enemy.src = castleEnemyAsset('laugh');
+  enemy.src = castleEnemyAsset('flyLeft');
+  enemy.classList.remove('castle-clone-hidden', 'castle-flight-left');
+  void enemy.offsetWidth;
+  enemy.classList.add('castle-flight-left');
+  await wait(1150);
+  enemy.classList.remove('castle-flight-left');
+  enemy.classList.add('castle-clone-hidden');
 }
 
 async function playCastleCloneFailure() {
@@ -1894,7 +1976,7 @@ async function handleCastleCloneChoice(isStill, point) {
     updateCastleCloneRoundLabel();
     await wait(420);
     if (!activeQuiz?.castleClone?.running) return;
-    await beginCastleCloneAttempt();
+    await beginCastleCloneAttempt(false);
     return;
   }
 

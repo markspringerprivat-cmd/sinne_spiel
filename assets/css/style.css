@@ -3708,3 +3708,44 @@ p { line-height: 1.5; }
   margin-left: auto;
   margin-right: auto;
 }
+
+
+/* ===== v74 Zauberschloss/Klangwald Feinanpassungen ===== */
+.quiz-battle-zone.castle-dodge-mode {
+  left: 0 !important;
+  right: 0 !important;
+}
+.quiz-battle-zone.castle-dodge-mode .knight-battle {
+  left: calc(var(--castle-player-left, 50%) - (var(--castle-combat-size) / 2)) !important;
+}
+.quiz-battle-zone.castle-dodge-mode .enemy-battle {
+  left: calc(var(--castle-mage-left, 0%) - (var(--castle-sky-size) / 2)) !important;
+}
+.castle-taste-dialog {
+  position: absolute;
+  left: 50%;
+  top: 6%;
+  transform: translateX(-50%);
+  width: min(82%, 560px);
+  display: grid;
+  gap: 10px;
+  padding: 18px 20px;
+  border-radius: 22px;
+  background: rgba(255,250,236,.97);
+  border: 2px solid rgba(255,255,255,.85);
+  box-shadow: 0 18px 36px rgba(0,0,0,.26);
+  color: #3e2a17;
+  font-weight: 850;
+  line-height: 1.35;
+  z-index: 18;
+}
+.castle-taste-dialog.hidden { display:none !important; }
+.castle-taste-dialog p { margin: 0; }
+.castle-taste-dialog .primary-button { justify-self: center; }
+@media (max-width: 520px) {
+  .castle-taste-dialog {
+    width: min(92%, 560px);
+    top: 3%;
+    padding: 14px 16px;
+  }
+}

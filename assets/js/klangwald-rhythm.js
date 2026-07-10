@@ -207,8 +207,7 @@
 
     music.pause();
     music.currentTime = 0;
-    music.volume = 0;
-    music.play().catch(() => {});
+    music.volume = currentVolume();
 
     let count = 3;
     const countdown = document.getElementById('rhythmCountdown');
