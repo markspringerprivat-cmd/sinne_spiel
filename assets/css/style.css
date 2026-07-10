@@ -3853,7 +3853,7 @@ p { line-height: 1.5; }
 }
 
 
-/* ===== v77 Zauberschloss: Tastphase mit Büschen ===== */
+/* ===== v78 Zauberschloss: Tastphase mit Büschen ===== */
 .quiz-battle-zone.castle-bush-mode {
   top: 19% !important;
   height: 60% !important;
@@ -3868,28 +3868,31 @@ p { line-height: 1.5; }
   transform-origin: center center !important;
 }
 .quiz-battle-zone.castle-bush-mode .knight-battle {
-  width: clamp(84px, 22vmin, 146px) !important;
-  height: clamp(84px, 22vmin, 146px) !important;
+  width: clamp(76px, 19vmin, 132px) !important;
+  height: clamp(76px, 19vmin, 132px) !important;
   z-index: 12 !important;
 }
 .quiz-battle-zone.castle-bush-mode .enemy-battle {
-  width: clamp(90px, 23vmin, 156px) !important;
-  height: clamp(90px, 23vmin, 156px) !important;
+  width: clamp(86px, 21vmin, 150px) !important;
+  height: clamp(86px, 21vmin, 150px) !important;
   z-index: 11 !important;
-  transition: left .62s linear, top .62s linear !important;
+  transition: left .42s linear, top .42s linear, opacity .18s linear !important;
 }
 .castle-bush-panel .castle-clone-hud-title,
 .castle-bush-panel .castle-clone-hud #castleCloneRound {
   min-height: 38px;
 }
 .castle-bush-playfield {
+  position: absolute;
   inset: 0;
+  overflow: visible;
   pointer-events: none;
+  z-index: 13;
 }
 .castle-bush-slot {
   position: absolute;
-  width: min(18vw, 120px);
-  height: min(18vw, 120px);
+  width: min(22vw, 148px);
+  height: min(22vw, 148px);
   transform: translate(-50%, -50%);
   z-index: 13;
   pointer-events: none;
@@ -3907,7 +3910,7 @@ p { line-height: 1.5; }
 .castle-bush-base {
   display: block;
   object-fit: contain;
-  filter: drop-shadow(0 6px 7px rgba(0,0,0,.25));
+  filter: drop-shadow(0 7px 8px rgba(0,0,0,.26));
 }
 .castle-bush-base.hidden {
   display: none !important;
@@ -3918,7 +3921,8 @@ p { line-height: 1.5; }
   background: transparent;
   opacity: 0;
   pointer-events: none;
-  transition: opacity .12s ease;
+  transition: opacity .08s ease;
+  cursor: pointer;
 }
 .castle-bush-reveal.hidden {
   display: none !important;
@@ -3931,7 +3935,7 @@ p { line-height: 1.5; }
   width: 100%;
   height: 100%;
   object-fit: contain;
-  filter: drop-shadow(0 6px 7px rgba(0,0,0,.25));
+  filter: drop-shadow(0 7px 8px rgba(0,0,0,.26));
 }
 .castle-bush-hit-blink {
   animation: castleBushHitBlink .18s steps(2) 4;
@@ -3942,7 +3946,7 @@ p { line-height: 1.5; }
 }
 @media (max-width: 520px) {
   .castle-bush-slot {
-    width: min(20vw, 92px);
-    height: min(20vw, 92px);
+    width: min(24vw, 108px);
+    height: min(24vw, 108px);
   }
 }
