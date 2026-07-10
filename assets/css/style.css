@@ -3674,3 +3674,37 @@ p { line-height: 1.5; }
     height: min(24vw, 84px);
   }
 }
+
+
+/* ===== v73 Zauberschloss: Geschmackssinn-Sammelphase ===== */
+.quiz-battle-zone.castle-dodge-mode .castle-projectile {
+  background: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  width: clamp(44px, 8vmin, 72px) !important;
+  height: clamp(44px, 8vmin, 72px) !important;
+  display: grid !important;
+  place-items: center !important;
+  font-size: clamp(28px, 6.6vmin, 54px) !important;
+  line-height: 1 !important;
+  filter: drop-shadow(0 8px 10px rgba(0, 0, 0, .28));
+}
+.quiz-battle-zone.castle-dodge-mode .castle-projectile.good-food {
+  animation: castleFoodBob 1.25s ease-in-out infinite;
+}
+.quiz-battle-zone.castle-dodge-mode .castle-projectile.bad-food {
+  animation: castleFoodSpin 1s linear infinite;
+}
+@keyframes castleFoodBob {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -54%) scale(1.06); }
+}
+@keyframes castleFoodSpin {
+  from { transform: translate(-50%, -50%) rotate(0deg) scale(1); }
+  to { transform: translate(-50%, -50%) rotate(360deg) scale(1.08); }
+}
+.castle-dodge-info {
+  max-width: 38rem;
+  margin-left: auto;
+  margin-right: auto;
+}

@@ -27,7 +27,12 @@ const CASTLE_QUIZ_QUESTION_COUNT = 3;
 const CASTLE_DODGE_DURATION_MS = 30000;
 const CASTLE_PROJECTILE_SPAWN_MS = 3400;
 const CASTLE_FLIGHT_SWAP_MS = 1200;
-const CASTLE_STUN_MS = 900;
+const CASTLE_STUN_MS = 1000;
+const CASTLE_TASTE_GOAL = 5;
+const CASTLE_GOOD_THROW_MS = 5000;
+const CASTLE_BAD_THROW_MIN_MS = 3000;
+const CASTLE_BAD_THROW_MAX_MS = 4000;
+const CASTLE_GOOD_FOODS = ['🥕', '🥒', '🥦', '🌽', '🍅'];
 const CASTLE_FINAL_QUESTION_INDEX = 3;
 const CASTLE_CLONE_ROUNDS_TOTAL = 3;
 const CASTLE_CLONE_COUNT = 15;
@@ -828,10 +833,10 @@ function ensureQuizModal() {
       </div>
       <div id="castleDodgePanel" class="quiz-panel castle-dodge-panel hidden">
         <div class="castle-dodge-top">
-          <strong>Ausweichen!</strong>
-          <span id="castleDodgeTimer">30.0</span>
+          <strong>Geschmack sammeln!</strong>
+          <span id="castleDodgeTimer">0 / 5</span>
         </div>
-        <p class="castle-dodge-info">Weiche den lilanen Bällen aus.</p>
+        <p class="castle-dodge-info">Nutze den Sinn des Schmeckens: Sammle leckere Gemüsesorten, um dich für den Kampf zu stärken. Scharfe Chilis machen dich 1 Sekunde bewegungsunfähig.</p>
         <div id="castleDodgeFeedback" class="castle-dodge-feedback hidden"></div>
         <div class="castle-dodge-controls">
           <button id="castleMoveLeft" class="ghost-button castle-arrow-button" type="button" aria-label="Nach links laufen">←</button>
@@ -1229,18 +1234,61 @@ function moveCastleKnight(direction) {
   setCastleMoveDir(direction);
 }
 
-function spawnCastleProjectile() {
+function updateCastleTasteStatus() {
+  const state = activeQuiz?.castleDodge;
+  const counter = document.getElementById('castleDodgeTimer');
+  if (!state || !counter) return;
+  counter.textContent = `${state.goodCollected} / ${state.goal}`;
+}
+
+function showCastleTasteFeedback(message, duration = 900) {
+  const feedback = document.getElementById('castleDodgeFeedback');
+  if (!feedback) return;
+  feedback.textContent = message;
+  feedback.classList.remove('hidden');
+  clearTimeout(showCastleTasteFeedback.timeoutId);
+  showCastleTasteFeedback.timeoutId = setTimeout(() => {
+    feedback.classList.add('hidden');
+  }, duration);
+}
+
+function spawnCastleTasteItem(kind = 'good') {
   if (!activeQuiz?.castleDodge || !activeQuiz.castleDodge.running) return;
   const state = activeQuiz.castleDodge;
   const layer = document.getElementById('castleProjectileLayer');
   if (!layer) return;
   const el = document.createElement('div');
-  el.className = 'castle-projectile';
+  el.className = `castle-projectile castle-food-item ${kind === 'good' ? 'good-food' : 'bad-food'}`;
+  el.textContent = kind === 'good'
+    ? CASTLE_GOOD_FOODS[Math.floor(Math.random() * CASTLE_GOOD_FOODS.length)]
+    : '🌶️';
   const x = Math.max(10, Math.min(90, state.mageX + 15 + (Math.random() * 14 - 7)));
   el.style.left = `${x}%`;
   el.style.top = '6%';
   layer.appendChild(el);
-  state.projectiles.push({ el, x, y: 6, speed: 38.75 + Math.random() * 5 });
+  state.projectiles.push({
+    el,
+    x,
+    y: 6,
+    kind,
+    speed: kind === 'good' ? 26 + Math.random() * 4 : 29 + Math.random() * 5
+  });
+}
+
+function spawnCastleGoodFood() {
+  spawnCastleTasteItem('good');
+}
+
+function scheduleCastleBadFood() {
+  const state = activeQuiz?.castleDodge;
+  if (!state || !state.running) return;
+  const delay = CASTLE_BAD_THROW_MIN_MS + Math.random() * (CASTLE_BAD_THROW_MAX_MS - CASTLE_BAD_THROW_MIN_MS);
+  state.badSpawnTimer = setTimeout(() => {
+    const current = activeQuiz?.castleDodge;
+    if (!current || !current.running) return;
+    spawnCastleTasteItem('bad');
+    scheduleCastleBadFood();
+  }, delay);
 }
 
 function setCastleMagePosition() {
@@ -1266,7 +1314,7 @@ function castleKnightHit() {
   knight.classList.remove('castle-walking');
   knight.classList.add('castle-knight-hit');
   if (feedback) {
-    feedback.textContent = 'Getroffen!';
+    feedback.textContent = 'Zu scharf! Kurz bewegungsunfähig!';
     feedback.classList.remove('hidden');
   }
   setTimeout(() => {
@@ -1293,7 +1341,18 @@ function updateCastleProjectiles(deltaSeconds) {
     const overlaps = !(rect.right < knightRect.left || rect.left > knightRect.right || rect.bottom < knightRect.top || rect.top > knightRect.bottom);
     if (overlaps) {
       projectile.el.remove();
-      castleKnightHit();
+      if (projectile.kind === 'good') {
+        state.goodCollected = Math.min(state.goal, state.goodCollected + 1);
+        playSfx(sfxCorrect);
+        updateCastleTasteStatus();
+        showCastleTasteFeedback(`Lecker! ${state.goodCollected} von ${state.goal} gesammelt.`, 850);
+        if (state.goodCollected >= state.goal) {
+          finishCastleDodgeGame();
+        }
+      } else {
+        playSfx(sfxWrong);
+        castleKnightHit();
+      }
       return false;
     }
     return true;
@@ -1328,10 +1387,7 @@ function castleDodgeFrame(now) {
   if (!state || !state.running) return;
   const delta = Math.min(0.05, (now - (state.lastFrame || now)) / 1000 || 0);
   state.lastFrame = now;
-  const remaining = Math.max(0, state.endTime - now);
-  const timer = document.getElementById('castleDodgeTimer');
   const knight = document.getElementById('quizKnight');
-  if (timer) timer.textContent = formatCastleDodgeTime(remaining);
   updateCastleKnightRunSprite(now);
 
   if (now >= state.stunnedUntil) {
@@ -1354,11 +1410,6 @@ function castleDodgeFrame(now) {
   }
   setCastleMagePosition();
   updateCastleProjectiles(delta);
-
-  if (remaining <= 0) {
-    finishCastleDodgeGame();
-    return;
-  }
   state.rafId = requestAnimationFrame(castleDodgeFrame);
 }
 
@@ -1415,22 +1466,26 @@ async function startCastleDodgeGame() {
     mageDir: 1,
     projectiles: [],
     stunnedUntil: 0,
-    endTime: performance.now() + CASTLE_DODGE_DURATION_MS,
+    goodCollected: 0,
+    goal: CASTLE_TASTE_GOAL,
     lastFrame: 0,
     lastRunDir: 0,
     lastRunKey: '',
     spawnTimer: null,
-    rafId: null
+    badSpawnTimer: null,
+    rafId: null,
+    finishing: false
   };
   zone.style.setProperty('--castle-player-left', '50%');
   zone.style.setProperty('--castle-mage-left', '-18%');
   knight.style.transform = 'translateX(0)';
   setCastleMagePosition();
-  const timer = document.getElementById('castleDodgeTimer');
-  if (timer) timer.textContent = '30.0';
+  updateCastleTasteStatus();
+  showCastleTasteFeedback('Sammle 5 leckere Sachen!', 1400);
 
-  activeQuiz.castleDodge.spawnTimer = setInterval(spawnCastleProjectile, CASTLE_PROJECTILE_SPAWN_MS);
-  setTimeout(spawnCastleProjectile, 900);
+  activeQuiz.castleDodge.spawnTimer = setInterval(spawnCastleGoodFood, CASTLE_GOOD_THROW_MS);
+  setTimeout(spawnCastleGoodFood, 1100);
+  scheduleCastleBadFood();
   activeQuiz.castleDodge.rafId = requestAnimationFrame(castleDodgeFrame);
 }
 
@@ -1439,13 +1494,15 @@ function stopCastleDodgeLoop() {
   const state = activeQuiz.castleDodge;
   state.running = false;
   if (state.spawnTimer) clearInterval(state.spawnTimer);
+  if (state.badSpawnTimer) clearTimeout(state.badSpawnTimer);
   if (state.flightTimer) clearInterval(state.flightTimer);
   if (state.rafId) cancelAnimationFrame(state.rafId);
   state.moveDir = 0;
 }
 
-function finishCastleDodgeGame() {
-  if (!activeQuiz) return;
+async function finishCastleDodgeGame() {
+  if (!activeQuiz?.castleDodge || activeQuiz.castleDodge.finishing) return;
+  activeQuiz.castleDodge.finishing = true;
   stopCastleDodgeLoop();
   clearCastleProjectiles();
   const dodgePanel = document.getElementById('castleDodgePanel');
@@ -1457,7 +1514,7 @@ function finishCastleDodgeGame() {
   if (layer) layer.classList.add('hidden');
   if (zone) {
     zone.classList.remove('castle-dodge-mode');
-    zone.classList.add('castle-final-question-mode');
+    zone.classList.add('castle-final-hit-mode');
     zone.style.setProperty('--castle-player-left', '50%');
     zone.style.setProperty('--castle-mage-left', '50%');
   }
@@ -1471,7 +1528,8 @@ function finishCastleDodgeGame() {
     enemy.classList.remove('castle-flyer', 'castle-pass-left', 'castle-pass-right');
     enemy.style.transform = '';
   }
-  showCastleFinalQuestion();
+  await wait(320);
+  await playCastleFinalHit();
 }
 
 function showCastleFinalQuestion() {
