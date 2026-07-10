@@ -29,6 +29,8 @@ const CASTLE_PROJECTILE_SPAWN_MS = 3400;
 const CASTLE_FLIGHT_SWAP_MS = 1200;
 const CASTLE_STUN_MS = 900;
 const CASTLE_FINAL_QUESTION_INDEX = 3;
+const CASTLE_SENSE_PHASE_MS = 12000;
+const CASTLE_SENSE_PHASES_TOTAL = 3;
 
 const currentArea = window.location.pathname.split('/').pop().replace('.html', '');
 const AREA_TITLES = {
@@ -136,6 +138,22 @@ function cleanupCastleDodgeGame() {
   const layer = document.getElementById('castleProjectileLayer');
   if (layer) layer.classList.add('hidden');
   resetCastleBattleClasses();
+}
+
+function cleanupCastleSensePhase() {
+  const state = activeQuiz?.castleSense;
+  if (state) {
+    state.running = false;
+    if (state.timer) clearInterval(state.timer);
+    if (state.spawnTimer) clearInterval(state.spawnTimer);
+    if (state.timeout) clearTimeout(state.timeout);
+  }
+  if (activeQuiz) activeQuiz.castleSense = null;
+  const panel = document.getElementById('castleSensePanel');
+  if (panel) {
+    panel.classList.add('hidden');
+    panel.innerHTML = '';
+  }
 }
 
 function showCastleSpeech(html) {
@@ -802,6 +820,7 @@ function ensureQuizModal() {
         </div>
       </div>
       <div id="castleFinalQuestionPanel" class="quiz-panel castle-final-question-panel hidden"></div>
+      <div id="castleSensePanel" class="quiz-panel castle-sense-panel hidden"></div>
       <div id="quizResult" class="quiz-result quiz-panel hidden"></div>
     </div>`;
   document.body.appendChild(modal);
@@ -1511,6 +1530,274 @@ async function playCastleFinalHit() {
   enemy.src = castleEnemyAsset('laugh');
   zone.classList.remove('castle-final-hit-mode');
   zone.classList.add('castle-stand-off-mode');
+  await wait(520);
+  startCastleSensePhase(1);
+}
+
+
+function castleSensePhaseConfig(phase) {
+  if (phase === 1) {
+    return {
+      title: 'Phase 1: Sehen',
+      subtitle: 'Tippe die echten Augensymbole an.',
+      type: 'vision',
+      target: 3
+    };
+  }
+  if (phase === 2) {
+    return {
+      title: 'Phase 2: Hören',
+      subtitle: 'Merke dir die Klangfolge und tippe sie nach.',
+      type: 'hearing',
+      target: 1
+    };
+  }
+  return {
+    title: 'Phase 3: Riechen',
+    subtitle: 'Sammle gute Duftwolken und meide Stinkwolken.',
+    type: 'smell',
+    target: 4
+  };
+}
+
+function startCastleSensePhase(phase) {
+  cleanupCastleSensePhase();
+  const panel = document.getElementById('castleSensePanel');
+  const zone = document.getElementById('quizBattleZone');
+  const knight = document.getElementById('quizKnight');
+  const enemy = document.getElementById('quizEnemy');
+  if (!panel || !activeQuiz) return;
+  const config = castleSensePhaseConfig(phase);
+  activeQuiz.castleSense = {
+    phase,
+    type: config.type,
+    score: 0,
+    target: config.target,
+    running: true,
+    remaining: config.type === 'hearing' ? 15 : 12,
+    timer: null,
+    spawnTimer: null,
+    timeout: null,
+    sequence: [],
+    inputIndex: 0
+  };
+  if (zone) zone.classList.add('castle-sense-mode');
+  if (knight) knight.src = castleKnightAsset('normal');
+  if (enemy) enemy.src = castleEnemyAsset('laugh');
+
+  panel.className = 'quiz-panel castle-sense-panel';
+  panel.innerHTML = `
+    <div class="castle-sense-head">
+      <strong>${config.title}</strong>
+      <span id="castleSenseTimer">${activeQuiz.castleSense.remaining}</span>
+    </div>
+    <p>${config.subtitle}</p>
+    <div id="castleSenseStatus" class="castle-sense-status">0 / ${config.target}</div>
+    <div id="castleSensePlayfield" class="castle-sense-playfield"></div>
+  `;
+  panel.classList.remove('hidden');
+
+  if (config.type === 'vision') setupCastleVisionPhase();
+  else if (config.type === 'hearing') setupCastleHearingPhase();
+  else setupCastleSmellPhase();
+
+  activeQuiz.castleSense.timer = setInterval(() => {
+    const state = activeQuiz?.castleSense;
+    if (!state || !state.running) return;
+    state.remaining -= 1;
+    const timer = document.getElementById('castleSenseTimer');
+    if (timer) timer.textContent = state.remaining;
+    if (state.remaining <= 0) completeCastleSensePhase(false);
+  }, 1000);
+}
+
+function updateCastleSenseStatus() {
+  const state = activeQuiz?.castleSense;
+  const status = document.getElementById('castleSenseStatus');
+  if (!state || !status) return;
+  status.textContent = `${state.score} / ${state.target}`;
+}
+
+function castleRandomPercent(min, max) {
+  return min + Math.random() * (max - min);
+}
+
+function setupCastleVisionPhase() {
+  const state = activeQuiz.castleSense;
+  const field = document.getElementById('castleSensePlayfield');
+  if (!field) return;
+
+  function spawnVisionSet() {
+    if (!activeQuiz?.castleSense?.running) return;
+    field.innerHTML = '';
+    const positions = [
+      [18, 24], [48, 18], [75, 28], [28, 58], [62, 62]
+    ].sort(() => Math.random() - 0.5);
+    const realIndex = Math.floor(Math.random() * positions.length);
+    positions.forEach(([x, y], idx) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = `castle-sense-target vision-target ${idx === realIndex ? 'real' : 'fake'}`;
+      btn.style.left = `${x}%`;
+      btn.style.top = `${y}%`;
+      btn.textContent = idx === realIndex ? '👁️' : ['◆', '✦', '☾', '✧'][idx % 4];
+      btn.addEventListener('click', () => {
+        const s = activeQuiz?.castleSense;
+        if (!s || !s.running) return;
+        if (idx === realIndex) {
+          s.score += 1;
+          playSfx(sfxCorrect);
+          updateCastleSenseStatus();
+          if (s.score >= s.target) completeCastleSensePhase(true);
+          else spawnVisionSet();
+        } else {
+          btn.classList.add('wrong-sense-target');
+          playSfx(sfxWrong);
+        }
+      });
+      field.appendChild(btn);
+    });
+  }
+
+  spawnVisionSet();
+}
+
+function setupCastleHearingPhase() {
+  const state = activeQuiz.castleSense;
+  const field = document.getElementById('castleSensePlayfield');
+  const status = document.getElementById('castleSenseStatus');
+  if (!field || !state) return;
+  state.sequence = Array.from({ length: 4 }, () => Math.floor(Math.random() * 4));
+  state.inputIndex = 0;
+  state.target = state.sequence.length;
+  state.score = 0;
+  if (status) status.textContent = 'Merken …';
+
+  field.innerHTML = `
+    <div class="castle-simon-grid">
+      ${['♩', '♪', '♫', '♬'].map((s, i) => `<button type="button" class="castle-simon-button" data-note="${i}">${s}</button>`).join('')}
+    </div>
+  `;
+  const buttons = [...field.querySelectorAll('.castle-simon-button')];
+  buttons.forEach(btn => btn.disabled = true);
+
+  let delay = 550;
+  state.sequence.forEach((note, idx) => {
+    setTimeout(() => {
+      const btn = buttons[note];
+      if (!btn || !activeQuiz?.castleSense?.running) return;
+      btn.classList.add('active-note');
+      setTimeout(() => btn.classList.remove('active-note'), 430);
+      if (idx === state.sequence.length - 1) {
+        setTimeout(() => {
+          if (!activeQuiz?.castleSense?.running) return;
+          buttons.forEach(b => b.disabled = false);
+          if (status) status.textContent = `0 / ${state.sequence.length}`;
+        }, 620);
+      }
+    }, delay);
+    delay += 620;
+  });
+
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const s = activeQuiz?.castleSense;
+      if (!s || !s.running) return;
+      const note = Number(btn.dataset.note);
+      btn.classList.add('active-note');
+      setTimeout(() => btn.classList.remove('active-note'), 220);
+      if (note === s.sequence[s.inputIndex]) {
+        s.inputIndex += 1;
+        s.score = s.inputIndex;
+        playSfx(sfxCorrect);
+        if (status) status.textContent = `${s.score} / ${s.sequence.length}`;
+        if (s.inputIndex >= s.sequence.length) completeCastleSensePhase(true);
+      } else {
+        playSfx(sfxWrong);
+        s.inputIndex = 0;
+        s.score = 0;
+        if (status) status.textContent = `0 / ${s.sequence.length}`;
+        buttons.forEach(b => b.classList.add('wrong-sense-target'));
+        setTimeout(() => buttons.forEach(b => b.classList.remove('wrong-sense-target')), 380);
+      }
+    });
+  });
+}
+
+function setupCastleSmellPhase() {
+  const state = activeQuiz.castleSense;
+  const field = document.getElementById('castleSensePlayfield');
+  if (!field) return;
+
+  function spawnCloud() {
+    const s = activeQuiz?.castleSense;
+    if (!s || !s.running) return;
+    const cloud = document.createElement('button');
+    const good = Math.random() > 0.38;
+    cloud.type = 'button';
+    cloud.className = `castle-sense-target smell-cloud ${good ? 'good' : 'bad'}`;
+    cloud.style.left = `${castleRandomPercent(12, 82)}%`;
+    cloud.style.top = `${castleRandomPercent(18, 72)}%`;
+    cloud.textContent = good ? '☁️' : '🟢';
+    cloud.addEventListener('click', () => {
+      const st = activeQuiz?.castleSense;
+      if (!st || !st.running) return;
+      if (good) {
+        st.score += 1;
+        playSfx(sfxCorrect);
+        updateCastleSenseStatus();
+        cloud.remove();
+        if (st.score >= st.target) completeCastleSensePhase(true);
+      } else {
+        cloud.classList.add('wrong-sense-target');
+        playSfx(sfxWrong);
+        setTimeout(() => cloud.remove(), 220);
+      }
+    });
+    field.appendChild(cloud);
+    setTimeout(() => cloud.remove(), 1600);
+  }
+
+  spawnCloud();
+  state.spawnTimer = setInterval(spawnCloud, 850);
+}
+
+async function completeCastleSensePhase(success = true) {
+  const state = activeQuiz?.castleSense;
+  if (!state || !state.running) return;
+  state.running = false;
+  if (state.timer) clearInterval(state.timer);
+  if (state.spawnTimer) clearInterval(state.spawnTimer);
+  const panel = document.getElementById('castleSensePanel');
+  const config = castleSensePhaseConfig(state.phase);
+  if (panel) {
+    panel.innerHTML = `
+      <div class="castle-sense-complete">
+        <h2>${success ? 'Geschafft!' : 'Weiter!'}</h2>
+        <p>${config.title} abgeschlossen.</p>
+      </div>
+    `;
+  }
+  await wait(780);
+  const next = state.phase + 1;
+  cleanupCastleSensePhase();
+  if (next <= CASTLE_SENSE_PHASES_TOTAL) {
+    startCastleSensePhase(next);
+  } else {
+    showCastleStandoffResult();
+  }
+}
+
+function showCastleStandoffResult() {
+  const zone = document.getElementById('quizBattleZone');
+  const knight = document.getElementById('quizKnight');
+  const enemy = document.getElementById('quizEnemy');
+  if (zone) {
+    zone.classList.remove('castle-sense-mode', 'castle-final-hit-mode');
+    zone.classList.add('castle-stand-off-mode');
+  }
+  if (knight) knight.src = castleKnightAsset('normal');
+  if (enemy) enemy.src = castleEnemyAsset('laugh');
   setAreaProgress({ level2Completed: true });
   applyMarkerStates();
   const result = document.getElementById('quizResult');
@@ -1519,7 +1806,7 @@ async function playCastleFinalHit() {
     result.classList.remove('hidden');
     result.innerHTML = `
       <h2>Treffer gelandet</h2>
-      <p>Der Zauberer lacht noch, aber zum ersten Mal hat ihn der Ritter erreicht.</p>
+      <p>Der Ritter hat den Zauberer erreicht und die ersten Sinnesprüfungen bestanden.</p>
       <div class="quiz-result-actions single-action">
         <button id="closeQuizButton" class="primary-button" type="button">Zur Weltkarte</button>
       </div>
@@ -1528,6 +1815,7 @@ async function playCastleFinalHit() {
     if (btn) btn.addEventListener('click', returnToOverworld);
   }
 }
+
 
 function showQuizEndPanel() {
   activeQuiz.finished = true;
@@ -1642,6 +1930,7 @@ function showWinResultSlide(result, reward, slide, fragmentStatus = {}) {
 
 async function returnToOverworld() {
   cleanupCastleDodgeGame();
+  cleanupCastleSensePhase();
   const modal = ensureQuizModal();
   modal.classList.add('hidden');
   pauseBossMusic();
@@ -1653,6 +1942,7 @@ async function returnToOverworld() {
 
 async function exitLevel() {
   cleanupCastleDodgeGame();
+  cleanupCastleSensePhase();
   pauseBossMusic();
   pauseLevelMusic();
   await moveToNode('start');
