@@ -3859,7 +3859,7 @@ p { line-height: 1.5; }
   height: 60% !important;
   left: 4% !important;
   right: 4% !important;
-  --bush-knight-x: 8.5%;
+  --bush-knight-x: 14%;
   --bush-knight-bottom: 4%;
   --bush-mage-x: -28%;
   --bush-mage-bottom: 11%;
@@ -3879,9 +3879,9 @@ p { line-height: 1.5; }
 .quiz-battle-zone.castle-bush-mode .knight-battle {
   left: var(--bush-knight-x) !important;
   bottom: var(--bush-knight-bottom) !important;
-  width: clamp(72px, 18vmin, 126px) !important;
-  height: clamp(72px, 18vmin, 126px) !important;
-  transform: translateX(-50%) scale(.82) !important;
+  width: var(--castle-combat-size) !important;
+  height: var(--castle-combat-size) !important;
+  transform: translateX(-50%) !important;
   transition: none !important;
   z-index: 22 !important;
 }
@@ -4018,8 +4018,104 @@ p { line-height: 1.5; }
   .castle-bush-slot {
     width: clamp(136px, 23vmin, 176px);
   }
-  .quiz-battle-zone.castle-bush-mode .knight-battle {
-    width: clamp(68px, 17vmin, 112px) !important;
-    height: clamp(68px, 17vmin, 112px) !important;
+}
+
+
+/* ===== v80 Zauberschloss: kurze Sinnesfragen vor Angriffen ===== */
+.castle-sense-question-panel {
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: clamp(14px, 3vw, 28px);
+  background: rgba(25, 12, 40, .52);
+  backdrop-filter: blur(2px);
+}
+
+.castle-sense-question-panel.hidden {
+  display: none !important;
+}
+
+.castle-sense-question-card {
+  width: min(92%, 620px);
+  max-height: 88%;
+  overflow: auto;
+  display: grid;
+  gap: 12px;
+  padding: clamp(18px, 3.5vw, 30px);
+  border: 2px solid rgba(255,255,255,.82);
+  border-radius: 26px;
+  background: rgba(255, 250, 236, .98);
+  color: #352447;
+  box-shadow: 0 22px 55px rgba(0,0,0,.34);
+}
+
+.castle-sense-question-kicker {
+  justify-self: start;
+  padding: 6px 11px;
+  border-radius: 999px;
+  background: rgba(115, 55, 177, .12);
+  color: #662d9c;
+  font-size: .84rem;
+  font-weight: 950;
+  letter-spacing: .02em;
+}
+
+.castle-sense-question-card h2,
+.castle-sense-question-card p {
+  margin: 0;
+}
+
+.castle-sense-question-card h2 {
+  font-size: clamp(1.15rem, 3.5vmin, 1.55rem);
+}
+
+.castle-sense-question-text {
+  font-size: clamp(1rem, 3vmin, 1.22rem);
+  font-weight: 850;
+  line-height: 1.4;
+}
+
+.castle-sense-question-answers {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.castle-sense-question-answer {
+  min-height: 52px;
+  padding: 11px 13px;
+}
+
+.castle-sense-question-feedback {
+  min-height: 1.5em;
+  text-align: center;
+  font-weight: 950;
+  color: #5b268b;
+}
+
+.castle-sense-question-feedback.hidden {
+  visibility: hidden;
+  display: block !important;
+}
+
+@media (max-width: 560px) {
+  .castle-sense-question-panel {
+    padding: 10px;
+  }
+  .castle-sense-question-card {
+    width: min(96%, 620px);
+    padding: 16px;
+    gap: 10px;
+  }
+  .castle-sense-question-answers {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .castle-sense-question-answer {
+    min-height: 44px;
+    padding: 9px 11px;
+    font-size: .9rem;
   }
 }
