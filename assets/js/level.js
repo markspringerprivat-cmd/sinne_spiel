@@ -118,10 +118,25 @@ function shuffleArray(items) {
   return copy;
 }
 
+const CASTLE_SENSE_FALLBACK_QUESTIONS = {
+  farbenreich: [
+    ['Mit welchem Sinnesorgan sehen wir?', ['Mit dem Auge', 'Mit der Nase', 'Mit der Haut', 'Mit dem Ohr'], 0]
+  ],
+  tastminen: [
+    ['Mit welchem Sinnesorgan tastest und fühlst du?', ['Mit der Haut', 'Mit der Nase', 'Mit der Zunge', 'Mit dem Ohr'], 0]
+  ],
+  flammenkueche: [
+    ['Mit welchem Sinnesorgan schmecken wir?', ['Mit der Zunge', 'Mit dem Auge', 'Mit dem Ohr', 'Mit der Hand'], 0]
+  ]
+};
+
 function getCastleSenseQuestion(areaId) {
-  const questions = window.SINNESMAGIE_QUIZZES?.[areaId]?.questions;
-  if (!Array.isArray(questions) || !questions.length) return null;
-  if (!activeQuiz) return questions[Math.floor(Math.random() * questions.length)] || null;
+  const sourceQuestions = window.SINNESMAGIE_QUIZZES?.[areaId]?.questions;
+  const questions = Array.isArray(sourceQuestions) && sourceQuestions.length
+    ? sourceQuestions
+    : CASTLE_SENSE_FALLBACK_QUESTIONS[areaId] || [];
+  if (!questions.length) return null;
+  if (!activeQuiz) return questions[Math.floor(Math.random() * questions.length)] || questions[0];
 
   activeQuiz.senseQuestionPools ||= {};
   let pool = activeQuiz.senseQuestionPools[areaId];
@@ -133,34 +148,59 @@ function getCastleSenseQuestion(areaId) {
   return questions[index] || questions[0] || null;
 }
 
+function ensureCastleSenseQuestionPanel() {
+  let panel = document.getElementById('castleSenseQuestionPanel');
+  if (!panel) {
+    panel = document.createElement('div');
+    panel.id = 'castleSenseQuestionPanel';
+    panel.className = 'castle-sense-question-panel hidden';
+  }
+  if (panel.parentElement !== document.body) document.body.appendChild(panel);
+  panel.setAttribute('aria-hidden', panel.classList.contains('hidden') ? 'true' : 'false');
+  return panel;
+}
+
 function hideCastleSenseQuestionPanel() {
   const panel = document.getElementById('castleSenseQuestionPanel');
   if (!panel) return;
   panel.classList.add('hidden');
+  panel.setAttribute('aria-hidden', 'true');
+  panel.style.display = 'none';
   panel.innerHTML = '';
 }
 
 function askCastleSenseQuestion(areaId, title) {
-  const panel = document.getElementById('castleSenseQuestionPanel');
+  const panel = ensureCastleSenseQuestionPanel();
   const question = getCastleSenseQuestion(areaId);
-  if (!panel || !question) return Promise.resolve(true);
+  if (!question) {
+    console.error(`Keine Sinnesfrage für ${areaId} gefunden.`);
+    return Promise.resolve(false);
+  }
 
   const [questionText, rawAnswers, correctIndex] = question;
+  if (!Array.isArray(rawAnswers) || rawAnswers.length === 0) {
+    console.error(`Ungültige Antwortdaten für ${areaId}.`);
+    return Promise.resolve(false);
+  }
+
   const answers = shuffleArray(rawAnswers.map((answer, originalIndex) => ({
     answer,
     correct: originalIndex === correctIndex
   })));
 
   panel.innerHTML = `
-    <div class="castle-sense-question-card" role="dialog" aria-modal="true" aria-label="${title}">
+    <div class="castle-sense-question-card" role="dialog" aria-modal="true" aria-labelledby="castleSenseQuestionTitle">
       <span class="castle-sense-question-kicker">Kurze Sinnesfrage</span>
-      <h2>${title}</h2>
+      <h2 id="castleSenseQuestionTitle">${title}</h2>
       <p class="castle-sense-question-text">${questionText}</p>
       <div class="castle-sense-question-answers"></div>
       <p class="castle-sense-question-feedback hidden" aria-live="polite"></p>
     </div>
   `;
   panel.classList.remove('hidden');
+  panel.setAttribute('aria-hidden', 'false');
+  panel.style.display = 'grid';
+  panel.style.pointerEvents = 'auto';
 
   return new Promise(resolve => {
     const answersWrap = panel.querySelector('.castle-sense-question-answers');
@@ -172,7 +212,10 @@ function askCastleSenseQuestion(areaId, title) {
       button.type = 'button';
       button.className = 'quiz-answer castle-sense-question-answer';
       button.textContent = item.answer;
-      button.addEventListener('click', async () => {
+      button.dataset.correct = item.correct ? '1' : '0';
+      button.addEventListener('click', async event => {
+        event.preventDefault();
+        event.stopPropagation();
         if (answered) return;
         answered = true;
         const buttons = [...answersWrap.querySelectorAll('button')];
@@ -181,15 +224,20 @@ function askCastleSenseQuestion(areaId, title) {
         const correctButton = buttons.find(btn => btn.dataset.correct === '1');
         if (!item.correct) correctButton?.classList.add('correct-answer');
 
-        feedback.textContent = item.correct ? 'Richtig – der Angriff kann beginnen!' : 'Falsch – versuche die Aufgabe erneut.';
+        feedback.textContent = item.correct
+          ? 'Richtig – der Angriff kann beginnen!'
+          : 'Falsch – du musst die Aufgabe erneut erspielen.';
         feedback.classList.remove('hidden');
         playSfx(item.correct ? sfxCorrect : sfxWrong);
-        await wait(item.correct ? 620 : 900);
+        await wait(item.correct ? 650 : 950);
         hideCastleSenseQuestionPanel();
         resolve(item.correct);
       });
-      button.dataset.correct = item.correct ? '1' : '0';
       answersWrap.appendChild(button);
+    });
+
+    requestAnimationFrame(() => {
+      panel.querySelector('.castle-sense-question-answer')?.focus({ preventScroll: true });
     });
   });
 }
@@ -1003,7 +1051,10 @@ function preloadQuizAssets(data, quizId) {
 
 function ensureQuizModal() {
   let modal = document.getElementById('quizModal');
-  if (modal) return modal;
+  if (modal) {
+    ensureCastleSenseQuestionPanel();
+    return modal;
+  }
   modal = document.createElement('div');
   modal.id = 'quizModal';
   modal.className = 'quiz-modal hidden';
@@ -1044,10 +1095,10 @@ function ensureQuizModal() {
       </div>
       <div id="castleFinalQuestionPanel" class="quiz-panel castle-final-question-panel hidden"></div>
       <div id="castleClonePanel" class="quiz-panel castle-clone-panel hidden"></div>
-      <div id="castleSenseQuestionPanel" class="castle-sense-question-panel hidden"></div>
       <div id="quizResult" class="quiz-result quiz-panel hidden"></div>
     </div>`;
   document.body.appendChild(modal);
+  ensureCastleSenseQuestionPanel();
   return modal;
 }
 

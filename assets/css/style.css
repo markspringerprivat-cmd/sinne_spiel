@@ -4023,18 +4023,22 @@ p { line-height: 1.5; }
 
 /* ===== v80 Zauberschloss: kurze Sinnesfragen vor Angriffen ===== */
 .castle-sense-question-panel {
-  position: absolute;
+  position: fixed;
   inset: 0;
-  z-index: 60;
+  z-index: 10000;
   display: grid;
   place-items: center;
   padding: clamp(14px, 3vw, 28px);
-  background: rgba(25, 12, 40, .52);
-  backdrop-filter: blur(2px);
+  background: rgba(25, 12, 40, .68);
+  backdrop-filter: blur(3px);
+  pointer-events: auto;
+  overflow: auto;
+  overscroll-behavior: contain;
 }
 
 .castle-sense-question-panel.hidden {
   display: none !important;
+  pointer-events: none !important;
 }
 
 .castle-sense-question-card {
