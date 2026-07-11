@@ -114,3 +114,11 @@ Die zweiten Levelpunkte der Levelkarten starten nun ein Kampf-Quiz mit sieben Fr
 - Bei Erfolg springt der leuchtende Ritter in den Ball, der explodiert und den Zauberer besiegt.
 - Bei Zeitablauf wird der Energieball auf den Ritter geschossen und der Kampf gilt als verloren.
 - Beim Sieg wird die Bossmusik ausgeblendet und `castle_finale_itsover.mp3` eingespielt.
+
+
+## Version 90
+- Finale Kampfszene ohne verbleibenden Blur-Overlay
+- Magier, Energiekugel und Ritter exakt auf einer vertikalen Achse
+- Bossmusik bleibt während der letzten Prüfung auf stabiler Lautstärke
+- Siegerfiguren im Boss-besiegt-Bild deutlich nach oben versetzt
+- Die Bossmusik wird vor ihrem im Audiomaterial enthaltenen leisen Ausklang sauber in den stabilen Mittelteil zurückgesetzt.

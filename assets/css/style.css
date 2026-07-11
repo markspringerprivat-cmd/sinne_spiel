@@ -4693,6 +4693,8 @@ p { line-height: 1.5; }
   border-radius: 0 !important;
   background: transparent !important;
   box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
   overflow: hidden !important;
   pointer-events: none !important;
 }
@@ -4952,3 +4954,55 @@ p { line-height: 1.5; }
 .castle-ultimate-retry-card p { margin: 0; }
 .castle-ultimate-retry-card h2 { font-size: clamp(1.3rem, 5vw, 1.9rem); }
 .castle-ultimate-retry-card p { font-weight: 850; }
+
+
+/* ===== v90 Finale: klare Cinematic-Szene, exakte Achse und freie Ergebnisfiguren ===== */
+.castle-ultimate-panel:not(.castle-ultimate-retry-panel),
+.castle-ultimate-panel.castle-ultimate-success,
+.castle-ultimate-panel.castle-ultimate-panel-fading {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background: transparent !important;
+}
+
+.quiz-battle-zone.castle-ultimate-mode .knight-battle,
+.quiz-battle-zone.castle-ultimate-mode .enemy-battle,
+.castle-ultimate-orb {
+  left: 50% !important;
+}
+
+.quiz-battle-zone.castle-victory-result-mode {
+  top: 7% !important;
+  height: 54% !important;
+  left: 4% !important;
+  right: 4% !important;
+}
+.quiz-battle-zone.castle-victory-result-mode .knight-battle,
+.quiz-battle-zone.castle-victory-result-mode .enemy-battle {
+  bottom: 22% !important;
+  width: var(--castle-combat-size) !important;
+  height: var(--castle-combat-size) !important;
+  max-width: none !important;
+  max-height: none !important;
+  object-fit: contain !important;
+  z-index: 14 !important;
+}
+.quiz-battle-zone.castle-victory-result-mode .knight-battle {
+  left: calc(29% - (var(--castle-combat-size) / 2)) !important;
+  right: auto !important;
+}
+.quiz-battle-zone.castle-victory-result-mode .enemy-battle {
+  left: calc(68% - (var(--castle-combat-size) / 2)) !important;
+  right: auto !important;
+}
+
+@media (max-width: 520px) {
+  .quiz-battle-zone.castle-victory-result-mode {
+    top: 5% !important;
+    height: 54% !important;
+  }
+  .quiz-battle-zone.castle-victory-result-mode .knight-battle,
+  .quiz-battle-zone.castle-victory-result-mode .enemy-battle {
+    bottom: 25% !important;
+  }
+}

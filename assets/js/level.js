@@ -299,7 +299,7 @@ function resetCastleBattleClasses() {
   const enemy = document.getElementById('quizEnemy');
   const speech = document.getElementById('castleSpeech');
   const beam = document.getElementById('castleBeam');
-  if (zone) zone.classList.remove('castle-boss-mode', 'castle-dodge-mode', 'castle-final-question-mode', 'castle-final-hit-mode', 'castle-stand-off-mode', 'castle-clone-mode', 'castle-bush-mode', 'castle-smell-mode', 'castle-hearing-mode', 'castle-ultimate-mode');
+  if (zone) zone.classList.remove('castle-boss-mode', 'castle-dodge-mode', 'castle-final-question-mode', 'castle-final-hit-mode', 'castle-stand-off-mode', 'castle-clone-mode', 'castle-bush-mode', 'castle-smell-mode', 'castle-hearing-mode', 'castle-ultimate-mode', 'castle-victory-result-mode');
   if (knight) {
     knight.classList.remove('castle-runner', 'castle-knight-evade', 'castle-knight-hit', 'castle-final-jump', 'castle-walking', 'castle-smell-knight-damage', 'castle-smell-final-jump', 'castle-hearing-knight-damage', 'castle-hearing-final-jump', 'castle-hearing-respawn', 'castle-ultimate-knight-glow', 'castle-ultimate-knight-hit');
     knight.style.transform = '';
@@ -548,7 +548,7 @@ function cleanupCastleUltimateGame({ keepFinalMusic = false } = {}) {
   }
   const zone = document.getElementById('quizBattleZone');
   if (zone) {
-    zone.classList.remove('castle-ultimate-mode');
+    zone.classList.remove('castle-ultimate-mode', 'castle-victory-result-mode');
     ['--ultimate-knight-x', '--ultimate-knight-bottom', '--ultimate-mage-x', '--ultimate-mage-top']
       .forEach(name => zone.style.removeProperty(name));
   }
@@ -572,7 +572,7 @@ function setCastleStandardBattlePoseVisual() {
   const knight = document.getElementById('quizKnight');
   const enemy = document.getElementById('quizEnemy');
   if (!zone || !knight || !enemy) return;
-  zone.classList.remove('castle-boss-mode','castle-dodge-mode','castle-final-question-mode','castle-final-hit-mode','castle-clone-mode','castle-bush-mode','castle-smell-mode','castle-hearing-mode','castle-ultimate-mode');
+  zone.classList.remove('castle-boss-mode','castle-dodge-mode','castle-final-question-mode','castle-final-hit-mode','castle-clone-mode','castle-bush-mode','castle-smell-mode','castle-hearing-mode','castle-ultimate-mode','castle-victory-result-mode');
   zone.classList.add('castle-stand-off-mode');
   knight.className = 'battle-sprite knight-battle';
   enemy.className = 'battle-sprite enemy-battle';
@@ -817,9 +817,27 @@ const sfxClick = new Audio('../assets/audio/slice_cut.mp3');
 const sfxMageHit = new Audio('../assets/audio/magehit.mp3');
 
 const bossMusic = new Audio('../assets/audio/bossencounter.mp3');
-bossMusic.loop = true;
+const BOSS_MUSIC_LOOP_START_SECONDS = 15;
+const BOSS_MUSIC_LOOP_END_SECONDS = 112;
+bossMusic.loop = false;
 let bossMusicWanted = false;
 let bossMusicMode = 'full';
+
+function restartBossMusicBeforeFadeOut() {
+  if (!bossMusicWanted || castleUltimateMusicWanted) return;
+  try {
+    bossMusic.currentTime = BOSS_MUSIC_LOOP_START_SECONDS;
+    bossMusic.volume = bossVolumeForMode();
+    bossMusic.play().catch(() => {});
+  } catch {}
+}
+
+bossMusic.addEventListener('timeupdate', () => {
+  if (bossMusicWanted && !castleUltimateMusicWanted && bossMusic.currentTime >= BOSS_MUSIC_LOOP_END_SECONDS) {
+    restartBossMusicBeforeFadeOut();
+  }
+});
+bossMusic.addEventListener('ended', restartBossMusicBeforeFadeOut);
 
 const castleUltimateMusic = new Audio('../assets/audio/castle_finale_itsover.mp3');
 castleUltimateMusic.preload = 'auto';
@@ -1016,12 +1034,35 @@ function setBossMusicMode(mode) {
   } catch {}
 }
 
+
+function stabilizeCastleUltimateBossMusic() {
+  const state = activeQuiz?.castleUltimate;
+  if (!state?.running || castleUltimateMusicWanted || state.completing) return;
+  if (state.finished && !state.failureCinematic) return;
+  bossMusicWanted = true;
+  bossMusicMode = 'full';
+  try {
+    bossMusic.loop = false;
+    if (bossMusic.currentTime >= BOSS_MUSIC_LOOP_END_SECONDS) bossMusic.currentTime = BOSS_MUSIC_LOOP_START_SECONDS;
+    bossMusic.volume = currentVolume();
+    if (bossMusic.paused) bossMusic.play().catch(() => {});
+  } catch {}
+}
+
+function scheduleCastleUltimateMusicRestore() {
+  [80, 420, 900].forEach(delay => {
+    const timer = setTimeout(stabilizeCastleUltimateBossMusic, delay);
+    activeQuiz?.castleUltimate?.timers?.push(timer);
+  });
+}
+
 function startBossMusic(mode = 'full') {
   pauseCastleUltimateMusic();
   bossMusicWanted = true;
   bossMusicMode = mode === 'question' ? 'question' : 'full';
   try {
-    bossMusic.loop = true;
+    bossMusic.loop = false;
+    if (bossMusic.currentTime >= BOSS_MUSIC_LOOP_END_SECONDS) bossMusic.currentTime = BOSS_MUSIC_LOOP_START_SECONDS;
     bossMusic.volume = bossVolumeForMode();
     bossMusic.play().catch(() => {});
   } catch {}
@@ -4099,6 +4140,34 @@ function setCastleUltimateMagePosition(x, top = 5) {
   zone.style.setProperty('--ultimate-mage-top', `${top}%`);
 }
 
+
+function alignCastleUltimateColumn() {
+  const zone = document.getElementById('quizBattleZone');
+  const knight = document.getElementById('quizKnight');
+  const enemy = document.getElementById('quizEnemy');
+  const orb = document.getElementById('castleUltimateOrb');
+  if (!zone) return;
+
+  zone.style.setProperty('--ultimate-knight-x', '50%');
+  zone.style.setProperty('--ultimate-mage-x', '50%');
+  if (knight) {
+    knight.style.setProperty('left', '50%', 'important');
+    knight.style.setProperty('right', 'auto', 'important');
+  }
+  if (enemy) {
+    enemy.style.setProperty('left', '50%', 'important');
+    enemy.style.setProperty('right', 'auto', 'important');
+  }
+  if (orb) orb.style.left = '50%';
+}
+
+function clearCastleUltimateQuestionOverlay() {
+  const panel = document.getElementById('castleUltimatePanel');
+  hideCastleSenseQuestionPanel();
+  if (!panel) return;
+  panel.classList.add('castle-ultimate-panel-fading');
+}
+
 function buildCastleUltimatePanel() {
   const state = activeQuiz?.castleUltimate;
   const panel = document.getElementById('castleUltimatePanel');
@@ -4197,6 +4266,7 @@ async function animateCastleUltimateMageEntry() {
   enemy.src = castleEnemyAsset('hover');
   enemy.classList.add('castle-ultimate-casting');
   setCastleUltimateMagePosition(50, endTop);
+  alignCastleUltimateColumn();
   return true;
 }
 
@@ -4204,6 +4274,8 @@ function startCastleUltimateCountdown() {
   const state = activeQuiz?.castleUltimate;
   if (!state || !state.running) return;
   state.deadline = performance.now() + CASTLE_ULTIMATE_DURATION_MS;
+  state.lastMusicStabilizeAt = 0;
+  stabilizeCastleUltimateBossMusic();
   const layer = document.getElementById('castleUltimateLayer');
   const timer = document.getElementById('castleUltimateTimer');
 
@@ -4211,6 +4283,10 @@ function startCastleUltimateCountdown() {
     const current = activeQuiz?.castleUltimate;
     if (!current?.running || current.finished) return;
     const remaining = Math.max(0, current.deadline - now);
+    if (!current.lastMusicStabilizeAt || now - current.lastMusicStabilizeAt >= 500) {
+      current.lastMusicStabilizeAt = now;
+      stabilizeCastleUltimateBossMusic();
+    }
     const elapsedProgress = Math.min(1, Math.max(0, 1 - remaining / CASTLE_ULTIMATE_DURATION_MS));
     if (timer) {
       timer.textContent = String(Math.max(0, Math.ceil(remaining / 1000)));
@@ -4246,6 +4322,7 @@ async function answerCastleUltimateStatement(selectedValue) {
   if (!correct) {
     state.deadline -= CASTLE_ULTIMATE_WRONG_PENALTY_MS;
     playSfx(sfxWrong);
+    scheduleCastleUltimateMusicRestore();
     card?.classList.add('wrong');
     setCastleUltimateFeedback('Falsch – 2 Sekunden verloren.', 'wrong');
     await wait(520);
@@ -4258,8 +4335,9 @@ async function answerCastleUltimateStatement(selectedValue) {
 
   card?.classList.add('correct');
   setCastleUltimateFeedback('Richtig!', 'correct');
-  playSfx(sfxCorrect);
   const completesFinale = state.index + 1 >= state.questions.length;
+  playSfx(sfxCorrect);
+  if (!completesFinale) scheduleCastleUltimateMusicRestore();
   if (completesFinale) {
     state.completing = true;
     if (state.rafId) {
@@ -4287,10 +4365,13 @@ async function animateCastleUltimateKnightIntoOrb() {
   const orb = document.getElementById('castleUltimateOrb');
   if (!state || !zone || !knight || !orb) return;
 
+  alignCastleUltimateColumn();
   const zoneRect = zone.getBoundingClientRect();
   const knightRect = knight.getBoundingClientRect();
   const orbRect = orb.getBoundingClientRect();
   const startBottom = Math.max(0, zoneRect.bottom - knightRect.bottom);
+  const startCenterX = knightRect.left + knightRect.width / 2 - zoneRect.left;
+  const targetCenterX = orbRect.left + orbRect.width / 2 - zoneRect.left;
   const knightCenterY = knightRect.top + knightRect.height / 2;
   const orbCenterY = orbRect.top + orbRect.height / 2;
   const risePx = Math.max(100, knightCenterY - orbCenterY);
@@ -4305,6 +4386,8 @@ async function animateCastleUltimateKnightIntoOrb() {
       const progress = Math.min(1, (now - startTime) / 1050);
       const eased = 1 - Math.pow(1 - progress, 3);
       const bottomPx = startBottom + risePx * eased;
+      const centerX = startCenterX + (targetCenterX - startCenterX) * eased;
+      knight.style.setProperty('left', `${centerX}px`, 'important');
       knight.style.setProperty('bottom', `${bottomPx}px`, 'important');
       if (progress < 1) requestAnimationFrame(frame);
       else resolve();
@@ -4348,8 +4431,12 @@ async function completeCastleUltimateSuccess() {
   setCastleUltimateAnswersEnabled(false);
   setCastleUltimateFeedback('Alle Aussagen geschafft! Zerstöre die Kugel!', 'correct');
   panel?.classList.add('castle-ultimate-success');
+  clearCastleUltimateQuestionOverlay();
   orb.classList.add('castle-ultimate-orb-stabilized');
+  alignCastleUltimateColumn();
   await wait(460);
+  panel?.classList.add('hidden');
+  panel?.classList.remove('castle-ultimate-panel-fading');
 
   await animateCastleUltimateKnightIntoOrb();
   if (!activeQuiz?.castleUltimate?.running) return;
@@ -4409,6 +4496,7 @@ async function retryCastleUltimatePhase() {
   activeQuiz.finished = false;
   activeQuiz.castleUltimateFailed = false;
   activeQuiz.hearts = Math.max(1, activeQuiz.hearts || 1);
+  document.getElementById('quizBattleZone')?.classList.remove('castle-victory-result-mode');
   setCastleStandardBattlePoseVisual();
   await wait(260);
   await flyCastleMageOutBeforePhase('left');
@@ -4437,23 +4525,29 @@ async function failCastleUltimateByTimeout() {
   const knight = document.getElementById('quizKnight');
   if (!state || !state.running || state.finished || !enemy || !knight) return;
 
+  state.failureCinematic = true;
   state.finished = true;
   state.locked = true;
   if (state.rafId) cancelAnimationFrame(state.rafId);
   state.rafId = null;
   setCastleUltimateAnswersEnabled(false);
-
-  panel?.classList.add('castle-ultimate-panel-fading');
+  clearCastleUltimateQuestionOverlay();
+  alignCastleUltimateColumn();
+  stabilizeCastleUltimateBossMusic();
   await wait(520);
   panel?.classList.add('hidden');
+  panel?.classList.remove('castle-ultimate-panel-fading');
   enemy.src = castleEnemyAsset('laugh');
   showCastleSpeech('<strong>Zu langsam!</strong>');
   await wait(1500);
   hideCastleSpeech();
+  alignCastleUltimateColumn();
+  stabilizeCastleUltimateBossMusic();
 
   enemy.classList.remove('castle-ultimate-casting');
   await animateCastleUltimateOrbStrike();
   playSfx(sfxWrong);
+  scheduleCastleUltimateMusicRestore();
   const impactX = Number.parseFloat(document.getElementById('castleUltimateOrb')?.style.left) || 50;
   const impactY = Number.parseFloat(document.getElementById('castleUltimateOrb')?.style.top) || 78;
   spawnCastleUltimateExplosion(impactX, impactY);
@@ -4468,6 +4562,7 @@ async function failCastleUltimateByTimeout() {
 
 async function startCastleUltimateSequence() {
   cleanupCastleUltimateGame();
+  setBossMusicMode('full');
   const modal = ensureQuizModal();
   const zone = document.getElementById('quizBattleZone');
   const knight = document.getElementById('quizKnight');
@@ -4490,6 +4585,7 @@ async function startCastleUltimateSequence() {
     finished: false,
     locked: true,
     completing: false,
+    failureCinematic: false,
     questions: createCastleUltimateQuestions(),
     index: 0,
     deadline: 0,
@@ -4525,6 +4621,8 @@ async function startCastleUltimateSequence() {
 
   const entered = await animateCastleUltimateMageEntry();
   if (!entered || !activeQuiz?.castleUltimate?.running) return;
+  alignCastleUltimateColumn();
+  stabilizeCastleUltimateBossMusic();
   buildCastleUltimatePanel();
   document.getElementById('castleUltimateOrb')?.classList.add('visible');
   const finalState = activeQuiz.castleUltimate;
@@ -4553,6 +4651,10 @@ function showQuizResult() {
   document.getElementById('battleFeedback').classList.add('hidden');
   const knight = document.getElementById('quizKnight');
   const enemy = document.getElementById('quizEnemy');
+  const battleZone = document.getElementById('quizBattleZone');
+  document.getElementById('castleUltimatePanel')?.classList.add('hidden');
+  hideCastleSenseQuestionPanel();
+  battleZone?.classList.toggle('castle-victory-result-mode', won && isCastleBossQuiz());
   knight.classList.remove('sprite-pop', 'sprite-shake', 'knight-strike', 'knight-damaged', 'knight-attack-pose');
   enemy.classList.remove('sprite-shake', 'enemy-hit', 'enemy-attack-strike');
   knight.src = won ? knightAsset('victory') : knightAsset('defeated');
