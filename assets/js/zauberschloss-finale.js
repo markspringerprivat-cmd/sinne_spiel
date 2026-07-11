@@ -2,9 +2,9 @@ const STORAGE_LEVEL_PROGRESS = 'sinnesmagie-level-progress';
 const STORAGE_LEVEL_NODE = 'sinnesmagie-level-node';
 const STORAGE_VOLUME = 'masterVolume';
 const OUTRO_PANEL_SECONDS = 10;
-const LAST_PANEL_HOLD_SECONDS = 8;
-const STORY_SCROLL_DELAY_MS = 900;
-const CREDITS_ROLL_MS = 46000;
+const LAST_PANEL_HOLD_SECONDS = 5;
+const AUTO_SCROLL_DELAY_MS = LAST_PANEL_HOLD_SECONDS * 1000;
+const AUTO_SCROLL_DURATION_MS = 74000;
 
 const orbFrames = [
   '../assets/images/finale/orb_stage_1.png',
@@ -71,8 +71,10 @@ const outroTitle = document.getElementById('castleOutroTitle');
 const outroText = document.getElementById('castleOutroText');
 const outroCounter = document.getElementById('castleOutroCounter');
 const outroProgress = document.getElementById('castleOutroProgress');
+const storyStage = document.querySelector('.castle-outro-story-stage');
+const storyCard = document.querySelector('.castle-outro-story-card');
+const imageWrap = document.querySelector('.castle-outro-story-image-wrap');
 const creditsSection = document.getElementById('castleCreditsSection');
-const creditsRoll = document.getElementById('castleCreditsRoll');
 const outroFinish = document.getElementById('castleOutroFinish');
 
 let orbIndex = 0;
@@ -81,8 +83,9 @@ let finished = false;
 let outroStarted = false;
 let outroPanelIndex = -1;
 let panelTimer = null;
-let creditsTimer = null;
-let creditsStarted = false;
+let autoScrollTimer = null;
+let autoScrollStarted = false;
+let autoScrollRaf = 0;
 
 function currentVolume() {
   const saved = Number(localStorage.getItem(STORAGE_VOLUME));
@@ -134,7 +137,7 @@ function fadeHopefulMusic(targetVolume, duration = 900) {
 }
 
 function setCaption(index) {
-  caption.textContent = hitTexts[Math.max(0, Math.min(hitTexts.length - 1, index))];
+  if (caption) caption.textContent = hitTexts[Math.max(0, Math.min(hitTexts.length - 1, index))];
 }
 
 function enterKnight() {
@@ -148,13 +151,14 @@ function enterKnight() {
 
 function clearStoryTimers() {
   if (panelTimer) { clearTimeout(panelTimer); panelTimer = null; }
-  if (creditsTimer) { clearTimeout(creditsTimer); creditsTimer = null; }
+  if (autoScrollTimer) { clearTimeout(autoScrollTimer); autoScrollTimer = null; }
+  if (autoScrollRaf) { cancelAnimationFrame(autoScrollRaf); autoScrollRaf = 0; }
 }
 
 function showWords(sentence, revealSeconds = 8.2) {
   outroText.innerHTML = '';
   const words = sentence.trim().split(/\s+/);
-  const interval = Math.max(95, Math.min(250, (revealSeconds * 1000) / Math.max(1, words.length)));
+  const interval = Math.max(95, Math.min(240, (revealSeconds * 1000) / Math.max(1, words.length)));
   words.forEach((word, index) => {
     const span = document.createElement('span');
     span.className = 'castle-outro-word';
@@ -162,6 +166,18 @@ function showWords(sentence, revealSeconds = 8.2) {
     span.textContent = `${word}${index < words.length - 1 ? ' ' : ''}`;
     outroText.appendChild(span);
   });
+}
+
+function syncStoryCardHeight() {
+  if (!storyCard || !imageWrap || !outroOverlay) return;
+  if (window.innerWidth <= 900) {
+    const viewport = window.innerHeight;
+    const imageHeight = imageWrap.getBoundingClientRect().height;
+    const desired = Math.max(320, viewport - imageHeight);
+    storyCard.style.minHeight = `${desired}px`;
+  } else {
+    storyCard.style.minHeight = '';
+  }
 }
 
 function renderOutroPanel(index) {
@@ -173,6 +189,7 @@ function renderOutroPanel(index) {
     outroImage.src = panel.img;
     outroImage.alt = `Endgeschichte Bild ${index + 1}`;
     outroImage.classList.add('is-visible');
+    syncStoryCardHeight();
   }, 60);
   outroTitle.textContent = panel.title;
   outroCounter.textContent = `${index + 1} / ${outroPanels.length}`;
@@ -181,25 +198,40 @@ function renderOutroPanel(index) {
 }
 
 function showFinishButton() {
-  outroFinish.classList.remove('hidden');
+  outroFinish?.classList.remove('hidden');
 }
 
-function startCredits() {
-  if (creditsStarted) return;
-  creditsStarted = true;
-  creditsSection.classList.remove('hidden');
-  creditsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  window.setTimeout(() => {
-    creditsRoll.classList.add('playing');
-    creditsRoll.addEventListener('animationend', showFinishButton, { once: true });
-    creditsTimer = window.setTimeout(showFinishButton, CREDITS_ROLL_MS + 600);
-  }, STORY_SCROLL_DELAY_MS);
+function easeInOut(t) {
+  return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+}
+
+function startAutoScrollThroughCredits() {
+  if (autoScrollStarted || !outroOverlay) return;
+  autoScrollStarted = true;
+  syncStoryCardHeight();
+  const startTop = outroOverlay.scrollTop;
+  const endTop = Math.max(0, outroOverlay.scrollHeight - outroOverlay.clientHeight);
+  const startTime = performance.now();
+
+  function step(now) {
+    const progress = Math.min(1, (now - startTime) / AUTO_SCROLL_DURATION_MS);
+    const eased = easeInOut(progress);
+    outroOverlay.scrollTop = startTop + (endTop - startTop) * eased;
+    if (progress < 1) {
+      autoScrollRaf = requestAnimationFrame(step);
+    } else {
+      autoScrollRaf = 0;
+      showFinishButton();
+    }
+  }
+
+  autoScrollRaf = requestAnimationFrame(step);
 }
 
 function queueNextPanel() {
   clearStoryTimers();
   if (outroPanelIndex >= outroPanels.length - 1) {
-    panelTimer = window.setTimeout(startCredits, LAST_PANEL_HOLD_SECONDS * 1000);
+    autoScrollTimer = window.setTimeout(startAutoScrollThroughCredits, AUTO_SCROLL_DELAY_MS);
     return;
   }
   panelTimer = window.setTimeout(() => {
@@ -213,6 +245,7 @@ async function startOutro() {
   outroStarted = true;
   finaleShell.classList.add('hidden');
   outroOverlay.classList.remove('hidden');
+  outroOverlay.scrollTop = 0;
   renderOutroPanel(0);
   queueNextPanel();
 
@@ -224,6 +257,8 @@ async function startOutro() {
   } catch {
     // Falls Autoplay blockiert ist, startet die Musik meist nach dem nächsten Tap.
   }
+
+  syncStoryCardHeight();
 }
 
 function finishFinale() {
@@ -274,6 +309,10 @@ function performStrike() {
 }
 
 attackButton?.addEventListener('click', performStrike);
+window.addEventListener('resize', syncStoryCardHeight);
+outroImage?.addEventListener('load', syncStoryCardHeight);
+hopefulMusic?.addEventListener('ended', showFinishButton);
+
 orbFrames.forEach(src => { const img = new Image(); img.src = src; });
 outroPanels.forEach(panel => { const img = new Image(); img.src = panel.img; });
 enterKnight();
