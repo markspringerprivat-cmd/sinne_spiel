@@ -1,8 +1,10 @@
-const STORAGE_VOLUME = 'sinnesmagie-volume';
 const STORAGE_LEVEL_PROGRESS = 'sinnesmagie-level-progress';
 const STORAGE_LEVEL_NODE = 'sinnesmagie-level-node';
+const STORAGE_VOLUME = 'masterVolume';
 const OUTRO_PANEL_SECONDS = 10;
-const OUTRO_STORY_SECONDS = 60;
+const LAST_PANEL_HOLD_SECONDS = 8;
+const STORY_SCROLL_DELAY_MS = 900;
+const CREDITS_ROLL_MS = 46000;
 
 const orbFrames = [
   '../assets/images/finale/orb_stage_1.png',
@@ -14,17 +16,17 @@ const orbFrames = [
 
 const hitTexts = [
   'Der Ritter betritt den Thronsaal. Vor ihm ruht die Glaskugel, in der die Magie der Sinne gefangen ist.',
-  'Ein erster Schlag! Feine Risse laufen über die Glaskugel.',
-  'Noch ein Treffer – die Kugel wird instabil und die Magie beginnt zu flackern.',
-  'Die Hülle hält kaum noch stand. Ein letzter kräftiger Angriff wird sie sprengen.',
+  'Der erste Schlag trifft die Kugel. Feine Risse flimmern über ihre Oberfläche.',
+  'Mit dem zweiten Treffer wird die Glaskugel instabil und beginnt unruhig zu leuchten.',
+  'Ein weiterer Hieb erschüttert die Kugel. Sie hält kaum noch stand.',
   'Die Glaskugel zerbricht! Die Magie der Sinne bricht mit gewaltiger Kraft hervor.'
 ];
 
 const outroPanels = [
   {
     img: '../assets/images/finale/out_1.png',
-    title: 'Die Magie ist frei',
-    text: 'Mit dem letzten Schlag zersprang die Glaskugel. Wie ein leuchtender Regenbogen schoss die befreite Sinnesmagie aus dem finsteren Schloss und machte sich auf den Weg zurück.'
+    title: 'Die Kugel zerbricht',
+    text: 'Mit dem letzten Schlag des Ritters zersprang die Glaskugel. Ein mächtiger Strom aus Farben, Licht und Sinnesmagie schoss aus dem dunklen Schloss hinaus und suchte den Weg zurück ins Königreich.'
   },
   {
     img: '../assets/images/finale/out_2.png',
@@ -69,17 +71,18 @@ const outroTitle = document.getElementById('castleOutroTitle');
 const outroText = document.getElementById('castleOutroText');
 const outroCounter = document.getElementById('castleOutroCounter');
 const outroProgress = document.getElementById('castleOutroProgress');
-const outroStatus = document.getElementById('castleOutroStatus');
-const outroMusicStart = document.getElementById('castleOutroMusicStart');
+const creditsSection = document.getElementById('castleCreditsSection');
+const creditsRoll = document.getElementById('castleCreditsRoll');
 const outroFinish = document.getElementById('castleOutroFinish');
 
 let orbIndex = 0;
 let busy = true;
 let finished = false;
-let hopefulPrimed = false;
 let outroStarted = false;
 let outroPanelIndex = -1;
-let outroRaf = null;
+let panelTimer = null;
+let creditsTimer = null;
+let creditsStarted = false;
 
 function currentVolume() {
   const saved = Number(localStorage.getItem(STORAGE_VOLUME));
@@ -88,11 +91,8 @@ function currentVolume() {
 }
 
 function getProgress() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_LEVEL_PROGRESS) || '{}');
-  } catch {
-    return {};
-  }
+  try { return JSON.parse(localStorage.getItem(STORAGE_LEVEL_PROGRESS) || '{}'); }
+  catch { return {}; }
 }
 
 function saveProgress(patch) {
@@ -121,40 +121,9 @@ function playAudio(audio) {
   } catch {}
 }
 
-function setCaption(index) {
-  caption.textContent = hitTexts[Math.max(0, Math.min(hitTexts.length - 1, index))];
-}
-
-function enterKnight() {
-  setCaption(0);
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => knight.classList.add('entered'));
-  });
-  window.setTimeout(() => {
-    busy = false;
-    attackButton.disabled = false;
-  }, 1220);
-}
-
-function primeHopefulMusic() {
-  if (!hopefulMusic || hopefulPrimed) return;
-  try {
-    hopefulMusic.pause();
-    hopefulMusic.currentTime = 0;
-    hopefulMusic.volume = 0;
-    const playPromise = hopefulMusic.play();
-    hopefulPrimed = true;
-    playPromise?.catch?.(() => {
-      hopefulPrimed = false;
-    });
-  } catch {
-    hopefulPrimed = false;
-  }
-}
-
 function fadeHopefulMusic(targetVolume, duration = 900) {
   if (!hopefulMusic) return;
-  const startVolume = hopefulMusic.volume || 0;
+  const startVolume = Number.isFinite(hopefulMusic.volume) ? hopefulMusic.volume : 0;
   const start = performance.now();
   function frame(now) {
     const progress = Math.min(1, (now - start) / duration);
@@ -164,10 +133,28 @@ function fadeHopefulMusic(targetVolume, duration = 900) {
   requestAnimationFrame(frame);
 }
 
-function showWords(sentence, revealSeconds = 7.2) {
+function setCaption(index) {
+  caption.textContent = hitTexts[Math.max(0, Math.min(hitTexts.length - 1, index))];
+}
+
+function enterKnight() {
+  setCaption(0);
+  requestAnimationFrame(() => requestAnimationFrame(() => knight.classList.add('entered')));
+  window.setTimeout(() => {
+    busy = false;
+    attackButton.disabled = false;
+  }, 1220);
+}
+
+function clearStoryTimers() {
+  if (panelTimer) { clearTimeout(panelTimer); panelTimer = null; }
+  if (creditsTimer) { clearTimeout(creditsTimer); creditsTimer = null; }
+}
+
+function showWords(sentence, revealSeconds = 8.2) {
   outroText.innerHTML = '';
   const words = sentence.trim().split(/\s+/);
-  const interval = Math.max(105, Math.min(310, (revealSeconds * 1000) / Math.max(1, words.length)));
+  const interval = Math.max(95, Math.min(250, (revealSeconds * 1000) / Math.max(1, words.length)));
   words.forEach((word, index) => {
     const span = document.createElement('span');
     span.className = 'castle-outro-word';
@@ -178,9 +165,9 @@ function showWords(sentence, revealSeconds = 7.2) {
 }
 
 function renderOutroPanel(index) {
-  if (index === outroPanelIndex || !outroPanels[index]) return;
-  outroPanelIndex = index;
   const panel = outroPanels[index];
+  if (!panel) return;
+  outroPanelIndex = index;
   outroImage.classList.remove('is-visible');
   window.setTimeout(() => {
     outroImage.src = panel.img;
@@ -189,66 +176,53 @@ function renderOutroPanel(index) {
   }, 60);
   outroTitle.textContent = panel.title;
   outroCounter.textContent = `${index + 1} / ${outroPanels.length}`;
-  showWords(panel.text, index === outroPanels.length - 1 ? 8.3 : 7.2);
+  outroProgress.style.width = `${((index + 1) / outroPanels.length) * 100}%`;
+  showWords(panel.text, index === outroPanels.length - 1 ? 8 : 8.6);
 }
 
-function updateOutroTimeline() {
-  if (!outroStarted || !hopefulMusic) return;
-  const elapsed = Math.max(0, hopefulMusic.currentTime || 0);
-  const panelIndex = Math.min(outroPanels.length - 1, Math.floor(elapsed / OUTRO_PANEL_SECONDS));
-  renderOutroPanel(panelIndex);
-  outroProgress.style.width = `${Math.min(100, (elapsed / OUTRO_STORY_SECONDS) * 100)}%`;
-  if (elapsed >= OUTRO_STORY_SECONDS) {
-    outroStatus.textContent = 'Die Endmusik klingt vollständig aus. Das letzte Bild bleibt als ruhiger Abschluss sichtbar.';
-  } else {
-    const remaining = Math.max(0, Math.ceil(OUTRO_PANEL_SECONDS - (elapsed % OUTRO_PANEL_SECONDS)));
-    outroStatus.textContent = `Nächstes Bild in ${remaining} Sekunden`;
-  }
-  outroRaf = requestAnimationFrame(updateOutroTimeline);
-}
-
-function completeOutro() {
-  if (outroRaf) cancelAnimationFrame(outroRaf);
-  outroRaf = null;
-  outroProgress.style.width = '100%';
-  outroStatus.textContent = 'Die Magie der Sinne ist zurückgekehrt. Das Abenteuer ist beendet.';
+function showFinishButton() {
   outroFinish.classList.remove('hidden');
 }
 
-function launchOutroTimeline() {
-  if (outroStarted) return;
-  outroStarted = true;
-  outroMusicStart.classList.add('hidden');
-  outroFinish.classList.add('hidden');
-  try {
-    hopefulMusic.currentTime = 0;
-    hopefulMusic.volume = 0;
-  } catch {}
-  fadeHopefulMusic(currentVolume());
-  renderOutroPanel(0);
-  outroRaf = requestAnimationFrame(updateOutroTimeline);
+function startCredits() {
+  if (creditsStarted) return;
+  creditsStarted = true;
+  creditsSection.classList.remove('hidden');
+  creditsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  window.setTimeout(() => {
+    creditsRoll.classList.add('playing');
+    creditsRoll.addEventListener('animationend', showFinishButton, { once: true });
+    creditsTimer = window.setTimeout(showFinishButton, CREDITS_ROLL_MS + 600);
+  }, STORY_SCROLL_DELAY_MS);
+}
+
+function queueNextPanel() {
+  clearStoryTimers();
+  if (outroPanelIndex >= outroPanels.length - 1) {
+    panelTimer = window.setTimeout(startCredits, LAST_PANEL_HOLD_SECONDS * 1000);
+    return;
+  }
+  panelTimer = window.setTimeout(() => {
+    renderOutroPanel(outroPanelIndex + 1);
+    queueNextPanel();
+  }, OUTRO_PANEL_SECONDS * 1000);
 }
 
 async function startOutro() {
+  if (outroStarted) return;
+  outroStarted = true;
   finaleShell.classList.add('hidden');
   outroOverlay.classList.remove('hidden');
-  outroPanelIndex = -1;
   renderOutroPanel(0);
-
-  if (hopefulMusic && !hopefulMusic.paused) {
-    launchOutroTimeline();
-    return;
-  }
+  queueNextPanel();
 
   try {
     hopefulMusic.currentTime = 0;
     hopefulMusic.volume = 0;
     await hopefulMusic.play();
-    hopefulPrimed = true;
-    launchOutroTimeline();
+    fadeHopefulMusic(currentVolume(), 1200);
   } catch {
-    outroStatus.textContent = 'Tippe einmal, damit Musik und Endgeschichte starten können.';
-    outroMusicStart.classList.remove('hidden');
+    // Falls Autoplay blockiert ist, startet die Musik meist nach dem nächsten Tap.
   }
 }
 
@@ -266,14 +240,11 @@ function finishFinale() {
   window.setTimeout(() => {
     stage.classList.remove('shaking');
     startOutro();
-  }, 1800);
+  }, 1700);
 }
 
 function performStrike() {
   if (busy || finished) return;
-  const finalStrike = orbIndex === orbFrames.length - 2;
-  if (finalStrike) primeHopefulMusic();
-
   busy = true;
   attackButton.disabled = true;
   knight.src = '../assets/images/characters/ritter_attack.png';
@@ -303,26 +274,6 @@ function performStrike() {
 }
 
 attackButton?.addEventListener('click', performStrike);
-outroMusicStart?.addEventListener('click', async () => {
-  try {
-    hopefulMusic.currentTime = 0;
-    hopefulMusic.volume = 0;
-    await hopefulMusic.play();
-    hopefulPrimed = true;
-    launchOutroTimeline();
-  } catch {
-    outroStatus.textContent = 'Der Ton konnte nicht gestartet werden. Prüfe die Medienlautstärke und tippe erneut.';
-  }
-});
-hopefulMusic?.addEventListener('ended', completeOutro);
-
-orbFrames.forEach(src => {
-  const img = new Image();
-  img.src = src;
-});
-outroPanels.forEach(panel => {
-  const img = new Image();
-  img.src = panel.img;
-});
-
+orbFrames.forEach(src => { const img = new Image(); img.src = src; });
+outroPanels.forEach(panel => { const img = new Image(); img.src = panel.img; });
 enterKnight();

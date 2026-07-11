@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Finale im Schloss | Die verlorene Sinnesmagie</title>
-  <link rel="stylesheet" href="../assets/css/style.css?v=95">
+  <link rel="stylesheet" href="../assets/css/style.css?v=96">
 </head>
 <body class="castle-finale-page">
   <main id="castleFinaleShell" class="castle-finale-shell" aria-label="Finale im Schloss des Magiers">
@@ -21,27 +21,74 @@
   </main>
 
   <section id="castleOutroOverlay" class="castle-outro-overlay hidden" aria-label="Endgeschichte" aria-live="polite">
-    <div class="castle-outro-story-stage">
-      <div class="castle-outro-story-image-wrap">
-        <img id="castleOutroImage" class="castle-outro-story-image" src="../assets/images/finale/out_1.png" alt="Endgeschichte Bild 1" draggable="false">
-      </div>
-      <article class="castle-outro-story-card">
-        <div class="story-progress">
-          <span id="castleOutroCounter">1 / 6</span>
-          <div class="story-progress-bar"><div id="castleOutroProgress" style="width:0%"></div></div>
+    <div class="castle-outro-flow">
+      <div class="castle-outro-story-stage">
+        <div class="castle-outro-story-image-wrap">
+          <img id="castleOutroImage" class="castle-outro-story-image" src="../assets/images/finale/out_1.png" alt="Endgeschichte Bild 1" draggable="false">
         </div>
-        <h2 id="castleOutroTitle" class="castle-outro-title">Die Magie ist frei</h2>
-        <p id="castleOutroText" class="castle-outro-text"></p>
-        <p id="castleOutroStatus" class="castle-outro-status">Die Endgeschichte beginnt …</p>
-        <button id="castleOutroMusicStart" class="primary-button hidden" type="button">Musik und Endgeschichte starten</button>
-        <a id="castleOutroFinish" class="primary-button hidden" href="../game.html?fromLevel=1">Zur Weltkarte</a>
-      </article>
+        <article class="castle-outro-story-card">
+          <div class="story-progress">
+            <span id="castleOutroCounter">1 / 6</span>
+            <div class="story-progress-bar"><div id="castleOutroProgress" style="width:0%"></div></div>
+          </div>
+          <h2 id="castleOutroTitle" class="castle-outro-title">Die Magie ist frei</h2>
+          <p id="castleOutroText" class="castle-outro-text"></p>
+        </article>
+      </div>
+
+      <section id="castleCreditsSection" class="castle-credits-section hidden" aria-label="Abspann">
+        <div class="castle-credits-titlecard">
+          <h2>Abspann</h2>
+          <p>Vielen Dank, dass du die Sinnesmagie zurück ins Königreich gebracht hast.</p>
+        </div>
+        <div class="castle-credits-viewport">
+          <div id="castleCreditsRoll" class="castle-credits-roll">
+            <div class="castle-credit-block castle-credit-intro">
+              <h3>Die Reise durch die Welt der Sinne</h3>
+              <p>Auf dem Weg zum Schloss musste der Ritter viele Prüfungen bestehen. Jede Begegnung zeigte, wie wichtig unsere Sinne für Orientierung, Freude, Sicherheit und Gemeinschaft sind.</p>
+            </div>
+
+            <div class="castle-credit-enemy">
+              <img src="../assets/images/enemies/duftgeist.png" alt="Duftgeist" draggable="false">
+              <div><h3>Der Duftgeist</h3><p>Im Duftgarten vernebelte er Gerüche und machte es schwer, Gutes von Schlechtem zu unterscheiden. Erst durch genaues Riechen fand der Ritter den richtigen Weg.</p></div>
+            </div>
+            <div class="castle-credit-enemy">
+              <img src="../assets/images/enemies/waldgeist.png" alt="Waldgeist" draggable="false">
+              <div><h3>Der Waldgeist</h3><p>Zwischen Echo und Klang stellte er das Gehör auf die Probe. Der Ritter lernte, wie wichtig Hören ist, um Warnungen, Stimmen und Musik wahrzunehmen.</p></div>
+            </div>
+            <div class="castle-credit-enemy">
+              <img src="../assets/images/enemies/farbgolem.png" alt="Farbgolem" draggable="false">
+              <div><h3>Der Farbgolem</h3><p>Er verwirrte mit bunten Täuschungen. Nur mit offenen Augen konnte der Ritter Unterschiede erkennen und wieder Ordnung in die Welt der Farben bringen.</p></div>
+            </div>
+            <div class="castle-credit-enemy">
+              <img src="../assets/images/enemies/maulwurf.png" alt="Maulwurf" draggable="false">
+              <div><h3>Der Maulwurf</h3><p>Im Dunkeln der Tastminen zeigte er, wie wichtig der Tastsinn ist. Fühlen hilft uns, Oberflächen zu erkennen und Gefahren wie Hitze oder Schmerz rechtzeitig zu bemerken.</p></div>
+            </div>
+            <div class="castle-credit-enemy">
+              <img src="../assets/images/enemies/feuergolem.png" alt="Feuergolem" draggable="false">
+              <div><h3>Der Feuergolem</h3><p>In der Flammenküche stellte er Geschmack und Vorsicht auf die Probe. Der Ritter lernte, dass der Geschmack nicht nur Genuss bringt, sondern auch vor Verdorbenem warnen kann.</p></div>
+            </div>
+            <div class="castle-credit-enemy">
+              <img src="../assets/images/enemies/zauberer_defeated.png" alt="Zauberer" draggable="false">
+              <div><h3>Der Zauberer</h3><p>Er raubte dem Königreich die Sinnesmagie. Doch gemeinsam mit Mut, Wissen und Aufmerksamkeit konnte der Ritter ihn besiegen und die Magie der Sinne befreien.</p></div>
+            </div>
+
+            <div class="castle-credit-block castle-credit-final">
+              <h3>Vielen Dank fürs Spielen!</h3>
+              <p>Behalte deine Sinne im Alltag im Blick: Sie helfen dir beim Lernen, schützen dich vor Gefahren und machen die Welt bunt, lebendig und voller Gefühle.</p>
+            </div>
+          </div>
+        </div>
+        <div class="castle-credits-actions">
+          <a id="castleOutroFinish" class="primary-button hidden" href="../game.html?fromLevel=1">Zur Weltkarte</a>
+        </div>
+      </section>
     </div>
   </section>
 
   <audio id="castleFinaleHitSfx" src="../assets/audio/slice_cut.mp3" preload="auto"></audio>
   <audio id="castleFinaleCrashSfx" src="../assets/audio/magehit.mp3" preload="auto"></audio>
   <audio id="castleHopefulMusic" src="../assets/audio/hopeful_happy_ending.mp3" preload="auto"></audio>
-  <script src="../assets/js/zauberschloss-finale.js?v=95"></script>
+  <script src="../assets/js/zauberschloss-finale.js?v=96"></script>
 </body>
 </html>

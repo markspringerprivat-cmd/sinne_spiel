@@ -1410,6 +1410,7 @@ async function moveLevelKnightTo(marker, index) {
   if (marker.disabled || marker.classList.contains('movement-disabled')) return;
   if (index === 0) await handleLevelOne();
   else if (index === 1) await handleLevelTwo();
+  else if (index === 2) await handleLevelFour();
   else await handleLevelThree();
 }
 
