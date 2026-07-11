@@ -3681,11 +3681,11 @@ p { line-height: 1.5; }
   background: none !important;
   border: 0 !important;
   box-shadow: none !important;
-  width: clamp(44px, 8vmin, 72px) !important;
-  height: clamp(44px, 8vmin, 72px) !important;
+  width: clamp(54px, 9.4vmin, 86px) !important;
+  height: clamp(54px, 9.4vmin, 86px) !important;
   display: grid !important;
   place-items: center !important;
-  font-size: clamp(28px, 6.6vmin, 54px) !important;
+  font-size: clamp(36px, 7.8vmin, 64px) !important;
   line-height: 1 !important;
   filter: drop-shadow(0 8px 10px rgba(0, 0, 0, .28));
 }
@@ -5005,4 +5005,45 @@ p { line-height: 1.5; }
   .quiz-battle-zone.castle-victory-result-mode .enemy-battle {
     bottom: 25% !important;
   }
+}
+
+
+/* ===== v91 Zauberschloss: getrennte Siegesszene oberhalb des Ergebnis-Pop-ups ===== */
+.castle-victory-scene {
+  position: absolute;
+  inset: 0;
+  z-index: 11;
+  pointer-events: none;
+  overflow: hidden;
+}
+.castle-victory-scene.hidden {
+  display: none !important;
+}
+.castle-victory-character {
+  position: absolute;
+  bottom: var(--castle-victory-bottom, 42%);
+  width: var(--castle-victory-size, clamp(104px, 20vw, 150px));
+  height: var(--castle-victory-size, clamp(104px, 20vw, 150px));
+  object-fit: contain;
+  object-position: center bottom;
+  transform: translateX(-50%);
+  filter: drop-shadow(0 10px 12px rgba(0,0,0,.34));
+}
+.castle-victory-knight {
+  left: 31%;
+}
+.castle-victory-mage {
+  left: 68%;
+}
+.quiz-battle-zone.castle-victory-result-mode .knight-battle,
+.quiz-battle-zone.castle-victory-result-mode .enemy-battle {
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+.quiz-modal:not(.hidden) #quizResult.quiz-final-result {
+  z-index: 12 !important;
+}
+@media (max-width: 520px) {
+  .castle-victory-knight { left: 30%; }
+  .castle-victory-mage { left: 69%; }
 }

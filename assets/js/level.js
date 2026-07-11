@@ -33,21 +33,21 @@ const CASTLE_TASTE_DROP_MIN_MS = 1800;
 const CASTLE_TASTE_DROP_MAX_MS = 2200;
 const CASTLE_GOOD_FOODS = ['🍎'];
 const CASTLE_FINAL_QUESTION_INDEX = 3;
-const CASTLE_CLONE_ROUNDS_TOTAL = 3;
-const CASTLE_CLONE_COUNT = 15;
+const CASTLE_CLONE_ROUNDS_TOTAL = 2;
+const CASTLE_CLONE_COUNT = 16;
 const CASTLE_BUSH_TARGET_HITS = 3;
 const CASTLE_BUSH_REVEAL_MS = 2000;
 const CASTLE_BUSH_DELAY_MIN_MS = 750;
 const CASTLE_BUSH_DELAY_MAX_MS = 1450;
 const CASTLE_BUSH_INTRO_FLIGHT_MS = 2900;
-const CASTLE_SMELL_ROUNDS_TOTAL = 3;
+const CASTLE_SMELL_ROUNDS_TOTAL = 2;
 const CASTLE_SMELL_CLOUD_COUNT = 6;
 const CASTLE_SMELL_FLIGHT_MS = 2200;
 const CASTLE_SMELL_ROW_GAP_MS = 2400;
-const CASTLE_SMELL_FALL_SPEED = 14.5;
+const CASTLE_SMELL_FALL_SPEED = 18.2;
 const CASTLE_SMELL_SPAWN_Y = 12;
 const CASTLE_SMELL_IMPACT_Y = 80;
-const CASTLE_HEARING_ROUNDS_TOTAL = 3;
+const CASTLE_HEARING_ROUNDS_TOTAL = 2;
 const CASTLE_HEARING_KEY_COUNT = 5;
 const CASTLE_HEARING_KEY_FLIGHT_MS = 2450;
 const CASTLE_HEARING_MAGE_RETURN_MS = 900;
@@ -55,6 +55,7 @@ const CASTLE_HEARING_PREVIEW_NOTE_MS = 700;
 const CASTLE_HEARING_PREVIEW_GAP_MS = 180;
 const CASTLE_HEARING_JUMP_MS = 620;
 const CASTLE_HEARING_RETURN_JUMP_MS = 520;
+const CASTLE_HEARING_SEQUENCE_LENGTH = 4;
 const CASTLE_HEARING_NOTES = [
   { name: 'C', file: '../assets/audio/hoersinn_C3.mp3' },
   { name: 'D', file: '../assets/audio/hoersinn_D3.mp3' },
@@ -143,6 +144,10 @@ function castleSmellAsset(kind = 'stink') {
   return kind === 'scent'
     ? '../assets/images/castle-combat/smell_scent_cloud.png'
     : '../assets/images/castle-combat/smell_stink_cloud.png';
+}
+
+function castleDefeatedMageAsset() {
+  return '../assets/images/castle-combat/mage_defeated.png';
 }
 
 function activeQuizQuestions() {
@@ -252,6 +257,10 @@ function askCastleSenseQuestion(areaId, title) {
   panel.setAttribute('aria-hidden', 'false');
   panel.style.display = 'grid';
   panel.style.pointerEvents = 'auto';
+  const card = panel.querySelector('.castle-sense-question-card');
+  card?.classList.remove('slide-out-left');
+  card?.classList.add('slide-in-right');
+  setTimeout(() => card?.classList.remove('slide-in-right'), QUIZ_TRANSITION_MS + 80);
 
   return new Promise(resolve => {
     const answersWrap = panel.querySelector('.castle-sense-question-answers');
@@ -281,6 +290,9 @@ function askCastleSenseQuestion(areaId, title) {
         feedback.classList.remove('hidden');
         playSfx(item.correct ? sfxCorrect : sfxWrong);
         await wait(item.correct ? 650 : 950);
+        card?.classList.remove('slide-in-right');
+        card?.classList.add('slide-out-left');
+        await wait(QUIZ_TRANSITION_MS);
         hideCastleSenseQuestionPanel();
         resolve(item.correct);
       });
@@ -661,6 +673,7 @@ async function animateCastleEnemyStrike({
   const risePx = getCastleStrikeRisePx(knight, enemy);
   const startTime = performance.now();
   let impactTriggered = false;
+  playSfx(sfxMageHit);
 
   await new Promise(resolve => {
     function frame(now) {
@@ -678,7 +691,6 @@ async function animateCastleEnemyStrike({
         }
         if (enemyHitSrc) enemy.src = enemyHitSrc;
         enemy.classList.add(impactClass);
-        playSfx(sfxMageHit);
       }
 
       if (progress < 1) {
@@ -1473,6 +1485,10 @@ function ensureQuizModal() {
         <div id="castleSpeech" class="castle-speech hidden"></div>
         <span id="battleFeedback" class="battle-feedback hidden"></span>
       </div>
+      <div id="castleVictoryScene" class="castle-victory-scene hidden" aria-hidden="true">
+        <img id="castleVictoryKnight" class="castle-victory-character castle-victory-knight" alt="Siegreicher Ritter" draggable="false">
+        <img id="castleVictoryMage" class="castle-victory-character castle-victory-mage" alt="Besiegter Zauberer" draggable="false">
+      </div>
       <div id="quizIntro" class="quiz-intro quiz-panel"></div>
       <div id="quizGame" class="quiz-game quiz-panel hidden">
         <div class="quiz-panel-top">
@@ -1534,6 +1550,7 @@ async function openQuizIntro(quizId) {
   modal.classList.remove('hidden');
   modal.querySelector('#quizGame').classList.add('hidden');
   modal.querySelector('#quizResult').classList.add('hidden');
+  hideCastleVictoryScene();
   modal.querySelector('#castleDodgePanel').classList.add('hidden');
   modal.querySelector('#castleSmellPanel')?.classList.add('hidden');
   modal.querySelector('#castleHearingPanel')?.classList.add('hidden');
@@ -1599,6 +1616,7 @@ function startQuiz(quizId) {
   setQuizScene(modal, data, quizId);
   modal.querySelector('#quizIntro').classList.add('hidden');
   modal.querySelector('#quizResult').classList.add('hidden');
+  hideCastleVictoryScene();
   modal.querySelector('#castleDodgePanel').classList.add('hidden');
   modal.querySelector('#castleSmellPanel')?.classList.add('hidden');
   modal.querySelector('#castleHearingPanel')?.classList.add('hidden');
@@ -2343,6 +2361,9 @@ function showCastleFinalQuestion() {
     answers.appendChild(btn);
   });
   panel.classList.remove('hidden');
+  panel.classList.remove('slide-out-left');
+  panel.classList.add('slide-in-right');
+  setTimeout(() => panel.classList.remove('slide-in-right'), QUIZ_TRANSITION_MS + 80);
 }
 
 async function answerCastleFinalQuestion(idx) {
@@ -2370,7 +2391,9 @@ async function answerCastleFinalQuestion(idx) {
 
   playSfx(sfxCorrect);
   await wait(520);
-  if (panel) panel.classList.add('hidden');
+  if (panel) { panel.classList.remove('slide-in-right'); panel.classList.add('slide-out-left'); }
+  await wait(QUIZ_TRANSITION_MS);
+  if (panel) { panel.classList.add('hidden'); panel.classList.remove('slide-out-left'); }
   await playCastleFinalHit();
 }
 
@@ -2454,12 +2477,14 @@ function shuffleCastleClonePoints(points) {
   return clone;
 }
 
-function getCastleClonePoints() {
+function getCastleClonePoints(round = 1) {
+  const count = round <= 1 ? 8 : 16;
   return shuffleCastleClonePoints([
     { x: 15, y: 16 }, { x: 33, y: 14 }, { x: 51, y: 18 }, { x: 69, y: 14 }, { x: 85, y: 18 },
     { x: 20, y: 34 }, { x: 38, y: 31 }, { x: 56, y: 29 }, { x: 74, y: 33 }, { x: 88, y: 32 },
-    { x: 17, y: 52 }, { x: 36, y: 50 }, { x: 58, y: 48 }, { x: 78, y: 49 }, { x: 70, y: 63 }
-  ]).slice(0, CASTLE_CLONE_COUNT);
+    { x: 17, y: 52 }, { x: 36, y: 50 }, { x: 58, y: 48 }, { x: 78, y: 49 }, { x: 70, y: 63 },
+    { x: 88, y: 62 }
+  ]).slice(0, count);
 }
 
 function updateCastleCloneRoundLabel() {
@@ -2556,7 +2581,7 @@ function buildCastleCloneChoices() {
   const field = document.getElementById('castleClonePlayfield');
   if (!state || !state.running || !field) return;
 
-  const points = getCastleClonePoints();
+  const points = getCastleClonePoints(state.round);
   const stillIndex = Math.floor(Math.random() * points.length);
   field.innerHTML = '';
   field.classList.remove('hidden');
@@ -2765,8 +2790,8 @@ async function startCastleBushSearchSequence() {
     fadeTimer: null,
     currentReveals: [],
     locked: true,
-    homeX: 14,
-    knightX: 14,
+    homeX: 12,
+    knightX: 12,
     groundBottom: 4,
     slots: [34, 58, 82],
     mageBottom: 11,
@@ -2978,10 +3003,13 @@ function showCastleBushReveal() {
     requestAnimationFrame(() => button.classList.add('visible'));
   });
 
+  const revealDuration = appearances.some(appearance => appearance.kind === 'real')
+    ? 1000
+    : CASTLE_BUSH_REVEAL_MS;
   state.revealTimer = setTimeout(() => {
     hideAllCastleBushReveals();
     if (state.running && !state.locked) scheduleCastleBushReveal();
-  }, CASTLE_BUSH_REVEAL_MS);
+  }, revealDuration);
 }
 
 function hideAllCastleBushReveals(immediate = false) {
@@ -3165,7 +3193,7 @@ function createCastleSmellRow(safeIndex,sequenceIndex){const s=activeQuiz?.castl
 function appendCastleSmellCloud(row,laneIndex){const s=activeQuiz?.castleSmell;if(!s||!row||row.spawned.has(laneIndex))return;row.spawned.add(laneIndex);const kind=laneIndex===row.safeIndex?'scent':'stink',img=document.createElement('img');img.className=`castle-smell-cloud castle-smell-cloud-${kind}`;img.src=castleSmellAsset(kind);img.alt=kind==='scent'?'Duftwolke':'Gestankwolke';img.draggable=false;img.style.left=`${s.lanes[laneIndex]}%`;img.style.setProperty('--smell-cloud-delay',`${laneIndex*-.07}s`);row.el.appendChild(img);}
 async function animateCastleSmellMageAndSpawnRow(direction,sequenceIndex,token){const s=activeQuiz?.castleSmell,e=document.getElementById('quizEnemy');if(!s||!e||token!==s.attemptToken)return null;const safeIndex=Math.floor(Math.random()*CASTLE_SMELL_CLOUD_COUNT),row=createCastleSmellRow(safeIndex,sequenceIndex);if(!row)return null;const startX=direction>0?-18:118,endX=direction>0?118:-18,order=direction>0?s.lanes.map((_,i)=>i):s.lanes.map((_,i)=>i).reverse(),top=Math.max(6.5,11-sequenceIndex*1.2);e.src=castleEnemyAsset(direction>0?'flyRight':'flyLeft');e.classList.remove('castle-phase-hidden','castle-smell-hidden');setCastleSmellMagePosition(startX,top);const started=performance.now();await new Promise(resolve=>{function frame(now){const c=activeQuiz?.castleSmell;if(!c?.running||token!==c.attemptToken){resolve();return;}const p=Math.min(1,(now-started)/CASTLE_SMELL_FLIGHT_MS),ease=p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2,x=startX+(endX-startX)*ease,bob=Math.sin(p*Math.PI*4)*1.1;setCastleSmellMagePosition(x,top+bob);order.forEach(i=>{const crossed=direction>0?x>=s.lanes[i]:x<=s.lanes[i];if(crossed)appendCastleSmellCloud(row,i);});if(p<1)requestAnimationFrame(frame);else resolve();}requestAnimationFrame(frame);});if(!activeQuiz?.castleSmell?.running||token!==s.attemptToken)return null;s.lanes.forEach((_,i)=>appendCastleSmellCloud(row,i));e.classList.add('castle-smell-hidden');row.falling=true;s.lastMageExitX=endX;return row;}
 function clearCastleSmellRows(value=false){const s=activeQuiz?.castleSmell;if(!s)return;s.rows.forEach(row=>{if(!row.resolved){row.resolved=true;row.resolve?.(value);}row.el?.remove();});s.rows=[];}
-function castleSmellDirectionsForRound(round){if(round===2)return[-1,1];if(round>=3)return[1,-1,1];return[1];}
+function castleSmellDirectionsForRound(round){if(round===1)return[1,-1];return[1,-1,1,-1,1,-1];}
 async function waitCastleSmellGap(ms,token){await wait(ms);const s=activeQuiz?.castleSmell;return!!s?.running&&s.attemptToken===token&&!s.failureHandling;}
 async function runCastleSmellRoundAttempt(){const s=activeQuiz?.castleSmell;if(!s||!s.running||s.attemptInProgress)return;s.attemptInProgress=true;s.failureHandling=false;s.locked=false;s.moveDir=0;s.lastFrame=performance.now();clearCastleSmellRows(false);setCastleSmellControlsEnabled(true);showCastleSmellFeedback(`Runde ${s.round}: Finde die Duftwolke!`,1200);const token=++s.attemptToken,directions=castleSmellDirectionsForRound(s.round),promises=[];for(let i=0;i<directions.length;i++){const row=await animateCastleSmellMageAndSpawnRow(directions[i],i,token);if(!row||!activeQuiz?.castleSmell?.running||s.attemptToken!==token){s.attemptInProgress=false;return;}promises.push(row.promise);if(i<directions.length-1&&!(await waitCastleSmellGap(CASTLE_SMELL_ROW_GAP_MS,token))){s.attemptInProgress=false;return;}}const results=await Promise.all(promises);if(!activeQuiz?.castleSmell?.running||s.attemptToken!==token||s.failureHandling){s.attemptInProgress=false;return;}s.attemptInProgress=false;if(results.every(Boolean))await completeCastleSmellRoundAttempt();}
 async function animateCastleSmellKnightToX(targetX,duration=560){const s=activeQuiz?.castleSmell,k=document.getElementById('quizKnight'),z=document.getElementById('quizBattleZone');if(!s||!k||!z)return;const start=s.playerX,dir=targetX>=start?1:-1,t0=performance.now();let last=-1;await new Promise(resolve=>{function frame(now){if(!activeQuiz?.castleSmell?.running){resolve();return;}const p=Math.min(1,(now-t0)/duration),ease=p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2,x=start+(targetX-start)*ease;s.playerX=x;z.style.setProperty('--smell-player-x',`${x}%`);const f=Math.floor(now/150)%2;if(f!==last){k.src=dir>0?castleKnightAsset(f?'runRight2':'runRight1'):castleKnightAsset(f?'runLeft2':'runLeft1');last=f;}if(p<1)requestAnimationFrame(frame);else resolve();}requestAnimationFrame(frame);});s.playerX=targetX;z.style.setProperty('--smell-player-x',`${targetX}%`);k.src=castleKnightAsset('normal');}
@@ -3312,7 +3340,6 @@ async function unlockCastleHearingAudio({ playConfirmation = false } = {}) {
       return false;
     }
 
-    setCastleHearingAudioStatus('MP3-Töne aktiviert.', 'ready');
     return true;
   })();
 
@@ -3458,10 +3485,8 @@ function buildCastleHearingPanel() {
     <div id="castleHearingFeedback" class="castle-hearing-feedback hidden" aria-live="polite"></div>
     <div id="castleHearingIntro" class="castle-hearing-dialog" role="dialog" aria-modal="true" aria-label="Hinweis zum Hörsinn">
       <p><strong>Der Zauberer greift deinen Hörsinn an!</strong></p>
-      <p>Höre dir die Töne C, D, E, F und G genau an. Merke dir ihre Reihenfolge und lasse den Ritter anschließend in derselben Reihenfolge auf die Tasten springen.</p>
-      <p>Ein falscher Ton öffnet einen dunklen Abgrund.</p>
-      <p id="castleHearingAudioStatus" class="castle-hearing-audio-status">Tippe auf den Button, um die MP3-Töne auf deinem Gerät zu aktivieren.</p>
-      <button id="castleHearingStartButton" class="primary-button" type="button">Ton aktivieren und starten</button>
+      <p>Merke dir pro Runde 4 Töne und lasse den Ritter dieselbe Reihenfolge nachspielen.</p>
+      <button id="castleHearingStartButton" class="primary-button" type="button">Weiter</button>
     </div>
     <div id="castleHearingAudioGate" class="castle-hearing-audio-gate hidden" role="dialog" aria-modal="true" aria-label="Ton aktivieren">
       <div class="castle-hearing-audio-gate-card">
@@ -3479,8 +3504,7 @@ function updateCastleHearingRoundLabel() {
   const state = activeQuiz?.castleHearing;
   const label = document.getElementById('castleHearingRound');
   if (!state || !label) return;
-  const tones = Math.min(CASTLE_HEARING_KEY_COUNT, state.round + 2);
-  label.textContent = `Runde ${state.round} / ${state.totalRounds} · ${tones} Töne`;
+  label.textContent = `Runde ${state.round} / ${state.totalRounds} · ${CASTLE_HEARING_SEQUENCE_LENGTH} Töne`;
 }
 
 function showCastleHearingFeedback(message, duration = 1400) {
@@ -3726,7 +3750,7 @@ async function animateCastleHearingMagicBolt(keyIndex, token) {
 }
 
 function createCastleHearingSequence(round) {
-  const length = Math.min(CASTLE_HEARING_KEY_COUNT, round + 2);
+  const length = Math.min(CASTLE_HEARING_KEY_COUNT, CASTLE_HEARING_SEQUENCE_LENGTH);
   return shuffleArray([...CASTLE_HEARING_NOTES.keys()]).slice(0, length);
 }
 
@@ -4081,8 +4105,7 @@ async function startCastleHearingSearchSequence() {
     state.audioActivating = true;
     hearingStartButton.disabled = true;
     hearingStartButton.textContent = 'Ton wird aktiviert …';
-    setCastleHearingAudioStatus('Die MP3-Töne werden für dieses Gerät vorbereitet …');
-    const audioUnlockAttempt = unlockCastleHearingAudio({ playConfirmation: true });
+    const audioUnlockAttempt = unlockCastleHearingAudio({ playConfirmation: false });
     unlockSfxForMobile();
 
     const audioReady = await audioUnlockAttempt;
@@ -4091,13 +4114,11 @@ async function startCastleHearingSearchSequence() {
       state.audioActivating = false;
       hearingStartButton.disabled = false;
       hearingStartButton.textContent = 'Erneut versuchen';
-      setCastleHearingAudioStatus('Der Ton wurde blockiert. Prüfe die Medienlautstärke und tippe erneut.', 'error');
-      return;
+        return;
     }
 
     state.audioActivating = false;
     state.started = true;
-    setCastleHearingAudioStatus('MP3-Töne aktiviert.', 'ready');
     document.getElementById('castleHearingIntro')?.classList.add('hidden');
     await animateCastleHearingKnightToCenter();
     if (activeQuiz?.castleHearing?.running) runCastleHearingRoundAttempt();
@@ -4447,14 +4468,15 @@ async function completeCastleUltimateSuccess() {
   enemy.src = castleEnemyAsset('surprised');
   enemy.classList.remove('castle-ultimate-casting');
   enemy.classList.add('castle-final-damage-blink', 'castle-ultimate-defeated');
-  const musicFade = crossfadeBossToCastleUltimateMusic(2800);
-  await Promise.all([musicFade, wait(1700)]);
+  keepBossMusicThroughCastleVictory();
+  await wait(1700);
 
   if (!activeQuiz) return;
   activeQuiz.hearts = Math.max(1, activeQuiz.hearts);
   activeQuiz.correct = activeQuizQuestions().length;
   activeQuiz.finished = true;
-  cleanupCastleUltimateGame({ keepFinalMusic: true });
+  cleanupCastleUltimateGame();
+  keepBossMusicThroughCastleVictory();
   showQuizResult();
 }
 
@@ -4631,6 +4653,60 @@ async function startCastleUltimateSequence() {
   startCastleUltimateCountdown();
 }
 
+function hideCastleVictoryScene() {
+  const scene = document.getElementById('castleVictoryScene');
+  if (!scene) return;
+  scene.classList.add('hidden');
+  scene.style.removeProperty('--castle-victory-bottom');
+  scene.style.removeProperty('--castle-victory-size');
+}
+
+function positionCastleVictoryScene() {
+  const scene = document.getElementById('castleVictoryScene');
+  const card = scene?.closest('.quiz-card');
+  if (!scene || !card || scene.classList.contains('hidden')) return;
+
+  const cardRect = card.getBoundingClientRect();
+  if (!cardRect.height || !cardRect.width) return;
+
+  const size = Math.max(112, Math.min(158, cardRect.width * 0.21));
+  const bottom = Math.max(260, Math.min(cardRect.height * 0.42, cardRect.height - size - 70));
+
+  scene.style.setProperty('--castle-victory-bottom', `${bottom}px`);
+  scene.style.setProperty('--castle-victory-size', `${size}px`);
+}
+
+function showCastleVictoryScene(knightSrc, mageSrc) {
+  const scene = document.getElementById('castleVictoryScene');
+  const knight = document.getElementById('castleVictoryKnight');
+  const mage = document.getElementById('castleVictoryMage');
+  if (!scene || !knight || !mage) return;
+
+  knight.src = knightSrc;
+  mage.src = mageSrc;
+  scene.classList.remove('hidden');
+  requestAnimationFrame(() => {
+    positionCastleVictoryScene();
+    requestAnimationFrame(positionCastleVictoryScene);
+  });
+}
+
+function keepBossMusicThroughCastleVictory() {
+  pauseCastleUltimateMusic();
+  bossMusicWanted = true;
+  bossMusicMode = 'full';
+  try {
+    bossMusic.loop = false;
+    if (bossMusic.currentTime >= BOSS_MUSIC_LOOP_END_SECONDS) {
+      bossMusic.currentTime = BOSS_MUSIC_LOOP_START_SECONDS;
+    }
+    bossMusic.volume = currentVolume();
+    if (bossMusic.paused) bossMusic.play().catch(() => {});
+  } catch {}
+}
+
+window.addEventListener('resize', positionCastleVictoryScene);
+
 function showQuizEndPanel() {
   activeQuiz.finished = true;
   setBossMusicMode('full');
@@ -4654,35 +4730,50 @@ function showQuizResult() {
   const battleZone = document.getElementById('quizBattleZone');
   document.getElementById('castleUltimatePanel')?.classList.add('hidden');
   hideCastleSenseQuestionPanel();
-  battleZone?.classList.toggle('castle-victory-result-mode', won && isCastleBossQuiz());
+  const castleVictory = won && isCastleBossQuiz();
+  battleZone?.classList.toggle('castle-victory-result-mode', castleVictory);
+  hideCastleVictoryScene();
   knight.classList.remove('sprite-pop', 'sprite-shake', 'knight-strike', 'knight-damaged', 'knight-attack-pose');
   enemy.classList.remove('sprite-shake', 'enemy-hit', 'enemy-attack-strike');
   knight.src = won ? knightAsset('victory') : knightAsset('defeated');
-  enemy.src = won ? enemyAsset(activeQuiz.data.enemy, 'defeated') : enemyAsset(activeQuiz.data.enemy, 'normal');
+  enemy.src = won
+    ? (castleVictory ? castleDefeatedMageAsset() : enemyAsset(activeQuiz.data.enemy, 'defeated'))
+    : enemyAsset(activeQuiz.data.enemy, 'normal');
 
   let fragmentStatus = { gained: false, reward: null, total: readFragments().size, allCollected: false };
   if (won) {
     setAreaProgress({ level2Completed: true });
     applyMarkerStates();
     fragmentStatus = awardFragment(activeQuiz.quizId);
-    writePendingNotice({ type: 'fragment', area: activeQuiz.quizId, gained: fragmentStatus.gained, allCollected: fragmentStatus.allCollected });
+    if (isCastleBossQuiz()) {
+      writePendingNotice({ type: 'castleBossComplete', area: 'zauberschloss' });
+    } else {
+      writePendingNotice({ type: 'fragment', area: activeQuiz.quizId, gained: fragmentStatus.gained, allCollected: fragmentStatus.allCollected });
+    }
   }
 
   const result = modal.querySelector('#quizResult');
   result.className = 'quiz-result quiz-panel quiz-final-result';
 
   if (won) {
+    const resultFollowUp = castleVictory
+      ? 'Das nächste Level wird gleich freigeschaltet.'
+      : 'Deine Belohnung erscheint gleich auf der Weltkarte.';
     result.innerHTML = `
       <h2>Boss besiegt!</h2>
       <div class="visual-notice compact-final-notice">
         <p>${activeQuiz.correct}/${activeQuizQuestions().length} Fragen richtig beantwortet.</p>
-        <p>Deine Belohnung erscheint gleich auf der Weltkarte.</p>
+        <p>${resultFollowUp}</p>
       </div>
       <div class="quiz-result-actions single-action">
-        <button id="closeQuizButton" class="primary-button" type="button">Zur Weltkarte</button>
+        <button id="closeQuizButton" class="primary-button" type="button">${castleVictory ? 'Zurück zum Zauberschloss' : 'Zur Weltkarte'}</button>
       </div>
     `;
-    document.getElementById('closeQuizButton').addEventListener('click', returnToOverworld);
+    if (castleVictory) {
+      showCastleVictoryScene(knight.src, enemy.src);
+      keepBossMusicThroughCastleVictory();
+    }
+    document.getElementById('closeQuizButton').addEventListener('click', castleVictory ? returnToCastleLevel : returnToOverworld);
     return;
   }
 
@@ -4748,7 +4839,8 @@ function showWinResultSlide(result, reward, slide, fragmentStatus = {}) {
   document.getElementById('closeQuizButton').addEventListener('click', returnToOverworld);
 }
 
-async function returnToOverworld() {
+async function returnToCastleLevel() {
+  hideCastleVictoryScene();
   cleanupCastleDodgeGame();
   cleanupCastleCloneSearch();
   cleanupCastleBushGame();
@@ -4757,10 +4849,27 @@ async function returnToOverworld() {
   cleanupCastleUltimateGame();
   const modal = ensureQuizModal();
   modal.classList.add('hidden');
+  saveCurrentNode('level2');
+  writePendingNotice({ type: 'castleNextLevelUnlocked', area: 'zauberschloss' });
   pauseBossMusic();
-  startLevelMusic();
+  pauseCastleUltimateMusic();
+  window.location.href = 'zauberschloss.html?nextLevelUnlocked=1';
+}
+
+async function returnToOverworld() {
+  hideCastleVictoryScene();
+  cleanupCastleDodgeGame();
+  cleanupCastleCloneSearch();
+  cleanupCastleBushGame();
+  cleanupCastleSmellGame();
+  cleanupCastleHearingGame();
+  cleanupCastleUltimateGame();
+  const modal = ensureQuizModal();
+  modal.classList.add('hidden');
   saveCurrentNode('level2');
   await moveToNode('start');
+  pauseBossMusic();
+  pauseCastleUltimateMusic();
   window.location.href = `../game.html?fromLevel=1&completedArea=${encodeURIComponent(activeQuiz?.quizId || currentArea)}`;
 }
 
@@ -4806,6 +4915,16 @@ const pendingNotice = readPendingNotice();
 if (pendingNotice?.type === 'minigameComplete' && pendingNotice.area === currentArea) {
   clearPendingNotice();
   window.setTimeout(() => showBossUnlockedNotice(currentArea), 260);
+} else if (pendingNotice?.type === 'castleNextLevelUnlocked' && currentArea === 'zauberschloss') {
+  clearPendingNotice();
+  startLevelMusic();
+  window.setTimeout(() => {
+    showLevelPopup(
+      'Nächstes Level freigeschaltet',
+      '<div class="visual-notice"><div class="visual-notice-icon">🏰✨</div><p>Der nächste Punkt vor dem Zauberschloss ist jetzt freigeschaltet.</p></div>',
+      'Weiter'
+    );
+  }, 320);
 } else {
   startLevelMusic();
 }

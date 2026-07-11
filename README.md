@@ -122,3 +122,10 @@ Die zweiten Levelpunkte der Levelkarten starten nun ein Kampf-Quiz mit sieben Fr
 - Bossmusik bleibt während der letzten Prüfung auf stabiler Lautstärke
 - Siegerfiguren im Boss-besiegt-Bild deutlich nach oben versetzt
 - Die Bossmusik wird vor ihrem im Audiomaterial enthaltenen leisen Ausklang sauber in den stabilen Mittelteil zurückgesetzt.
+
+## Version 91 – Zauberschloss-Finale
+
+- Die Siegfiguren liegen in einer eigenen Ebene und werden automatisch vollständig oberhalb des Ergebnis-Pop-ups positioniert.
+- Die Bossmusik läuft bis zum Verlassen des Ergebnisses weiter; das frühere alternative Finalstück wird nicht mehr gestartet.
+- Nach der Rückkehr zur Weltkarte erscheint die Schaltfläche „Zurück zum Zauberschloss“.
+- Beim erneuten Betreten des Zauberschlosses wird angezeigt, dass das nächste Level freigeschaltet wurde.

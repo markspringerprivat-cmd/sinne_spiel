@@ -199,6 +199,32 @@ function nextPlayableStep() {
 }
 
 function showReturnGuidance(pending = null) {
+  if (pending?.type === 'castleBossComplete' || (pending?.area === 'zauberschloss' && isAreaCompleted('zauberschloss'))) {
+    showInfo(
+      'Boss besiegt!',
+      `<div class="visual-notice">
+        <div class="visual-notice-icon">🏰✨</div>
+        <p>Das nächste Level im Zauberschloss ist jetzt freigeschaltet.</p>
+      </div>`,
+      {
+        html: true,
+        hideBackButton: true,
+        showScanButton: false,
+        extraButtons: [
+          {
+            label: 'Zurück zum Zauberschloss',
+            className: 'primary-button',
+            onClick: () => {
+              localStorage.setItem(STORAGE_PENDING_NOTICE, JSON.stringify({ type: 'castleNextLevelUnlocked', area: 'zauberschloss' }));
+              window.location.href = 'levels/zauberschloss.html?nextLevelUnlocked=1';
+            }
+          }
+        ]
+      }
+    );
+    return;
+  }
+
   let title = 'Weiter geht’s';
   let html = '';
   if (pending?.type === 'fragment' && pending.area && fragmentMeta[pending.area]) {
@@ -354,12 +380,14 @@ function renderInfoActions(options = {}) {
   infoModalActions.innerHTML = '';
   currentInfoOnClose = typeof options.onClose === 'function' ? options.onClose : null;
 
-  const backButton = document.createElement('button');
-  backButton.className = 'ghost-button';
-  backButton.type = 'button';
-  backButton.textContent = options.backLabel || 'Zurück';
-  backButton.addEventListener('click', closeInfo);
-  infoModalActions.appendChild(backButton);
+  if (!options.hideBackButton) {
+    const backButton = document.createElement('button');
+    backButton.className = 'ghost-button';
+    backButton.type = 'button';
+    backButton.textContent = options.backLabel || 'Zurück';
+    backButton.addEventListener('click', closeInfo);
+    infoModalActions.appendChild(backButton);
+  }
 
   if (options.showScanButton) {
     const scanButton = document.createElement('button');
