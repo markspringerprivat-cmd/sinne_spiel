@@ -3158,7 +3158,7 @@ p { line-height: 1.5; }
 .castle-speech {
   left: 50% !important;
   right: auto !important;
-  top: 4% !important;
+  top: 50% !important;
   transform: translateX(-50%) !important;
   max-width: min(72%, 560px) !important;
   z-index: 12 !important;
@@ -3583,8 +3583,8 @@ p { line-height: 1.5; }
 .castle-clone-dialog {
   position: absolute;
   left: 50%;
-  top: 3%;
-  transform: translateX(-50%);
+  top: 50%;
+  transform: translate(-50%, -50%);
   width: min(78%, 560px);
   display: grid;
   gap: 14px;
@@ -3655,7 +3655,7 @@ p { line-height: 1.5; }
 @media (max-width: 520px) {
   .castle-clone-dialog {
     width: min(92%, 560px);
-    top: 2%;
+    top: 50%;
     padding: 14px 16px;
   }
   .castle-clone-hud {
@@ -3724,8 +3724,8 @@ p { line-height: 1.5; }
 .castle-taste-dialog {
   position: absolute;
   left: 50%;
-  top: 6%;
-  transform: translateX(-50%);
+  top: 50%;
+  transform: translate(-50%, -50%);
   width: min(82%, 560px);
   display: grid;
   gap: 10px;
@@ -3745,7 +3745,7 @@ p { line-height: 1.5; }
 @media (max-width: 520px) {
   .castle-taste-dialog {
     width: min(92%, 560px);
-    top: 3%;
+    top: 50%;
     padding: 14px 16px;
   }
 }
@@ -3826,7 +3826,7 @@ p { line-height: 1.5; }
   z-index: 16;
 }
 .castle-taste-panel .castle-taste-dialog {
-  top: 4% !important;
+  top: 50% !important;
   z-index: 17;
   pointer-events: auto;
 }
@@ -3848,7 +3848,7 @@ p { line-height: 1.5; }
     text-align: center;
   }
   .castle-taste-panel .castle-taste-dialog {
-    top: 2% !important;
+    top: 50% !important;
   }
 }
 
@@ -4126,7 +4126,7 @@ p { line-height: 1.5; }
 
 
 /* ===== v82 Zauberschloss: Riechsinn-Wolkenphase ===== */
-.quiz-battle-zone .enemy-battle.castle-phase-hidden,.quiz-battle-zone.castle-smell-mode .enemy-battle.castle-smell-hidden{opacity:0!important;visibility:hidden!important}.quiz-battle-zone.castle-smell-mode{top:12%!important;height:69%!important;left:2%!important;right:2%!important;--smell-player-x:50%;--smell-mage-x:-20%;--smell-mage-top:11%}.quiz-battle-zone.castle-smell-mode .knight-battle,.quiz-battle-zone.castle-smell-mode .enemy-battle{right:auto!important;max-width:none!important;max-height:none!important;object-fit:contain!important;pointer-events:none!important}.quiz-battle-zone.castle-smell-mode .knight-battle{left:var(--smell-player-x)!important;top:auto!important;bottom:1.5%!important;width:var(--castle-combat-size)!important;height:var(--castle-combat-size)!important;transform:translateX(-50%)!important;transform-origin:center bottom!important;z-index:35!important;transition:none!important}.quiz-battle-zone.castle-smell-mode .enemy-battle{left:var(--smell-mage-x)!important;top:var(--smell-mage-top)!important;bottom:auto!important;width:var(--castle-sky-size)!important;height:var(--castle-sky-size)!important;transform:translateX(-50%)!important;transform-origin:center center!important;z-index:34!important;transition:opacity .12s ease!important}.castle-smell-layer{position:absolute;inset:0;z-index:31;overflow:visible;pointer-events:none}.castle-smell-layer.hidden{display:none!important}.castle-smell-row{position:absolute;left:0;width:100%;height:1px;pointer-events:none;will-change:top}.castle-smell-cloud{position:absolute;top:0;width:clamp(58px,15.5vmin,94px);height:auto;display:block;transform:translate(-50%,-50%);filter:drop-shadow(0 7px 9px rgba(16,8,25,.3));animation:castleSmellCloudFloat 1.35s ease-in-out infinite;animation-delay:var(--smell-cloud-delay,0s);will-change:transform,filter}.castle-smell-cloud-scent{z-index:2;filter:drop-shadow(0 0 11px rgba(243,159,255,.72)) drop-shadow(0 7px 9px rgba(16,8,25,.24))}.castle-smell-cloud-stink{z-index:1}@keyframes castleSmellCloudFloat{0%,100%{transform:translate(-50%,-50%) translateY(0) scale(1)}50%{transform:translate(-50%,-50%) translateY(-4px) scale(1.025)}}.castle-smell-row-safe .castle-smell-cloud-scent{animation:castleSmellSafePulse .18s ease-in-out 4!important}.castle-smell-row-danger .castle-smell-cloud-stink{animation:castleSmellDangerFlash .14s steps(2) 5!important}@keyframes castleSmellSafePulse{0%,100%{transform:translate(-50%,-50%) scale(1);filter:drop-shadow(0 0 9px rgba(243,159,255,.7))}50%{transform:translate(-50%,-50%) scale(1.12);filter:brightness(1.25) drop-shadow(0 0 19px rgba(255,220,255,1))}}@keyframes castleSmellDangerFlash{0%,100%{opacity:1;filter:drop-shadow(0 7px 9px rgba(16,8,25,.3))}50%{opacity:.42;filter:sepia(1) saturate(5) hue-rotate(318deg) drop-shadow(0 0 14px rgba(255,75,75,.95))}}.castle-smell-panel{inset:0!important;top:0!important;left:0!important;right:0!important;bottom:0!important;min-height:0!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;backdrop-filter:none!important;overflow:hidden!important;pointer-events:none!important;z-index:42!important}.castle-smell-panel.hidden{display:none!important}.castle-smell-hud{position:absolute;top:1.5%;right:1.5%;z-index:45;display:flex;gap:8px;align-items:center;pointer-events:none}.castle-smell-hud strong,.castle-smell-hud span{display:inline-flex;align-items:center;min-height:38px;padding:8px 13px;border-radius:999px;background:rgba(255,247,214,.95);color:#4b2a16;font-weight:950;box-shadow:0 8px 18px rgba(0,0,0,.2)}.castle-smell-hud span{background:rgba(255,255,255,.94);color:#5b268b}.castle-smell-dialog{position:absolute;left:50%;top:7%;transform:translateX(-50%);width:min(82%,580px);z-index:47;display:grid;gap:10px;padding:18px 22px;border:2px solid rgba(255,255,255,.85);border-radius:24px;background:rgba(255,250,236,.98);color:#3e2a17;font-weight:850;line-height:1.35;box-shadow:0 18px 38px rgba(0,0,0,.28);pointer-events:auto}.castle-smell-dialog.hidden{display:none!important}.castle-smell-dialog p{margin:0}.castle-smell-dialog .primary-button{justify-self:center}.castle-smell-feedback{position:absolute;left:50%;top:17%;transform:translateX(-50%);z-index:46;max-width:84%;padding:8px 14px;border-radius:999px;background:rgba(255,247,214,.96);color:#4b2a16;font-weight:950;text-align:center;box-shadow:0 8px 18px rgba(0,0,0,.2);pointer-events:none}.castle-smell-feedback.hidden{display:none!important}.castle-smell-controls{position:absolute;left:50%;bottom:max(2%,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:47;width:100%;display:flex;justify-content:center;gap:clamp(18px,7vw,48px);pointer-events:auto}.castle-smell-knight-damage{animation:castleSmellKnightDamage .13s steps(2) 6!important}@keyframes castleSmellKnightDamage{0%,100%{opacity:1;filter:none}50%{opacity:.42;filter:sepia(1) saturate(6) hue-rotate(315deg) brightness(1.3)}}.castle-smell-final-jump{animation:castleSmellFinalJump 1.15s ease-in-out both!important}@keyframes castleSmellFinalJump{0%{transform:translateX(-50%) translateY(0) scale(1)}45%{transform:translateX(-50%) translateY(-155%) scale(1.05)}58%{transform:translateX(-50%) translateY(-168%) scale(1.07)}100%{transform:translateX(-50%) translateY(0) scale(1)}}@media(max-width:520px){.quiz-battle-zone.castle-smell-mode{top:5%!important;height:77%!important;left:0!important;right:0!important}.castle-smell-cloud{width:clamp(54px,16.5vw,74px)}.castle-smell-hud{top:1%;right:1%;gap:6px}.castle-smell-hud strong,.castle-smell-hud span{min-height:32px;padding:6px 10px;font-size:.8rem}.castle-smell-dialog{top:5%;width:min(92%,580px);padding:14px 16px}.castle-smell-feedback{top:14%;font-size:.86rem}}
+.quiz-battle-zone .enemy-battle.castle-phase-hidden,.quiz-battle-zone.castle-smell-mode .enemy-battle.castle-smell-hidden{opacity:0!important;visibility:hidden!important}.quiz-battle-zone.castle-smell-mode{top:12%!important;height:69%!important;left:2%!important;right:2%!important;--smell-player-x:50%;--smell-mage-x:-20%;--smell-mage-top:11%}.quiz-battle-zone.castle-smell-mode .knight-battle,.quiz-battle-zone.castle-smell-mode .enemy-battle{right:auto!important;max-width:none!important;max-height:none!important;object-fit:contain!important;pointer-events:none!important}.quiz-battle-zone.castle-smell-mode .knight-battle{left:var(--smell-player-x)!important;top:auto!important;bottom:1.5%!important;width:var(--castle-combat-size)!important;height:var(--castle-combat-size)!important;transform:translateX(-50%)!important;transform-origin:center bottom!important;z-index:35!important;transition:none!important}.quiz-battle-zone.castle-smell-mode .enemy-battle{left:var(--smell-mage-x)!important;top:var(--smell-mage-top)!important;bottom:auto!important;width:var(--castle-sky-size)!important;height:var(--castle-sky-size)!important;transform:translateX(-50%)!important;transform-origin:center center!important;z-index:34!important;transition:opacity .12s ease!important}.castle-smell-layer{position:absolute;inset:0;z-index:31;overflow:visible;pointer-events:none}.castle-smell-layer.hidden{display:none!important}.castle-smell-row{position:absolute;left:0;width:100%;height:1px;pointer-events:none;will-change:top}.castle-smell-cloud{position:absolute;top:0;width:clamp(58px,15.5vmin,94px);height:auto;display:block;transform:translate(-50%,-50%);filter:drop-shadow(0 7px 9px rgba(16,8,25,.3));animation:castleSmellCloudFloat 1.35s ease-in-out infinite;animation-delay:var(--smell-cloud-delay,0s);will-change:transform,filter}.castle-smell-cloud-scent{z-index:2;filter:drop-shadow(0 0 11px rgba(243,159,255,.72)) drop-shadow(0 7px 9px rgba(16,8,25,.24))}.castle-smell-cloud-stink{z-index:1}@keyframes castleSmellCloudFloat{0%,100%{transform:translate(-50%,-50%) translateY(0) scale(1)}50%{transform:translate(-50%,-50%) translateY(-4px) scale(1.025)}}.castle-smell-row-safe .castle-smell-cloud-scent{animation:castleSmellSafePulse .18s ease-in-out 4!important}.castle-smell-row-danger .castle-smell-cloud-stink{animation:castleSmellDangerFlash .14s steps(2) 5!important}@keyframes castleSmellSafePulse{0%,100%{transform:translate(-50%,-50%) scale(1);filter:drop-shadow(0 0 9px rgba(243,159,255,.7))}50%{transform:translate(-50%,-50%) scale(1.12);filter:brightness(1.25) drop-shadow(0 0 19px rgba(255,220,255,1))}}@keyframes castleSmellDangerFlash{0%,100%{opacity:1;filter:drop-shadow(0 7px 9px rgba(16,8,25,.3))}50%{opacity:.42;filter:sepia(1) saturate(5) hue-rotate(318deg) drop-shadow(0 0 14px rgba(255,75,75,.95))}}.castle-smell-panel{inset:0!important;top:0!important;left:0!important;right:0!important;bottom:0!important;min-height:0!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;backdrop-filter:none!important;overflow:hidden!important;pointer-events:none!important;z-index:42!important}.castle-smell-panel.hidden{display:none!important}.castle-smell-hud{position:absolute;top:1.5%;right:1.5%;z-index:45;display:flex;gap:8px;align-items:center;pointer-events:none}.castle-smell-hud strong,.castle-smell-hud span{display:inline-flex;align-items:center;min-height:38px;padding:8px 13px;border-radius:999px;background:rgba(255,247,214,.95);color:#4b2a16;font-weight:950;box-shadow:0 8px 18px rgba(0,0,0,.2)}.castle-smell-hud span{background:rgba(255,255,255,.94);color:#5b268b}.castle-smell-dialog{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(82%,580px);z-index:47;display:grid;gap:10px;padding:18px 22px;border:2px solid rgba(255,255,255,.85);border-radius:24px;background:rgba(255,250,236,.98);color:#3e2a17;font-weight:850;line-height:1.35;box-shadow:0 18px 38px rgba(0,0,0,.28);pointer-events:auto}.castle-smell-dialog.hidden{display:none!important}.castle-smell-dialog p{margin:0}.castle-smell-dialog .primary-button{justify-self:center}.castle-smell-feedback{position:absolute;left:50%;top:17%;transform:translateX(-50%);z-index:46;max-width:84%;padding:8px 14px;border-radius:999px;background:rgba(255,247,214,.96);color:#4b2a16;font-weight:950;text-align:center;box-shadow:0 8px 18px rgba(0,0,0,.2);pointer-events:none}.castle-smell-feedback.hidden{display:none!important}.castle-smell-controls{position:absolute;left:50%;bottom:max(2%,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:47;width:100%;display:flex;justify-content:center;gap:clamp(18px,7vw,48px);pointer-events:auto}.castle-smell-knight-damage{animation:castleSmellKnightDamage .13s steps(2) 6!important}@keyframes castleSmellKnightDamage{0%,100%{opacity:1;filter:none}50%{opacity:.42;filter:sepia(1) saturate(6) hue-rotate(315deg) brightness(1.3)}}.castle-smell-final-jump{animation:castleSmellFinalJump 1.15s ease-in-out both!important}@keyframes castleSmellFinalJump{0%{transform:translateX(-50%) translateY(0) scale(1)}45%{transform:translateX(-50%) translateY(-155%) scale(1.05)}58%{transform:translateX(-50%) translateY(-168%) scale(1.07)}100%{transform:translateX(-50%) translateY(0) scale(1)}}@media(max-width:520px){.quiz-battle-zone.castle-smell-mode{top:5%!important;height:77%!important;left:0!important;right:0!important}.castle-smell-cloud{width:clamp(54px,16.5vw,74px)}.castle-smell-hud{top:1%;right:1%;gap:6px}.castle-smell-hud strong,.castle-smell-hud span{min-height:32px;padding:6px 10px;font-size:.8rem}.castle-smell-dialog{top:50%;width:min(92%,580px);padding:14px 16px}.castle-smell-feedback{top:14%;font-size:.86rem}}
 
 
 /* ===== v83 Zauberschloss: Hörsinn – magische Tonleiter ===== */
@@ -4187,7 +4187,7 @@ p { line-height: 1.5; }
 .castle-hearing-key {
   position: absolute;
   left: 50%;
-  bottom: 3.5%;
+  bottom: 2.4%;
   width: clamp(48px, 12.2vmin, 78px);
   height: clamp(55px, 14vmin, 90px);
   transform: translateX(-50%);
@@ -4358,8 +4358,8 @@ p { line-height: 1.5; }
 .castle-hearing-dialog {
   position: absolute;
   left: 50%;
-  top: 6%;
-  transform: translateX(-50%);
+  top: 50%;
+  transform: translate(-50%, -50%);
   width: min(84%, 600px);
   z-index: 53;
   display: grid;
@@ -4404,22 +4404,23 @@ p { line-height: 1.5; }
 }
 .castle-hearing-abyss {
   position: absolute;
-  left: 50%;
-  bottom: -5%;
-  width: 10%;
-  height: 9%;
-  transform: translateX(-50%) scale(.15);
-  border-radius: 50%;
+  left: 0;
+  right: 0;
+  bottom: -8%;
+  width: 100%;
+  height: 24%;
+  transform: scaleY(.08);
+  transform-origin: center bottom;
+  border-radius: 42% 42% 0 0 / 100% 100% 0 0;
   opacity: 0;
   background:
-    radial-gradient(ellipse at center, #000 0 32%, #10091a 48%, #3c1960 64%, rgba(72,26,112,.15) 74%, transparent 76%);
-  filter: drop-shadow(0 0 18px rgba(88,25,135,.9));
-  transition: transform .32s ease, opacity .24s ease, width .32s ease;
+    radial-gradient(ellipse at center, #000 0 34%, #12091f 52%, #3f1a67 70%, rgba(72,26,112,.18) 82%, transparent 86%);
+  filter: drop-shadow(0 0 22px rgba(88,25,135,.9));
+  transition: transform .32s ease, opacity .24s ease;
   z-index: 35;
 }
 .castle-hearing-abyss.visible {
-  width: 82%;
-  transform: translateX(-50%) scale(1);
+  transform: scaleY(1);
   opacity: 1;
 }
 .castle-hearing-keys-falling .castle-hearing-key {
@@ -4486,7 +4487,7 @@ p { line-height: 1.5; }
     font-size: .78rem;
   }
   .castle-hearing-dialog {
-    top: 5%;
+    top: 50%;
     width: min(92%, 600px);
     padding: 14px 16px;
     font-size: .9rem;
@@ -4554,3 +4555,6 @@ p { line-height: 1.5; }
 .castle-hearing-audio-gate-card .primary-button {
   justify-self: center;
 }
+
+.compact-final-notice { gap: 6px !important; }
+.quiz-final-result .visual-notice.compact-final-notice { max-width: 360px; }

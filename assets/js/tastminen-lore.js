@@ -158,6 +158,10 @@
     writeMinigamePendingNotice('tastminen');
   }
 
+  function miniGuideEmojiRow(emojis = []) {
+    return `<span class="mini-guide-emoji-row">${emojis.map((emoji) => `<span class="mini-guide-emoji">${emoji}</span>`).join('')}</span>`;
+  }
+
   function resizeCanvas() {
     const dpr = Math.min(1.5, Math.max(1, window.devicePixelRatio || 1));
     const w = Math.max(320, window.innerWidth);
@@ -188,22 +192,22 @@
                 <p class="mini-guide-text">Wechsle die Spur bei Schienenlücken.</p>
               </article>
               <article class="mini-guide-card">
-                <div class="mini-guide-icon">⬅️➡️</div>
+                <div class="mini-guide-icon">${miniGuideEmojiRow(['⬅️','➡️'])}</div>
                 <p class="mini-guide-title">Steuern</p>
                 <p class="mini-guide-text">Tippe links/rechts oder wische.</p>
               </article>
               <article class="mini-guide-card">
-                <div class="mini-guide-icon">🧱🪵⛓️</div>
+                <div class="mini-guide-icon">${miniGuideEmojiRow(['🧱','🪵','⛓️'])}</div>
                 <p class="mini-guide-title">Brücke</p>
                 <p class="mini-guide-text">Ziehe passende Materialien in die Felder.</p>
               </article>
               <article class="mini-guide-card">
-                <div class="mini-guide-icon">🧽🍄🌿</div>
+                <div class="mini-guide-icon">${miniGuideEmojiRow(['🧽','🍄','🌿'])}</div>
                 <p class="mini-guide-title">Ablenkung</p>
                 <p class="mini-guide-text">Nicht alles eignet sich zum Bauen.</p>
               </article>
               <article class="mini-guide-card">
-                <div class="mini-guide-icon">❤️❤️❤️</div>
+                <div class="mini-guide-icon">${miniGuideEmojiRow(['❤️','❤️','❤️'])}</div>
                 <p class="mini-guide-title">Leben</p>
                 <p class="mini-guide-text">Absturz oder falsche Brücke kostet ein Herz.</p>
               </article>
