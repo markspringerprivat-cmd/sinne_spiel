@@ -4,15 +4,15 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Finale im Schloss | Die verlorene Sinnesmagie</title>
-  <link rel="stylesheet" href="../assets/css/style.css?v=94">
+  <link rel="stylesheet" href="../assets/css/style.css?v=95">
 </head>
 <body class="castle-finale-page">
-  <main class="castle-finale-shell" aria-label="Finale im Schloss des Magiers">
+  <main id="castleFinaleShell" class="castle-finale-shell" aria-label="Finale im Schloss des Magiers">
     <section id="castleFinaleStage" class="castle-finale-stage" aria-live="polite">
       <img class="castle-finale-bg" src="../assets/images/finale/background.png" alt="Dunkler Thronsaal im Schloss des Magiers" draggable="false">
       <img id="castleFinaleOrb" class="castle-finale-orb" src="../assets/images/finale/orb_stage_1.png" alt="Glaskugel mit der Magie der Sinne" draggable="false">
       <img id="castleFinaleKnight" class="castle-finale-knight" src="../assets/images/characters/knight.png" alt="Ritter" draggable="false">
-      <div id="castleFinaleCaption" class="castle-finale-caption">Der Ritter schleicht in den Thronsaal. Vor ihm ruht die Glaskugel, in der die Sinnesmagie gefangen ist.</div>
+      <div id="castleFinaleCaption" class="castle-finale-caption">Der Ritter betritt den Thronsaal. Vor ihm ruht die Glaskugel, in der die Magie der Sinne gefangen ist.</div>
     </section>
     <div class="castle-finale-controls">
       <button id="castleFinaleAttack" class="primary-button" type="button" disabled>Angriff</button>
@@ -20,8 +20,28 @@
     </div>
   </main>
 
+  <section id="castleOutroOverlay" class="castle-outro-overlay hidden" aria-label="Endgeschichte" aria-live="polite">
+    <div class="castle-outro-story-stage">
+      <div class="castle-outro-story-image-wrap">
+        <img id="castleOutroImage" class="castle-outro-story-image" src="../assets/images/finale/out_1.png" alt="Endgeschichte Bild 1" draggable="false">
+      </div>
+      <article class="castle-outro-story-card">
+        <div class="story-progress">
+          <span id="castleOutroCounter">1 / 6</span>
+          <div class="story-progress-bar"><div id="castleOutroProgress" style="width:0%"></div></div>
+        </div>
+        <h2 id="castleOutroTitle" class="castle-outro-title">Die Magie ist frei</h2>
+        <p id="castleOutroText" class="castle-outro-text"></p>
+        <p id="castleOutroStatus" class="castle-outro-status">Die Endgeschichte beginnt …</p>
+        <button id="castleOutroMusicStart" class="primary-button hidden" type="button">Musik und Endgeschichte starten</button>
+        <a id="castleOutroFinish" class="primary-button hidden" href="../game.html?fromLevel=1">Zur Weltkarte</a>
+      </article>
+    </div>
+  </section>
+
   <audio id="castleFinaleHitSfx" src="../assets/audio/slice_cut.mp3" preload="auto"></audio>
   <audio id="castleFinaleCrashSfx" src="../assets/audio/magehit.mp3" preload="auto"></audio>
-  <script src="../assets/js/zauberschloss-finale.js?v=94"></script>
+  <audio id="castleHopefulMusic" src="../assets/audio/hopeful_happy_ending.mp3" preload="auto"></audio>
+  <script src="../assets/js/zauberschloss-finale.js?v=95"></script>
 </body>
 </html>

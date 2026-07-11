@@ -827,6 +827,9 @@ const sfxCorrect = new Audio('../assets/audio/correct.mp3');
 const sfxWrong = new Audio('../assets/audio/falsch_3.mp3');
 const sfxClick = new Audio('../assets/audio/slice_cut.mp3');
 const sfxMageHit = new Audio('../assets/audio/magehit.mp3');
+const castleWinMusic = new Audio('../assets/audio/winfin.mp3');
+castleWinMusic.preload = 'auto';
+castleWinMusic.loop = false;
 
 const bossMusic = new Audio('../assets/audio/bossencounter.mp3');
 const BOSS_MUSIC_LOOP_START_SECONDS = 15;
@@ -920,7 +923,7 @@ let sfxUnlocked = false;
 function unlockSfxForMobile() {
   if (sfxUnlocked) return;
   sfxUnlocked = true;
-  [sfxCorrect, sfxWrong, sfxClick, sfxMageHit, castleUltimateMusic].forEach(audio => {
+  [sfxCorrect, sfxWrong, sfxClick, sfxMageHit, castleUltimateMusic, castleWinMusic].forEach(audio => {
     if (!audio) return;
     try {
       audio.volume = 0;
@@ -980,6 +983,7 @@ function getAreaProgress() {
   const result = {};
   const maxLevels = Math.max(4, levelMarkers.length);
   for (let i = 1; i <= maxLevels; i++) result[`level${i}Completed`] = !!area[`level${i}Completed`];
+  result.finaleCompleted = !!area.finaleCompleted;
   return result;
 }
 
@@ -989,7 +993,7 @@ function setAreaProgress(patch) {
   const next = {};
   const maxLevels = Math.max(4, levelMarkers.length);
   for (let i = 1; i <= maxLevels; i++) next[`level${i}Completed`] = !!area[`level${i}Completed`];
-  progress[currentArea] = { ...next, ...patch };
+  progress[currentArea] = { ...area, ...next, ...patch };
   writeProgress(progress);
 }
 
@@ -1012,9 +1016,28 @@ function awardFragment(quizId) {
   };
 }
 
+function pauseCastleWinMusic() {
+  try {
+    castleWinMusic.pause();
+    castleWinMusic.currentTime = 0;
+  } catch {}
+}
+
+function playCastleWinMusic() {
+  pauseBossMusic();
+  pauseCastleUltimateMusic();
+  try {
+    castleWinMusic.pause();
+    castleWinMusic.currentTime = 0;
+    castleWinMusic.volume = currentVolume();
+    castleWinMusic.play().catch(() => {});
+  } catch {}
+}
+
 function startLevelMusic() {
   pauseBossMusic();
   pauseCastleUltimateMusic();
+  pauseCastleWinMusic();
   if (!levelMusic) return;
   if (levelMusicLoop) {
     levelMusicLoop.setVolume(currentVolume());
@@ -1163,6 +1186,12 @@ function saveCurrentNode(node) {
 
 function initialNodeFromProgress() {
   const progress = getAreaProgress();
+  if (currentArea === 'zauberschloss' && levelMarkers.length === 3) {
+    if (progress.finaleCompleted || progress.level4Completed) return 'level3';
+    if (progress.level2Completed) return 'level2';
+    if (progress.level1Completed) return 'level1';
+    return 'start';
+  }
   for (let i = levelMarkers.length; i >= 1; i--) {
     if (progress[`level${i}Completed`] && levelMarkers[i - 1]) return `level${i}`;
   }
@@ -1293,10 +1322,17 @@ function preloadLevelJumpSprites() {
 function applyMarkerStates() {
   const progress = getAreaProgress();
   levelMarkers.forEach((marker, index) => {
-    const levelKey = `level${index + 1}Completed`;
-    const previousKey = `level${index}Completed`;
-    const completed = !!progress[levelKey];
-    const locked = index > 0 && !progress[previousKey];
+    let completed;
+    let locked;
+    if (currentArea === 'zauberschloss' && levelMarkers.length === 3 && index === 2) {
+      completed = !!(progress.finaleCompleted || progress.level4Completed);
+      locked = !progress.level2Completed;
+    } else {
+      const levelKey = `level${index + 1}Completed`;
+      const previousKey = `level${index}Completed`;
+      completed = !!progress[levelKey];
+      locked = index > 0 && !progress[previousKey];
+    }
     marker.classList.toggle('completed', completed);
     marker.classList.toggle('locked', locked);
     marker.classList.toggle('available', !locked && !completed);
@@ -1353,40 +1389,20 @@ async function handleLevelTwo() {
 async function handleLevelThree() {
   const progress = getAreaProgress();
   if (!progress.level2Completed) {
-    showLevelPopup('Noch gesperrt', 'Du musst zuerst die Bossbegegnung schaffen, bevor du weiter zum Schloss kannst.');
+    showLevelPopup('Noch gesperrt', 'Du musst zuerst die Bossbegegnung schaffen, bevor du das Schlosstor betreten kannst.');
     return;
   }
   await moveToNode('level3');
-  if (!progress.level3Completed) {
-    showLevelPopup(
-      levelMarkers[2]?.dataset.title || 'Vor dem Schloss',
-      `<div class="visual-notice"><div class="visual-notice-icon">🏰</div><p>${levelMarkers[2]?.dataset.text || 'Der Weg zum letzten Tor ist frei.'}</p></div>`,
-      'Weiter',
-      () => {
-        setAreaProgress({ level3Completed: true });
-        saveCurrentNode('level3');
-        applyMarkerStates();
-      }
-    );
-    return;
-  }
-  showLevelPopup(levelMarkers[2]?.dataset.title || 'Vor dem Schloss', 'Dieser Punkt ist geschafft. Das finale Tor ist freigeschaltet.', 'OK');
-}
-
-async function handleLevelFour() {
-  const progress = getAreaProgress();
-  if (!progress.level3Completed) {
-    showLevelPopup('Noch gesperrt', 'Du musst zuerst den Punkt vor dem Schloss erreichen.');
-    return;
-  }
-  await moveToNode('level4');
-  saveCurrentNode('level4');
-  const alreadyDone = !!progress.level4Completed;
+  saveCurrentNode('level3');
+  const alreadyDone = !!(progress.finaleCompleted || progress.level4Completed);
   showLevelPopup(
-    levelMarkers[3]?.dataset.title || 'Finale im Schloss',
-    `<div class="visual-notice"><div class="visual-notice-icon">🏰💥</div><p>${levelMarkers[3]?.dataset.text || 'Dringe in den Thronsaal ein, stelle dich der Glaskugel und befreie die Sinnesmagie.'}</p></div>`,
+    levelMarkers[2]?.dataset.title || 'Finale im Schloss',
+    `<div class="visual-notice"><div class="visual-notice-icon">🏰💥</div><p>${levelMarkers[2]?.dataset.text || 'Betritt den Thronsaal, zerschlage die Glaskugel und befreie die Magie der Sinne.'}</p></div>`,
     alreadyDone ? 'Finale erneut spielen' : 'Finale starten',
-    () => { pauseLevelMusic(); window.location.href = 'zauberschloss-finale.html'; }
+    () => {
+      pauseLevelMusic();
+      window.location.href = 'zauberschloss-finale.html';
+    }
   );
 }
 
@@ -1394,8 +1410,7 @@ async function moveLevelKnightTo(marker, index) {
   if (marker.disabled || marker.classList.contains('movement-disabled')) return;
   if (index === 0) await handleLevelOne();
   else if (index === 1) await handleLevelTwo();
-  else if (index === 2) await handleLevelThree();
-  else await handleLevelFour();
+  else await handleLevelThree();
 }
 
 levelMarkers.forEach((marker, index) => {
@@ -4774,7 +4789,7 @@ function showQuizResult() {
     `;
     if (castleVictory) {
       showCastleVictoryScene(knight.src, enemy.src);
-      keepBossMusicThroughCastleVictory();
+      playCastleWinMusic();
     }
     document.getElementById('closeQuizButton').addEventListener('click', castleVictory ? returnToCastleLevel : returnToOverworld);
     return;
@@ -4856,6 +4871,7 @@ async function returnToCastleLevel() {
   writePendingNotice({ type: 'castleNextLevelUnlocked', area: 'zauberschloss' });
   pauseBossMusic();
   pauseCastleUltimateMusic();
+  pauseCastleWinMusic();
   window.location.href = 'zauberschloss.html?nextLevelUnlocked=1';
 }
 
@@ -4873,6 +4889,7 @@ async function returnToOverworld() {
   await moveToNode('start');
   pauseBossMusic();
   pauseCastleUltimateMusic();
+  pauseCastleWinMusic();
   window.location.href = `../game.html?fromLevel=1&completedArea=${encodeURIComponent(activeQuiz?.quizId || currentArea)}`;
 }
 
@@ -4884,6 +4901,7 @@ async function exitLevel() {
   cleanupCastleHearingGame();
   cleanupCastleUltimateGame();
   pauseBossMusic();
+  pauseCastleWinMusic();
   pauseLevelMusic();
   await moveToNode('start');
   window.location.href = '../game.html?fromLevel=1';
