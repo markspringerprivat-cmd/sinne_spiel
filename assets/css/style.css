@@ -4496,3 +4496,61 @@ p { line-height: 1.5; }
     font-size: .84rem;
   }
 }
+
+/* ===== v84 Hörsinn: mobile Audio-Freigabe und Wiederaufnahme ===== */
+.castle-hearing-audio-status {
+  margin: 2px 0 0 !important;
+  padding: 8px 11px;
+  border-radius: 13px;
+  background: rgba(91, 38, 139, .09);
+  color: #5b268b;
+  font-size: .9rem;
+  font-weight: 850;
+  text-align: center;
+}
+.castle-hearing-audio-status.is-ready {
+  background: rgba(45, 142, 76, .12);
+  color: #236f3c;
+}
+.castle-hearing-audio-status.is-error {
+  background: rgba(181, 48, 48, .12);
+  color: #992c2c;
+}
+.castle-hearing-audio-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 10020;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(20, 9, 31, .72);
+  backdrop-filter: blur(4px);
+  pointer-events: auto !important;
+}
+.castle-hearing-audio-gate.hidden {
+  display: none !important;
+}
+.castle-hearing-audio-gate-card {
+  width: min(92vw, 440px);
+  display: grid;
+  gap: 12px;
+  padding: 22px;
+  border: 2px solid rgba(255, 255, 255, .86);
+  border-radius: 22px;
+  background: rgba(255, 250, 236, .99);
+  color: #3e2a17;
+  text-align: center;
+  box-shadow: 0 22px 54px rgba(0, 0, 0, .42);
+}
+.castle-hearing-audio-gate-card strong {
+  font-size: 1.18rem;
+  color: #5b268b;
+}
+.castle-hearing-audio-gate-card p {
+  margin: 0;
+  line-height: 1.4;
+  font-weight: 800;
+}
+.castle-hearing-audio-gate-card .primary-button {
+  justify-self: center;
+}

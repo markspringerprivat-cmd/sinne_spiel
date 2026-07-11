@@ -57,11 +57,11 @@ const CASTLE_HEARING_PREVIEW_GAP_MS = 250;
 const CASTLE_HEARING_JUMP_MS = 620;
 const CASTLE_HEARING_RETURN_JUMP_MS = 520;
 const CASTLE_HEARING_NOTES = [
-  { name: 'C', frequency: 261.63 },
-  { name: 'D', frequency: 293.66 },
-  { name: 'E', frequency: 329.63 },
-  { name: 'F', frequency: 349.23 },
-  { name: 'G', frequency: 392.00 }
+  { name: 'C', frequency: 261.63, file: '../assets/audio/hoersinn_C4.wav' },
+  { name: 'D', frequency: 293.66, file: '../assets/audio/hoersinn_D4.wav' },
+  { name: 'E', frequency: 329.63, file: '../assets/audio/hoersinn_E4.wav' },
+  { name: 'F', frequency: 349.23, file: '../assets/audio/hoersinn_F4.wav' },
+  { name: 'G', frequency: 392.00, file: '../assets/audio/hoersinn_G4.wav' }
 ];
 
 const currentArea = window.location.pathname.split('/').pop().replace('.html', '');
@@ -454,6 +454,13 @@ function cleanupCastleSmellGame() {
 
 function cleanupCastleHearingGame() {
   hideCastleSenseQuestionPanel();
+  cancelCastleHearingAudioGate();
+  document.getElementById('castleHearingAudioGate')?.remove();
+  castleHearingActiveToneCount = 0;
+  try { if (bossMusicWanted) bossMusic.volume = bossVolumeForMode(); } catch {}
+  (castleHearingHtmlPlayers || []).forEach(audio => {
+    try { audio.pause(); audio.currentTime = 0; } catch {}
+  });
   const state = activeQuiz?.castleHearing;
   if (state) {
     state.running = false;
@@ -2909,71 +2916,396 @@ async function finishCastleSmellSearch() {
 
 
 let castleHearingAudioContext = null;
+let castleHearingAudioBuffers = new Map();
+let castleHearingAudioBufferPromise = null;
+let castleHearingHtmlPlayers = null;
+let castleHearingAudioUnlocked = false;
+let castleHearingAudioUnlockInProgress = null;
+let castleHearingAudioGatePromise = null;
+let castleHearingAudioGateResolve = null;
+let castleHearingActiveToneCount = 0;
+let castleHearingAudioListenersInstalled = false;
 
 function getCastleHearingAudioContext() {
   const AudioContextClass = window.AudioContext || window.webkitAudioContext;
   if (!AudioContextClass) return null;
-  if (!castleHearingAudioContext) castleHearingAudioContext = new AudioContextClass();
-  if (castleHearingAudioContext.state === 'suspended') {
-    castleHearingAudioContext.resume().catch(() => {});
+  if (!castleHearingAudioContext || castleHearingAudioContext.state === 'closed') {
+    try {
+      castleHearingAudioContext = new AudioContextClass({ latencyHint: 'interactive' });
+    } catch {
+      castleHearingAudioContext = new AudioContextClass();
+    }
   }
   return castleHearingAudioContext;
 }
 
-function playCastleHearingTone(noteIndex, durationMs = 440) {
-  const note = CASTLE_HEARING_NOTES[noteIndex];
-  if (!note) return wait(durationMs);
+function initCastleHearingHtmlPlayers() {
+  if (castleHearingHtmlPlayers) return castleHearingHtmlPlayers;
+  castleHearingHtmlPlayers = CASTLE_HEARING_NOTES.map(note => {
+    const audio = new Audio(note.file);
+    audio.preload = 'auto';
+    audio.playsInline = true;
+    audio.setAttribute('playsinline', '');
+    audio.setAttribute('webkit-playsinline', '');
+    try { audio.load(); } catch {}
+    return audio;
+  });
+  return castleHearingHtmlPlayers;
+}
+
+function primeCastleHearingAudioFiles() {
+  initCastleHearingHtmlPlayers().forEach(audio => {
+    try { audio.load(); } catch {}
+  });
+}
+
+async function loadCastleHearingAudioBuffers(context) {
+  if (!context) return castleHearingAudioBuffers;
+  if (castleHearingAudioBuffers.size === CASTLE_HEARING_NOTES.length) return castleHearingAudioBuffers;
+  if (castleHearingAudioBufferPromise) return castleHearingAudioBufferPromise;
+
+  castleHearingAudioBufferPromise = Promise.all(CASTLE_HEARING_NOTES.map(async (note, index) => {
+    try {
+      const response = await fetch(note.file, { cache: 'force-cache' });
+      if (!response.ok) throw new Error(`Audiodatei ${note.file} konnte nicht geladen werden.`);
+      const data = await response.arrayBuffer();
+      const buffer = await context.decodeAudioData(data.slice(0));
+      castleHearingAudioBuffers.set(index, buffer);
+    } catch (error) {
+      console.warn('Hörsinn-Audiodatei konnte nicht als AudioBuffer geladen werden.', error);
+    }
+  })).finally(() => {
+    castleHearingAudioBufferPromise = null;
+  });
+
+  await castleHearingAudioBufferPromise;
+  return castleHearingAudioBuffers;
+}
+
+function castleHearingToneVolume() {
+  let volume = 0.65;
+  try { volume = currentVolume(); } catch {}
+  // Das Hörspiel muss auch über kleine Smartphone-Lautsprecher klar verständlich bleiben.
+  return Math.max(0.56, Math.min(0.92, volume * 1.18));
+}
+
+function beginCastleHearingMusicDuck() {
+  castleHearingActiveToneCount += 1;
   try {
+    if (bossMusicWanted && !bossMusic.paused) {
+      bossMusic.volume = Math.min(bossMusic.volume, Math.max(0.025, currentVolume() * 0.13));
+    }
+  } catch {}
+}
+
+function endCastleHearingMusicDuck() {
+  castleHearingActiveToneCount = Math.max(0, castleHearingActiveToneCount - 1);
+  if (castleHearingActiveToneCount > 0) return;
+  try {
+    if (bossMusicWanted) bossMusic.volume = bossVolumeForMode();
+  } catch {}
+}
+
+function setCastleHearingAudioStatus(message, type = '') {
+  const status = document.getElementById('castleHearingAudioStatus');
+  if (!status) return;
+  status.textContent = message;
+  status.classList.remove('is-error', 'is-ready');
+  if (type === 'error') status.classList.add('is-error');
+  if (type === 'ready') status.classList.add('is-ready');
+}
+
+function hideCastleHearingAudioGate() {
+  document.getElementById('castleHearingAudioGate')?.classList.add('hidden');
+}
+
+function cancelCastleHearingAudioGate() {
+  hideCastleHearingAudioGate();
+  if (castleHearingAudioGateResolve) castleHearingAudioGateResolve(false);
+  castleHearingAudioGateResolve = null;
+  castleHearingAudioGatePromise = null;
+}
+
+async function unlockCastleHearingAudio({ playConfirmation = false } = {}) {
+  if (castleHearingAudioUnlockInProgress) return castleHearingAudioUnlockInProgress;
+
+  castleHearingAudioUnlockInProgress = (async () => {
     const context = getCastleHearingAudioContext();
-    if (!context) return wait(durationMs);
+    const players = initCastleHearingHtmlPlayers();
 
-    const start = context.currentTime + 0.015;
-    const duration = Math.max(0.18, durationMs / 1000);
-    const master = context.createGain();
-    const toneGain = context.createGain();
-    const shimmerGain = context.createGain();
-    const oscillator = context.createOscillator();
-    const shimmer = context.createOscillator();
-    const panner = typeof context.createStereoPanner === 'function' ? context.createStereoPanner() : null;
-    const x = activeQuiz?.castleHearing?.keyXs?.[noteIndex] ?? 50;
-    let volume = 0.5;
-    try { volume = currentVolume(); } catch {}
+    // Die play()-Aufrufe erfolgen sofort innerhalb der Nutzeraktion. Das ist für iOS/WebKit wichtig.
+    const htmlAttempts = players.map(audio => {
+      try {
+        audio.pause();
+        audio.currentTime = 0;
+        audio.muted = true;
+        audio.volume = 0;
+        const result = audio.play();
+        return result && typeof result.then === 'function' ? result : Promise.resolve();
+      } catch (error) {
+        return Promise.reject(error);
+      }
+    });
 
-    master.gain.setValueAtTime(0.0001, start);
-    master.gain.exponentialRampToValueAtTime(Math.max(0.035, volume * 0.28), start + 0.045);
-    master.gain.exponentialRampToValueAtTime(0.0001, start + duration);
-    toneGain.gain.value = 0.82;
-    shimmerGain.gain.value = 0.18;
-
-    oscillator.type = 'sine';
-    oscillator.frequency.setValueAtTime(note.frequency, start);
-    shimmer.type = 'triangle';
-    shimmer.frequency.setValueAtTime(note.frequency * 2, start);
-
-    oscillator.connect(toneGain);
-    shimmer.connect(shimmerGain);
-    toneGain.connect(master);
-    shimmerGain.connect(master);
-    if (panner) {
-      panner.pan.value = Math.max(-0.7, Math.min(0.7, (x - 50) / 50));
-      master.connect(panner);
-      panner.connect(context.destination);
-    } else {
-      master.connect(context.destination);
+    let resumeAttempt = Promise.resolve();
+    if (context && (context.state === 'suspended' || context.state === 'interrupted')) {
+      try { resumeAttempt = context.resume(); } catch (error) { resumeAttempt = Promise.reject(error); }
     }
 
-    oscillator.start(start);
-    shimmer.start(start);
-    oscillator.stop(start + duration + 0.03);
-    shimmer.stop(start + duration + 0.03);
-  } catch (error) {
-    console.warn('Ton konnte nicht abgespielt werden.', error);
+    // Ein lautloser Ein-Sample-Puffer öffnet auf mobilen Browsern zuverlässig den Audio-Ausgang.
+    if (context) {
+      try {
+        const silentBuffer = context.createBuffer(1, 1, 22050);
+        const silentSource = context.createBufferSource();
+        silentSource.buffer = silentBuffer;
+        silentSource.connect(context.destination);
+        silentSource.start(0);
+      } catch {}
+    }
+
+    const results = await Promise.allSettled([resumeAttempt, ...htmlAttempts]);
+    let htmlUnlocked = false;
+    players.forEach((audio, index) => {
+      if (results[index + 1]?.status === 'fulfilled') htmlUnlocked = true;
+      try {
+        audio.pause();
+        audio.currentTime = 0;
+        audio.muted = false;
+        audio.volume = castleHearingToneVolume();
+      } catch {}
+    });
+
+    const contextRunning = !!context && context.state === 'running';
+    castleHearingAudioUnlocked = contextRunning || htmlUnlocked;
+
+    if (contextRunning) await loadCastleHearingAudioBuffers(context);
+
+    if (!castleHearingAudioUnlocked) {
+      setCastleHearingAudioStatus('Der Ton wurde vom Browser blockiert. Tippe erneut auf „Ton aktivieren“.', 'error');
+      return false;
+    }
+
+    setCastleHearingAudioStatus('Ton aktiviert. Du hörst gleich einen kurzen Testton.', 'ready');
+    if (playConfirmation) {
+      await playCastleHearingTone(0, 220, { skipUnlock: true, allowGate: false });
+    }
+    return true;
+  })();
+
+  try {
+    return await castleHearingAudioUnlockInProgress;
+  } finally {
+    castleHearingAudioUnlockInProgress = null;
   }
-  return wait(durationMs);
 }
+
+async function ensureCastleHearingAudioReady({ fromUserGesture = false, allowGate = true } = {}) {
+  const context = getCastleHearingAudioContext();
+  if (context?.state === 'running') {
+    castleHearingAudioUnlocked = true;
+    return true;
+  }
+
+  if (context && (context.state === 'suspended' || context.state === 'interrupted')) {
+    try {
+      await context.resume();
+      if (context.state === 'running') {
+        castleHearingAudioUnlocked = true;
+        loadCastleHearingAudioBuffers(context);
+        return true;
+      }
+    } catch (error) {
+      console.warn('Hörsinn-Audio konnte nicht automatisch fortgesetzt werden.', error);
+    }
+  }
+
+  if (fromUserGesture) {
+    const unlocked = await unlockCastleHearingAudio();
+    if (unlocked) return true;
+  }
+
+  if (castleHearingAudioUnlocked && initCastleHearingHtmlPlayers().length) return true;
+  if (!allowGate) return false;
+  return requestCastleHearingAudioGate();
+}
+
+function requestCastleHearingAudioGate() {
+  if (castleHearingAudioGatePromise) return castleHearingAudioGatePromise;
+  const gate = document.getElementById('castleHearingAudioGate');
+  const button = document.getElementById('castleHearingAudioGateButton');
+  const message = document.getElementById('castleHearingAudioGateMessage');
+  if (!gate || !button) return Promise.resolve(false);
+
+  gate.classList.remove('hidden');
+  if (message) message.textContent = 'Der Browser hat den Ton angehalten. Aktiviere ihn, damit die Tonfolge fortgesetzt werden kann.';
+  button.disabled = false;
+  button.textContent = 'Ton aktivieren';
+
+  castleHearingAudioGatePromise = new Promise(resolve => {
+    castleHearingAudioGateResolve = resolve;
+    button.onclick = async () => {
+      button.disabled = true;
+      button.textContent = 'Ton wird aktiviert …';
+      const ready = await unlockCastleHearingAudio({ playConfirmation: true });
+      if (!ready) {
+        button.disabled = false;
+        button.textContent = 'Erneut versuchen';
+        if (message) message.textContent = 'Der Ton ist weiterhin blockiert. Prüfe die Medienlautstärke und tippe erneut.';
+        return;
+      }
+      hideCastleHearingAudioGate();
+      const done = castleHearingAudioGateResolve;
+      castleHearingAudioGateResolve = null;
+      castleHearingAudioGatePromise = null;
+      done?.(true);
+    };
+  });
+  return castleHearingAudioGatePromise;
+}
+
+async function playCastleHearingHtmlTone(noteIndex, durationMs) {
+  const audio = initCastleHearingHtmlPlayers()[noteIndex];
+  if (!audio) return false;
+  try {
+    audio.pause();
+    audio.currentTime = 0;
+    audio.muted = false;
+    audio.volume = castleHearingToneVolume();
+    await audio.play();
+    setTimeout(() => {
+      try { audio.pause(); audio.currentTime = 0; } catch {}
+    }, Math.max(180, durationMs));
+    return true;
+  } catch (error) {
+    console.warn('HTML-Audio-Ton konnte nicht abgespielt werden.', error);
+    return false;
+  }
+}
+
+function playCastleHearingWebAudioTone(context, noteIndex, durationMs) {
+  const note = CASTLE_HEARING_NOTES[noteIndex];
+  if (!context || context.state !== 'running' || !note) return false;
+  const start = context.currentTime + 0.012;
+  const duration = Math.max(0.18, durationMs / 1000);
+  const master = context.createGain();
+  const panner = typeof context.createStereoPanner === 'function' ? context.createStereoPanner() : null;
+  const x = activeQuiz?.castleHearing?.keyXs?.[noteIndex] ?? 50;
+  const targetVolume = castleHearingToneVolume();
+
+  master.gain.setValueAtTime(0.0001, start);
+  master.gain.exponentialRampToValueAtTime(targetVolume, start + 0.028);
+  master.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+
+  if (panner) {
+    panner.pan.value = Math.max(-0.65, Math.min(0.65, (x - 50) / 50));
+    master.connect(panner);
+    panner.connect(context.destination);
+  } else {
+    master.connect(context.destination);
+  }
+
+  const buffer = castleHearingAudioBuffers.get(noteIndex);
+  if (buffer) {
+    const source = context.createBufferSource();
+    source.buffer = buffer;
+    source.connect(master);
+    source.start(start);
+    source.stop(start + duration + 0.04);
+    return true;
+  }
+
+  // Sofortiger Synthesizer-Fallback, falls die Audiodatei noch lädt.
+  const oscillator = context.createOscillator();
+  const harmonic = context.createOscillator();
+  const oscillatorGain = context.createGain();
+  const harmonicGain = context.createGain();
+  oscillator.type = 'triangle';
+  oscillator.frequency.setValueAtTime(note.frequency, start);
+  harmonic.type = 'sine';
+  harmonic.frequency.setValueAtTime(note.frequency * 2, start);
+  oscillatorGain.gain.value = 0.78;
+  harmonicGain.gain.value = 0.22;
+  oscillator.connect(oscillatorGain);
+  harmonic.connect(harmonicGain);
+  oscillatorGain.connect(master);
+  harmonicGain.connect(master);
+  oscillator.start(start);
+  harmonic.start(start);
+  oscillator.stop(start + duration + 0.04);
+  harmonic.stop(start + duration + 0.04);
+  return true;
+}
+
+async function playCastleHearingTone(noteIndex, durationMs = 440, options = {}) {
+  const note = CASTLE_HEARING_NOTES[noteIndex];
+  if (!note) {
+    await wait(durationMs);
+    return false;
+  }
+
+  let ready = options.skipUnlock
+    ? !!(castleHearingAudioContext?.state === 'running' || castleHearingAudioUnlocked)
+    : await ensureCastleHearingAudioReady({
+        fromUserGesture: !!options.fromUserGesture,
+        allowGate: options.allowGate !== false
+      });
+
+  if (!ready && options.allowGate !== false) {
+    ready = await requestCastleHearingAudioGate();
+  }
+  if (!ready) {
+    await wait(durationMs);
+    return false;
+  }
+
+  beginCastleHearingMusicDuck();
+  let started = false;
+  try {
+    const context = getCastleHearingAudioContext();
+    if (context?.state === 'running') {
+      started = playCastleHearingWebAudioTone(context, noteIndex, durationMs);
+    }
+    if (!started) started = await playCastleHearingHtmlTone(noteIndex, durationMs);
+  } catch (error) {
+    console.warn('Hörsinn-Ton konnte nicht abgespielt werden.', error);
+  }
+
+  if (!started && options.allowGate !== false) {
+    castleHearingAudioUnlocked = false;
+    endCastleHearingMusicDuck();
+    const reactivated = await requestCastleHearingAudioGate();
+    if (reactivated) return playCastleHearingTone(noteIndex, durationMs, { skipUnlock: true, allowGate: false });
+    await wait(durationMs);
+    return false;
+  }
+
+  await wait(durationMs);
+  endCastleHearingMusicDuck();
+  return started;
+}
+
+function installCastleHearingAudioLifecycleListeners() {
+  if (castleHearingAudioListenersInstalled) return;
+  castleHearingAudioListenersInstalled = true;
+  const tryResume = () => {
+    if (!activeQuiz?.castleHearing?.running) return;
+    const context = castleHearingAudioContext;
+    if (!context || context.state === 'running') return;
+    context.resume().then(() => {
+      if (context.state === 'running') castleHearingAudioUnlocked = true;
+    }).catch(() => {});
+  };
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') tryResume();
+  });
+  window.addEventListener('pageshow', tryResume);
+  window.addEventListener('focus', tryResume);
+}
+
 function buildCastleHearingPanel() {
   const panel = document.getElementById('castleHearingPanel');
   if (!panel) return;
+  document.getElementById('castleHearingAudioGate')?.remove();
   panel.className = 'quiz-panel castle-hearing-panel';
   panel.innerHTML = `
     <div class="castle-hearing-hud">
@@ -2985,8 +3317,18 @@ function buildCastleHearingPanel() {
       <p><strong>Der Zauberer greift deinen Hörsinn an!</strong></p>
       <p>Höre dir die Töne C, D, E, F und G genau an. Merke dir ihre Reihenfolge und lasse den Ritter anschließend in derselben Reihenfolge auf die Tasten springen.</p>
       <p>Ein falscher Ton öffnet einen dunklen Abgrund.</p>
-      <button id="castleHearingStartButton" class="primary-button" type="button">OK</button>
+      <p id="castleHearingAudioStatus" class="castle-hearing-audio-status">Tippe auf den Button, um den Ton auf deinem Gerät zu aktivieren.</p>
+      <button id="castleHearingStartButton" class="primary-button" type="button">Ton aktivieren und starten</button>
+    </div>
+    <div id="castleHearingAudioGate" class="castle-hearing-audio-gate hidden" role="dialog" aria-modal="true" aria-label="Ton aktivieren">
+      <div class="castle-hearing-audio-gate-card">
+        <strong>Ton erforderlich</strong>
+        <p id="castleHearingAudioGateMessage">Der Browser hat den Ton angehalten.</p>
+        <button id="castleHearingAudioGateButton" class="primary-button" type="button">Ton aktivieren</button>
+      </div>
     </div>`;
+  const audioGate = panel.querySelector('#castleHearingAudioGate');
+  if (audioGate) document.body.appendChild(audioGate);
   panel.classList.remove('hidden');
 }
 
@@ -3377,10 +3719,19 @@ async function handleCastleHearingKeyPress(keyIndex) {
   const expected = state.sequence[state.inputIndex];
   state.locked = true;
   setCastleHearingKeysEnabled(false);
+
+  const audioReady = await ensureCastleHearingAudioReady({ fromUserGesture: true, allowGate: true });
+  if (!audioReady || !activeQuiz?.castleHearing?.running) {
+    state.locked = false;
+    setCastleHearingKeysEnabled(true);
+    return;
+  }
+
   setCastleHearingOccupiedKey(null);
   flashCastleHearingKey(keyIndex, 'player', 520);
-  playCastleHearingTone(keyIndex, 480);
+  const tonePlayback = playCastleHearingTone(keyIndex, 480, { skipUnlock: true, allowGate: true });
   await animateCastleHearingKnightJump(state.keyXs[keyIndex], false);
+  await tonePlayback;
   setCastleHearingOccupiedKey(keyIndex);
   if (!activeQuiz?.castleHearing?.running) return;
 
@@ -3563,6 +3914,7 @@ async function startCastleHearingSearchSequence() {
   activeQuiz.castleHearing = {
     running: true,
     started: false,
+    audioActivating: false,
     round: 1,
     totalRounds: CASTLE_HEARING_ROUNDS_TOTAL,
     locked: true,
@@ -3578,16 +3930,36 @@ async function startCastleHearingSearchSequence() {
   buildCastleHearingPanel();
   updateCastleHearingRoundLabel();
   prepareCastleHearingModeVisual();
-  document.getElementById('castleHearingStartButton')?.addEventListener('click', async () => {
+  primeCastleHearingAudioFiles();
+  installCastleHearingAudioLifecycleListeners();
+  const hearingStartButton = document.getElementById('castleHearingStartButton');
+  hearingStartButton?.addEventListener('click', async () => {
     const state = activeQuiz?.castleHearing;
-    if (!state || state.started) return;
+    if (!state || state.started || state.audioActivating) return;
+    state.audioActivating = true;
+    hearingStartButton.disabled = true;
+    hearingStartButton.textContent = 'Ton wird aktiviert …';
+    setCastleHearingAudioStatus('Audio wird für dieses Gerät vorbereitet …');
+    const audioUnlockAttempt = unlockCastleHearingAudio({ playConfirmation: true });
     unlockSfxForMobile();
-    getCastleHearingAudioContext();
+
+    const audioReady = await audioUnlockAttempt;
+    if (!activeQuiz?.castleHearing?.running) return;
+    if (!audioReady) {
+      state.audioActivating = false;
+      hearingStartButton.disabled = false;
+      hearingStartButton.textContent = 'Erneut versuchen';
+      setCastleHearingAudioStatus('Der Ton wurde blockiert. Prüfe die Medienlautstärke und tippe erneut.', 'error');
+      return;
+    }
+
+    state.audioActivating = false;
     state.started = true;
+    setCastleHearingAudioStatus('Ton aktiviert.', 'ready');
     document.getElementById('castleHearingIntro')?.classList.add('hidden');
     await animateCastleHearingKnightToCenter();
     if (activeQuiz?.castleHearing?.running) runCastleHearingRoundAttempt();
-  }, { once: true });
+  });
 }
 
 async function finishCastleHearingSearch() {
