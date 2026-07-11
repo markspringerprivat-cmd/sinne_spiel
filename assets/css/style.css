@@ -4916,3 +4916,39 @@ p { line-height: 1.5; }
   .castle-ultimate-footer > span { font-size: .78rem; min-height: 30px; padding: 5px 9px; }
   .castle-ultimate-orb { top: 27%; width: clamp(64px, 18vw, 92px); }
 }
+
+
+/* ===== v89 Finale: 60 Sekunden und kontrollierter Wiederholungsablauf ===== */
+.castle-ultimate-panel {
+  transition: opacity .42s ease;
+}
+.castle-ultimate-panel.castle-ultimate-panel-fading {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+.castle-ultimate-retry-panel {
+  display: grid !important;
+  place-items: center !important;
+  padding: 18px !important;
+  pointer-events: auto !important;
+  background: rgba(18, 7, 31, .52) !important;
+  backdrop-filter: blur(2px) !important;
+  opacity: 1 !important;
+}
+.castle-ultimate-retry-card {
+  width: min(88%, 430px);
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding: 24px 22px;
+  border-radius: 24px;
+  border: 2px solid rgba(255,255,255,.82);
+  background: linear-gradient(180deg, rgba(255,251,237,.98), rgba(243,223,255,.97));
+  color: #35203b;
+  text-align: center;
+  box-shadow: 0 18px 42px rgba(9,2,18,.42);
+}
+.castle-ultimate-retry-card h2,
+.castle-ultimate-retry-card p { margin: 0; }
+.castle-ultimate-retry-card h2 { font-size: clamp(1.3rem, 5vw, 1.9rem); }
+.castle-ultimate-retry-card p { font-weight: 850; }

@@ -29,9 +29,8 @@ const CASTLE_PROJECTILE_SPAWN_MS = 3400;
 const CASTLE_FLIGHT_SWAP_MS = 1200;
 const CASTLE_STUN_MS = 1000;
 const CASTLE_TASTE_GOAL = 5;
-const CASTLE_GOOD_THROW_MS = 5000;
-const CASTLE_BAD_THROW_MIN_MS = 3000;
-const CASTLE_BAD_THROW_MAX_MS = 4000;
+const CASTLE_TASTE_DROP_MIN_MS = 1800;
+const CASTLE_TASTE_DROP_MAX_MS = 2200;
 const CASTLE_GOOD_FOODS = ['🍎'];
 const CASTLE_FINAL_QUESTION_INDEX = 3;
 const CASTLE_CLONE_ROUNDS_TOTAL = 3;
@@ -64,7 +63,7 @@ const CASTLE_HEARING_NOTES = [
   { name: 'G', file: '../assets/audio/hoersinn_G3.mp3' }
 ];
 
-const CASTLE_ULTIMATE_DURATION_MS = 30000;
+const CASTLE_ULTIMATE_DURATION_MS = 60000;
 const CASTLE_ULTIMATE_QUESTION_COUNT = 8;
 const CASTLE_ULTIMATE_WRONG_PENALTY_MS = 2000;
 const CASTLE_ULTIMATE_STATEMENTS = [
@@ -280,7 +279,7 @@ function askCastleSenseQuestion(areaId, title) {
           ? 'Richtig – der Angriff kann beginnen!'
           : 'Falsch – du musst die Aufgabe erneut erspielen.';
         feedback.classList.remove('hidden');
-        if (!item.correct) playSfx(sfxWrong);
+        playSfx(item.correct ? sfxCorrect : sfxWrong);
         await wait(item.correct ? 650 : 950);
         hideCastleSenseQuestionPanel();
         resolve(item.correct);
@@ -332,6 +331,7 @@ function cleanupCastleDodgeGame() {
   const state = activeQuiz.castleDodge;
   state.running = false;
   if (state.spawnTimer) clearInterval(state.spawnTimer);
+  if (state.dropTimer) clearTimeout(state.dropTimer);
   if (state.flightTimer) clearInterval(state.flightTimer);
   if (state.rafId) cancelAnimationFrame(state.rafId);
   clearCastleProjectiles();
@@ -678,7 +678,7 @@ async function animateCastleEnemyStrike({
         }
         if (enemyHitSrc) enemy.src = enemyHitSrc;
         enemy.classList.add(impactClass);
-        playSfx(sfxClick);
+        playSfx(sfxMageHit);
       }
 
       if (progress < 1) {
@@ -811,9 +811,10 @@ let quizTimer = null;
 let popupCloseHandler = null;
 let currentNode = 'start';
 
-const sfxCorrect = new Audio('../assets/audio/richtig_1.mp3');
+const sfxCorrect = new Audio('../assets/audio/correct.mp3');
 const sfxWrong = new Audio('../assets/audio/falsch_3.mp3');
 const sfxClick = new Audio('../assets/audio/slice_cut.mp3');
+const sfxMageHit = new Audio('../assets/audio/magehit.mp3');
 
 const bossMusic = new Audio('../assets/audio/bossencounter.mp3');
 bossMusic.loop = true;
@@ -889,7 +890,7 @@ let sfxUnlocked = false;
 function unlockSfxForMobile() {
   if (sfxUnlocked) return;
   sfxUnlocked = true;
-  [sfxCorrect, sfxWrong, sfxClick, castleUltimateMusic].forEach(audio => {
+  [sfxCorrect, sfxWrong, sfxClick, sfxMageHit, castleUltimateMusic].forEach(audio => {
     if (!audio) return;
     try {
       audio.volume = 0;
@@ -1653,6 +1654,7 @@ function answerQuestion(idx) {
     if (i === q[2]) btn.classList.add('correct-answer');
     if (i === idx && !correct) btn.classList.add('wrong-answer');
   });
+  if (correct) playSfx(sfxCorrect);
 
   setTimeout(() => {
     const game = document.getElementById('quizGame');
@@ -1761,6 +1763,7 @@ async function answerCastleQuestion(idx) {
     if (i === q[2]) btn.classList.add('correct-answer');
     if (i === idx && !correct) btn.classList.add('wrong-answer');
   });
+  if (correct) playSfx(sfxCorrect);
 
   await wait(320);
   const game = document.getElementById('quizGame');
@@ -1951,16 +1954,21 @@ function spawnCastleGoodFood() {
   spawnCastleTasteItem('good');
 }
 
-function scheduleCastleBadFood() {
+function scheduleCastleTasteDrop(initialDelay = null) {
   const state = activeQuiz?.castleDodge;
   if (!state || !state.running) return;
-  const delay = CASTLE_BAD_THROW_MIN_MS + Math.random() * (CASTLE_BAD_THROW_MAX_MS - CASTLE_BAD_THROW_MIN_MS);
-  state.badSpawnTimer = setTimeout(() => {
+  if (state.dropTimer) clearTimeout(state.dropTimer);
+  const delay = initialDelay ?? (
+    CASTLE_TASTE_DROP_MIN_MS + Math.random() * (CASTLE_TASTE_DROP_MAX_MS - CASTLE_TASTE_DROP_MIN_MS)
+  );
+  state.dropTimer = setTimeout(() => {
     const current = activeQuiz?.castleDodge;
     if (!current || !current.running) return;
-    spawnCastleTasteItem('bad');
-    scheduleCastleBadFood();
-  }, delay);
+    const kind = Math.random() < 0.68 ? 'good' : 'bad';
+    spawnCastleTasteItem(kind);
+    current.lastDropAt = performance.now();
+    scheduleCastleTasteDrop();
+  }, Math.max(1000, delay));
 }
 
 function setCastleMagePosition() {
@@ -1995,12 +2003,23 @@ function castleKnightHit() {
   }, CASTLE_STUN_MS);
 }
 
+function shrinkCastleCollisionRect(rect, horizontalRatio = 0.2, verticalRatio = 0.16) {
+  const insetX = rect.width * horizontalRatio;
+  const insetY = rect.height * verticalRatio;
+  return {
+    left: rect.left + insetX,
+    right: rect.right - insetX,
+    top: rect.top + insetY,
+    bottom: rect.bottom - insetY
+  };
+}
+
 function updateCastleProjectiles(deltaSeconds) {
   const state = activeQuiz?.castleDodge;
   if (!state || !state.running) return;
   const knight = document.getElementById('quizKnight');
   if (!knight) return;
-  const knightRect = knight.getBoundingClientRect();
+  const knightRect = shrinkCastleCollisionRect(knight.getBoundingClientRect(), 0.23, 0.14);
 
   state.projectiles = state.projectiles.filter(projectile => {
     projectile.y += projectile.speed * deltaSeconds;
@@ -2009,7 +2028,7 @@ function updateCastleProjectiles(deltaSeconds) {
       projectile.el.remove();
       return false;
     }
-    const rect = projectile.el.getBoundingClientRect();
+    const rect = shrinkCastleCollisionRect(projectile.el.getBoundingClientRect(), 0.26, 0.22);
     const overlaps = !(rect.right < knightRect.left || rect.left > knightRect.right || rect.bottom < knightRect.top || rect.top > knightRect.bottom);
     if (overlaps) {
       projectile.el.remove();
@@ -2146,6 +2165,8 @@ async function startCastleDodgeGame() {
     lastRunKey: '',
     spawnTimer: null,
     badSpawnTimer: null,
+    dropTimer: null,
+    lastDropAt: 0,
     rafId: null,
     finishing: false
   };
@@ -2160,9 +2181,7 @@ async function startCastleDodgeGame() {
   activeQuiz.castleDodge.running = true;
   enemy.classList.remove('castle-phase-hidden');
   showCastleTasteFeedback('Sammle 5 Äpfel!', 1400);
-  activeQuiz.castleDodge.spawnTimer = setInterval(spawnCastleGoodFood, CASTLE_GOOD_THROW_MS);
-  setTimeout(spawnCastleGoodFood, 1100);
-  scheduleCastleBadFood();
+  scheduleCastleTasteDrop(900);
   activeQuiz.castleDodge.rafId = requestAnimationFrame(castleDodgeFrame);
 }
 
@@ -2172,6 +2191,7 @@ function stopCastleDodgeLoop() {
   state.running = false;
   if (state.spawnTimer) clearInterval(state.spawnTimer);
   if (state.badSpawnTimer) clearTimeout(state.badSpawnTimer);
+  if (state.dropTimer) clearTimeout(state.dropTimer);
   if (state.flightTimer) clearInterval(state.flightTimer);
   if (state.rafId) cancelAnimationFrame(state.rafId);
   state.moveDir = 0;
@@ -2197,6 +2217,7 @@ function resumeCastleTasteCollectionAfterWrongAnswer() {
   state.lastRunKey = '';
   state.spawnTimer = null;
   state.badSpawnTimer = null;
+  state.dropTimer = null;
   state.rafId = null;
 
   zone.classList.remove('castle-final-hit-mode');
@@ -2210,9 +2231,7 @@ function resumeCastleTasteCollectionAfterWrongAnswer() {
   updateCastleTasteStatus();
   showCastleTasteFeedback('Falsch beantwortet – sammle erneut 5 Äpfel.', 1800);
 
-  state.spawnTimer = setInterval(spawnCastleGoodFood, CASTLE_GOOD_THROW_MS);
-  setTimeout(spawnCastleGoodFood, 800);
-  scheduleCastleBadFood();
+  scheduleCastleTasteDrop(800);
   state.rafId = requestAnimationFrame(castleDodgeFrame);
 }
 
@@ -2308,6 +2327,7 @@ async function answerCastleFinalQuestion(idx) {
     return;
   }
 
+  playSfx(sfxCorrect);
   await wait(520);
   if (panel) panel.classList.add('hidden');
   await playCastleFinalHit();
@@ -3025,7 +3045,7 @@ async function handleCastleBushPick(index) {
 
     await animateCastleBushKnightJump(targetX, false);
     if (!activeQuiz?.castleBush?.running) return;
-    playSfx(sfxClick);
+    playSfx(sfxMageHit);
     image?.classList.add('castle-bush-hit-blink');
     await wait(520);
     image?.classList.remove('castle-bush-hit-blink');
@@ -4097,7 +4117,7 @@ function buildCastleUltimatePanel() {
   panel.innerHTML = `
     <div class="castle-ultimate-hud">
       <strong>Letzte Prüfung</strong>
-      <span id="castleUltimateTimer">30</span>
+      <span id="castleUltimateTimer">60</span>
     </div>
     <div class="castle-ultimate-progress" aria-hidden="true"><span id="castleUltimateProgressFill"></span></div>
     <div class="castle-ultimate-slider-window">
@@ -4169,6 +4189,11 @@ async function animateCastleUltimateMageEntry() {
     requestAnimationFrame(frame);
   });
   if (!activeQuiz?.castleUltimate?.running) return false;
+  const zone = document.getElementById('quizBattleZone');
+  if (zone) {
+    zone.style.setProperty('--ultimate-knight-x', '50%');
+    zone.style.setProperty('--ultimate-mage-x', '50%');
+  }
   enemy.src = castleEnemyAsset('hover');
   enemy.classList.add('castle-ultimate-casting');
   setCastleUltimateMagePosition(50, endTop);
@@ -4233,6 +4258,7 @@ async function answerCastleUltimateStatement(selectedValue) {
 
   card?.classList.add('correct');
   setCastleUltimateFeedback('Richtig!', 'correct');
+  playSfx(sfxCorrect);
   const completesFinale = state.index + 1 >= state.questions.length;
   if (completesFinale) {
     state.completing = true;
@@ -4327,7 +4353,7 @@ async function completeCastleUltimateSuccess() {
 
   await animateCastleUltimateKnightIntoOrb();
   if (!activeQuiz?.castleUltimate?.running) return;
-  playSfx(sfxClick);
+  playSfx(sfxMageHit);
   const explosionPoint = getCastleUltimateElementCenterPercent(orb);
   orb.classList.add('castle-ultimate-orb-exploding');
   spawnCastleUltimateExplosion(explosionPoint.x, explosionPoint.y);
@@ -4375,32 +4401,69 @@ async function animateCastleUltimateOrbStrike() {
   });
 }
 
+async function retryCastleUltimatePhase() {
+  const retryButton = document.getElementById('castleUltimateRetryButton');
+  if (retryButton) retryButton.disabled = true;
+  cleanupCastleUltimateGame();
+  if (!activeQuiz) return;
+  activeQuiz.finished = false;
+  activeQuiz.castleUltimateFailed = false;
+  activeQuiz.hearts = Math.max(1, activeQuiz.hearts || 1);
+  setCastleStandardBattlePoseVisual();
+  await wait(260);
+  await flyCastleMageOutBeforePhase('left');
+  if (activeQuiz && !activeQuiz.finished) await startCastleUltimateSequence();
+}
+
+function showCastleUltimateRetryPopup() {
+  const panel = document.getElementById('castleUltimatePanel');
+  if (!panel) return;
+  panel.className = 'quiz-panel castle-ultimate-panel castle-ultimate-retry-panel';
+  panel.innerHTML = `
+    <div class="castle-ultimate-retry-card" role="dialog" aria-modal="true" aria-labelledby="castleUltimateRetryTitle">
+      <h2 id="castleUltimateRetryTitle">Du warst zu langsam</h2>
+      <p>Versuche es noch einmal.</p>
+      <button id="castleUltimateRetryButton" class="primary-button" type="button">Letzte Phase wiederholen</button>
+    </div>
+  `;
+  panel.classList.remove('hidden', 'castle-ultimate-panel-fading', 'castle-ultimate-success');
+  document.getElementById('castleUltimateRetryButton')?.addEventListener('click', retryCastleUltimatePhase, { once: true });
+}
+
 async function failCastleUltimateByTimeout() {
   const state = activeQuiz?.castleUltimate;
+  const panel = document.getElementById('castleUltimatePanel');
   const enemy = document.getElementById('quizEnemy');
   const knight = document.getElementById('quizKnight');
   if (!state || !state.running || state.finished || !enemy || !knight) return;
+
   state.finished = true;
   state.locked = true;
   if (state.rafId) cancelAnimationFrame(state.rafId);
+  state.rafId = null;
   setCastleUltimateAnswersEnabled(false);
-  setCastleUltimateFeedback('Die Zeit ist abgelaufen!', 'wrong');
-  enemy.classList.remove('castle-ultimate-casting');
+
+  panel?.classList.add('castle-ultimate-panel-fading');
+  await wait(520);
+  panel?.classList.add('hidden');
   enemy.src = castleEnemyAsset('laugh');
+  showCastleSpeech('<strong>Zu langsam!</strong>');
+  await wait(1500);
+  hideCastleSpeech();
+
+  enemy.classList.remove('castle-ultimate-casting');
   await animateCastleUltimateOrbStrike();
   playSfx(sfxWrong);
   const impactX = Number.parseFloat(document.getElementById('castleUltimateOrb')?.style.left) || 50;
   const impactY = Number.parseFloat(document.getElementById('castleUltimateOrb')?.style.top) || 78;
   spawnCastleUltimateExplosion(impactX, impactY);
   knight.classList.add('castle-ultimate-knight-hit');
-  await wait(950);
+  await wait(1050);
+  knight.classList.remove('castle-ultimate-knight-hit');
 
-  if (!activeQuiz) return;
-  activeQuiz.hearts = 0;
+  if (!activeQuiz?.castleUltimate) return;
   activeQuiz.castleUltimateFailed = true;
-  activeQuiz.finished = true;
-  cleanupCastleUltimateGame();
-  showQuizResult();
+  showCastleUltimateRetryPopup();
 }
 
 async function startCastleUltimateSequence() {
