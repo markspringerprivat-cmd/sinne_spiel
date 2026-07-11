@@ -346,8 +346,18 @@ function showCompletedAreaInfo(area) {
     : '<div class="intro-visual">✓</div>';
   showInfo(
     `${areaNames[area] || 'Gebiet'} abgeschlossen`,
-    `${visual}<p>${completedAreaMessage(area)}</p>`,
-    { showScanButton: !allDone, html: true }
+    `${visual}<p>Dieses Gebiet hast du bereits abgeschlossen. Du kannst es jederzeit erneut spielen.</p>`,
+    {
+      showScanButton: !allDone,
+      html: true,
+      extraButtons: levelPages[area] ? [
+        {
+          label: 'Gebiet erneut spielen',
+          className: 'primary-button',
+          onClick: () => { window.location.href = levelPages[area]; }
+        }
+      ] : []
+    }
   );
 }
 
@@ -370,7 +380,7 @@ function renderCompletedAreaBadges() {
     badge.setAttribute('aria-label', `${areaNames[area]} abgeschlossen`);
     badge.addEventListener('click', event => {
       event.stopPropagation();
-      showCompletedAreaInfo(area);
+      moveKnightTo(button);
     });
     layer.appendChild(badge);
   });
@@ -519,11 +529,6 @@ function breakCastleSeal() {
 
 function moveKnightTo(button) {
   const area = button.dataset.area;
-
-  if (isAreaCompleted(area) && fragmentMeta[area]) {
-    showCompletedAreaInfo(area);
-    return;
-  }
 
   if (!isUnlocked(area)) {
     showLockedInfo(area);

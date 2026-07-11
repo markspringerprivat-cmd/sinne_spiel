@@ -1372,7 +1372,25 @@ async function handleLevelOne() {
     return;
   }
 
-  showLevelPopup(levelMarkers[0].dataset.title || 'Minispiel', 'Dieses Minispiel hast du bereits geschafft. Der nächste Punkt ist freigeschaltet.');
+  const minigameUrl = levelMarkers[0].dataset.minigameUrl;
+  if (minigameUrl) {
+    showLevelPopup(
+      levelMarkers[0].dataset.title || 'Minispiel',
+      `<div class="visual-notice"><div class="visual-notice-icon">🔁🎮</div><p>Dieses Minispiel hast du bereits geschafft.</p><p>Du kannst es jederzeit noch einmal spielen.</p></div>`,
+      'Minispiel erneut spielen',
+      () => {
+        pauseLevelMusic();
+        window.location.href = minigameUrl;
+      }
+    );
+    return;
+  }
+
+  showLevelPopup(
+    levelMarkers[0].dataset.title || 'Minispiel',
+    'Dieses Level hast du bereits geschafft und kannst es erneut öffnen.',
+    'Erneut spielen'
+  );
 }
 
 async function handleLevelTwo() {
@@ -1410,8 +1428,7 @@ async function moveLevelKnightTo(marker, index) {
   if (marker.disabled || marker.classList.contains('movement-disabled')) return;
   if (index === 0) await handleLevelOne();
   else if (index === 1) await handleLevelTwo();
-  else if (index === 2) await handleLevelFour();
-  else await handleLevelThree();
+  else if (index === 2) await handleLevelThree();
 }
 
 levelMarkers.forEach((marker, index) => {
