@@ -4,22 +4,22 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Finale im Schloss | Die verlorene Sinnesmagie</title>
-  <link rel="stylesheet" href="../assets/css/style.css?v=98">
+  <link rel="stylesheet" href="../assets/css/style.css?v=99">
 </head>
 <body class="castle-finale-page">
   <main id="castleFinaleShell" class="castle-finale-shell" aria-label="Finale im Schloss des Magiers">
-    <header class="castle-finale-topbar">
+    <section id="castleFinaleStage" class="castle-finale-stage" aria-live="polite">
+      <img class="castle-finale-bg" src="../assets/images/finale/background.png" alt="Dunkler Thronsaal im Schloss des Magiers" draggable="false">
+
       <div id="castleFinaleCaption" class="castle-finale-caption">Der Ritter betritt den Thronsaal. Vor ihm ruht die Glaskugel, in der die Magie der Sinne gefangen ist.</div>
+
+      <img id="castleFinaleOrb" class="castle-finale-orb" src="../assets/images/finale/orb_stage_1.png" alt="Glaskugel mit der Magie der Sinne" draggable="false">
+      <img id="castleFinaleKnight" class="castle-finale-knight" src="../assets/images/characters/knight.png" alt="Ritter" draggable="false">
+
       <div class="castle-finale-controls">
         <button id="castleFinaleAttack" class="primary-button" type="button" disabled>Angriff</button>
         <a class="ghost-button" href="zauberschloss.html">Zurück</a>
       </div>
-    </header>
-
-    <section id="castleFinaleStage" class="castle-finale-stage" aria-live="polite">
-      <img class="castle-finale-bg" src="../assets/images/finale/background.png" alt="Dunkler Thronsaal im Schloss des Magiers" draggable="false">
-      <img id="castleFinaleOrb" class="castle-finale-orb" src="../assets/images/finale/orb_stage_1.png" alt="Glaskugel mit der Magie der Sinne" draggable="false">
-      <img id="castleFinaleKnight" class="castle-finale-knight" src="../assets/images/characters/knight.png" alt="Ritter" draggable="false">
     </section>
   </main>
 
@@ -101,6 +101,6 @@
   <audio id="castleFinaleHitSfx" src="../assets/audio/slice_cut.mp3" preload="auto"></audio>
   <audio id="castleFinaleCrashSfx" src="../assets/audio/magehit.mp3" preload="auto"></audio>
   <audio id="castleHopefulMusic" src="../assets/audio/hopeful_happy_ending.mp3" preload="auto"></audio>
-  <script src="../assets/js/zauberschloss-finale.js?v=98"></script>
+  <script src="../assets/js/zauberschloss-finale.js?v=99"></script>
 </body>
 </html>
