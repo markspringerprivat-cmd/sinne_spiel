@@ -4558,3 +4558,361 @@ p { line-height: 1.5; }
 
 .compact-final-notice { gap: 6px !important; }
 .quiz-final-result .visual-notice.compact-final-notice { max-width: 360px; }
+
+
+/* ===== v88 Zauberschloss: finale Energieball-Prüfung ===== */
+.quiz-battle-zone.castle-ultimate-mode {
+  top: 5% !important;
+  height: 77% !important;
+  left: 0 !important;
+  right: 0 !important;
+  --ultimate-knight-x: 50%;
+  --ultimate-knight-bottom: 1.5%;
+  --ultimate-mage-x: 50%;
+  --ultimate-mage-top: 4.5%;
+}
+.quiz-battle-zone.castle-ultimate-mode .knight-battle,
+.quiz-battle-zone.castle-ultimate-mode .enemy-battle {
+  right: auto !important;
+  max-width: none !important;
+  max-height: none !important;
+  object-fit: contain !important;
+  pointer-events: none !important;
+  transition: none !important;
+}
+.quiz-battle-zone.castle-ultimate-mode .knight-battle {
+  left: var(--ultimate-knight-x) !important;
+  top: auto !important;
+  bottom: var(--ultimate-knight-bottom) !important;
+  width: var(--castle-combat-size) !important;
+  height: var(--castle-combat-size) !important;
+  transform: translateX(-50%) !important;
+  transform-origin: center bottom !important;
+  z-index: 66 !important;
+}
+.quiz-battle-zone.castle-ultimate-mode .enemy-battle {
+  left: var(--ultimate-mage-x) !important;
+  top: var(--ultimate-mage-top) !important;
+  bottom: auto !important;
+  width: var(--castle-sky-size) !important;
+  height: var(--castle-sky-size) !important;
+  transform: translateX(-50%) !important;
+  transform-origin: center center !important;
+  z-index: 64 !important;
+}
+.castle-ultimate-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 62;
+  overflow: visible;
+  pointer-events: none;
+  --ultimate-orb-scale: .72;
+  --ultimate-orb-progress: 0;
+  --ultimate-glow-a: 18px;
+  --ultimate-glow-b: 44px;
+  --ultimate-saturation: 1;
+  --ultimate-brightness: 1;
+}
+.castle-ultimate-layer.hidden { display: none !important; }
+.castle-ultimate-orb {
+  position: absolute;
+  left: 50%;
+  top: 29%;
+  width: clamp(72px, 17vmin, 126px);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%) scale(var(--ultimate-orb-scale));
+  border-radius: 50%;
+  opacity: 0;
+  z-index: 65;
+  background:
+    radial-gradient(circle at 37% 31%, #fff 0 8%, #f8e4ff 10% 18%, #e894ff 25%, #8b34e4 50%, #321066 76%, #090016 100%);
+  box-shadow:
+    0 0 var(--ultimate-glow-a) rgba(220,112,255,.95),
+    0 0 var(--ultimate-glow-b) rgba(105,38,224,.72),
+    inset 0 0 22px rgba(255,255,255,.85);
+  filter: saturate(var(--ultimate-saturation)) brightness(var(--ultimate-brightness));
+  transition: opacity .28s ease;
+  will-change: transform, left, top, filter;
+}
+.castle-ultimate-orb.visible { opacity: 1; }
+.castle-ultimate-orb::before,
+.castle-ultimate-orb::after {
+  content: '';
+  position: absolute;
+  inset: -12%;
+  border-radius: 50%;
+  border: 3px solid rgba(235,174,255,.68);
+  animation: castleUltimateOrbOrbit 2.2s linear infinite;
+}
+.castle-ultimate-orb::after {
+  inset: -24%;
+  border-color: rgba(121,85,255,.48);
+  animation-direction: reverse;
+  animation-duration: 3.1s;
+}
+.castle-ultimate-orb-core {
+  position: absolute;
+  inset: 25%;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff 0 24%, #eec9ff 40%, rgba(255,255,255,0) 72%);
+  animation: castleUltimateCorePulse .7s ease-in-out infinite alternate;
+}
+.castle-ultimate-orb-ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 145%;
+  height: 42%;
+  border: 3px solid rgba(244,208,255,.72);
+  border-radius: 50%;
+  transform: translate(-50%, -50%) rotate(22deg);
+  animation: castleUltimateRingSpin 1.8s linear infinite;
+}
+.castle-ultimate-orb-ring.ring-two {
+  transform: translate(-50%, -50%) rotate(-54deg);
+  animation-direction: reverse;
+  animation-duration: 2.35s;
+}
+@keyframes castleUltimateOrbOrbit { to { transform: rotate(360deg); } }
+@keyframes castleUltimateCorePulse { to { transform: scale(1.18); opacity: .72; } }
+@keyframes castleUltimateRingSpin { to { transform: translate(-50%, -50%) rotate(382deg); } }
+.quiz-battle-zone.castle-ultimate-mode .enemy-battle.castle-ultimate-casting {
+  animation: castleUltimateMageCast 1.15s ease-in-out infinite !important;
+}
+@keyframes castleUltimateMageCast {
+  0%, 100% { transform: translateX(-50%) translateY(0) rotate(-2deg); filter: drop-shadow(0 0 8px rgba(166,80,255,.55)); }
+  50% { transform: translateX(-50%) translateY(-7px) rotate(3deg); filter: drop-shadow(0 0 22px rgba(211,126,255,.95)); }
+}
+.castle-ultimate-panel {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 72 !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+}
+.castle-ultimate-panel.hidden { display: none !important; }
+.castle-ultimate-hud {
+  position: absolute;
+  top: 1.2%;
+  right: 1.5%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 75;
+}
+.castle-ultimate-hud strong,
+.castle-ultimate-hud span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 8px 13px;
+  border-radius: 999px;
+  background: rgba(255,247,214,.96);
+  color: #4b2a16;
+  font-weight: 1000;
+  box-shadow: 0 8px 18px rgba(0,0,0,.22);
+}
+.castle-ultimate-hud span {
+  min-width: 54px;
+  justify-content: center;
+  background: rgba(255,255,255,.95);
+  color: #5b268b;
+  font-variant-numeric: tabular-nums;
+}
+.castle-ultimate-hud span.urgent {
+  color: #fff;
+  background: #b72b42;
+  animation: castleUltimateTimerUrgent .7s ease-in-out infinite alternate;
+}
+@keyframes castleUltimateTimerUrgent { to { transform: scale(1.08); box-shadow: 0 0 20px rgba(255,67,87,.8); } }
+.castle-ultimate-progress {
+  position: absolute;
+  left: 50%;
+  top: 8.3%;
+  width: min(76%, 520px);
+  height: 8px;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(18,4,32,.55);
+  border: 1px solid rgba(255,255,255,.42);
+  z-index: 74;
+}
+.castle-ultimate-progress span {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #7be6ff, #d995ff, #fff2a5);
+  transition: width .25s ease;
+}
+.castle-ultimate-slider-window {
+  position: absolute;
+  left: 50%;
+  top: 52%;
+  width: min(88%, 610px);
+  min-height: 27%;
+  transform: translate(-50%, -50%);
+  overflow: hidden;
+  border-radius: 24px;
+  pointer-events: auto;
+  z-index: 76;
+}
+.castle-ultimate-slider-track {
+  display: flex;
+  width: 100%;
+  transition: transform .42s cubic-bezier(.22,.82,.28,1);
+  will-change: transform;
+}
+.castle-ultimate-card {
+  flex: 0 0 100%;
+  min-width: 100%;
+  min-height: clamp(168px, 28vmin, 230px);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  align-items: center;
+  justify-items: center;
+  gap: 11px;
+  padding: clamp(17px, 3vmin, 25px);
+  border: 2px solid rgba(255,255,255,.8);
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(255,251,237,.98), rgba(243,223,255,.96));
+  color: #342039;
+  box-shadow: 0 17px 38px rgba(12,3,23,.34), inset 0 1px 0 rgba(255,255,255,.85);
+}
+.castle-ultimate-card.correct { animation: castleUltimateCardCorrect .32s ease both; }
+.castle-ultimate-card.wrong { animation: castleUltimateCardWrong .12s linear 4; }
+@keyframes castleUltimateCardCorrect { 50% { filter: brightness(1.13); box-shadow: 0 0 28px rgba(83,224,151,.85); } }
+@keyframes castleUltimateCardWrong { 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+.castle-ultimate-topic {
+  display: inline-flex;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: #6a2ba7;
+  color: #fff;
+  font-weight: 950;
+  font-size: clamp(.78rem, 2.4vmin, .94rem);
+}
+.castle-ultimate-statement {
+  margin: 0;
+  max-width: 34rem;
+  text-align: center;
+  font-weight: 950;
+  line-height: 1.24;
+  font-size: clamp(1.04rem, 3.4vmin, 1.38rem);
+}
+.castle-ultimate-answer-row {
+  width: min(100%, 430px);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.castle-ultimate-answer {
+  min-height: 48px;
+  border: 0;
+  border-radius: 16px;
+  font: inherit;
+  font-weight: 1000;
+  font-size: clamp(.94rem, 2.8vmin, 1.08rem);
+  color: #fff;
+  box-shadow: 0 7px 0 rgba(28,12,33,.28), 0 10px 18px rgba(0,0,0,.18);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.castle-ultimate-answer:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 3px 0 rgba(28,12,33,.28); }
+.castle-ultimate-answer:disabled { cursor: default; opacity: .72; }
+.castle-ultimate-true { background: linear-gradient(180deg, #47c978, #238849); }
+.castle-ultimate-false { background: linear-gradient(180deg, #e46070, #a82d43); }
+.castle-ultimate-footer {
+  position: absolute;
+  left: 50%;
+  top: 70.5%;
+  width: min(86%, 580px);
+  transform: translateX(-50%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  z-index: 77;
+  pointer-events: none;
+}
+.castle-ultimate-footer > span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 6px 11px;
+  border-radius: 999px;
+  background: rgba(255,249,226,.95);
+  color: #43261a;
+  font-weight: 950;
+  box-shadow: 0 7px 16px rgba(0,0,0,.2);
+}
+.castle-ultimate-feedback.correct { color: #167441; }
+.castle-ultimate-feedback.wrong { color: #a21f39; }
+.castle-ultimate-success .castle-ultimate-slider-window,
+.castle-ultimate-success .castle-ultimate-hud,
+.castle-ultimate-success .castle-ultimate-progress,
+.castle-ultimate-success .castle-ultimate-footer { animation: castleUltimatePanelFade .42s ease both; }
+@keyframes castleUltimatePanelFade { to { opacity: 0; transform: translate(-50%, -50%) scale(.92); } }
+.castle-ultimate-knight-glow {
+  animation: castleUltimateKnightGlow .42s ease-in-out infinite alternate !important;
+}
+@keyframes castleUltimateKnightGlow {
+  to { filter: brightness(1.55) drop-shadow(0 0 18px #fff) drop-shadow(0 0 30px #8fddff); }
+}
+.castle-ultimate-knight-hit {
+  animation: castleUltimateKnightHit .13s steps(2) 8 !important;
+}
+@keyframes castleUltimateKnightHit {
+  0%,100% { opacity: 1; filter: none; }
+  50% { opacity: .28; filter: sepia(1) saturate(6) hue-rotate(315deg) brightness(1.35); }
+}
+.castle-ultimate-orb-stabilized { animation: castleUltimateOrbStabilized .28s ease-in-out infinite alternate; }
+@keyframes castleUltimateOrbStabilized { to { filter: brightness(1.38) saturate(1.35); } }
+.castle-ultimate-orb-launched::before,
+.castle-ultimate-orb-launched::after { animation-duration: .42s !important; }
+.castle-ultimate-orb-exploding { opacity: 0 !important; transform: translate(-50%, -50%) scale(4.6) !important; transition: transform .24s ease-out, opacity .2s ease-out !important; }
+.castle-ultimate-explosion {
+  position: absolute;
+  width: clamp(120px, 35vmin, 270px);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  z-index: 90;
+  pointer-events: none;
+  background: radial-gradient(circle, #fff 0 9%, #fff8a7 13%, #edb5ff 30%, #8b35e5 52%, rgba(72,12,139,.34) 68%, transparent 72%);
+  box-shadow: 0 0 35px #fff, 0 0 78px #e495ff, 0 0 130px #7132d5;
+  animation: castleUltimateExplosion .88s ease-out both;
+}
+@keyframes castleUltimateExplosion {
+  0% { opacity: 1; transform: translate(-50%, -50%) scale(.12); }
+  65% { opacity: 1; transform: translate(-50%, -50%) scale(1.55); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(2.25); }
+}
+.quiz-battle-zone.castle-ultimate-mode .enemy-battle.castle-ultimate-defeated {
+  animation: castleUltimateMageDefeated 1.45s ease-in both !important;
+}
+@keyframes castleUltimateMageDefeated {
+  0% { transform: translateX(-50%) rotate(0) scale(1); opacity: 1; }
+  45% { transform: translateX(-50%) rotate(-10deg) scale(1.12); opacity: 1; filter: brightness(1.8); }
+  100% { transform: translateX(-50%) translateY(-45px) rotate(18deg) scale(.65); opacity: 0; filter: brightness(2.4); }
+}
+@media (max-width: 520px) {
+  .castle-ultimate-hud { top: .8%; right: 1%; gap: 6px; }
+  .castle-ultimate-hud strong,
+  .castle-ultimate-hud span { min-height: 32px; padding: 6px 10px; font-size: .78rem; }
+  .castle-ultimate-progress { top: 7.3%; width: 72%; }
+  .castle-ultimate-slider-window { top: 53%; width: 92%; min-height: 25%; }
+  .castle-ultimate-card { min-height: 172px; padding: 14px 13px; gap: 8px; }
+  .castle-ultimate-statement { font-size: clamp(.98rem, 4.1vw, 1.16rem); }
+  .castle-ultimate-answer { min-height: 44px; }
+  .castle-ultimate-footer { top: 72.5%; width: 92%; gap: 6px; }
+  .castle-ultimate-footer > span { font-size: .78rem; min-height: 30px; padding: 5px 9px; }
+  .castle-ultimate-orb { top: 27%; width: clamp(64px, 18vw, 92px); }
+}

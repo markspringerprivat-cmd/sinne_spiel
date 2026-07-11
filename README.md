@@ -107,3 +107,10 @@ Jedes Level startet mit dem Ritter am Eingang und enthält zwei halbtransparente
 ## Update: Quiz-Level
 
 Die zweiten Levelpunkte der Levelkarten starten nun ein Kampf-Quiz mit sieben Fragen, 30-Sekunden-Timer, drei Herzen, Ritter-/Gegner-Animationen und Ergebnisbildschirm.
+
+## Version 88 – Finale Energieball-Phase
+- Nach der Hörsinnphase startet eine letzte 30-Sekunden-Prüfung mit Richtig/Falsch-Aussagen zu allen Sinnen.
+- Der Zauberer beschwört dabei einen wachsenden Energieball.
+- Bei Erfolg springt der leuchtende Ritter in den Ball, der explodiert und den Zauberer besiegt.
+- Bei Zeitablauf wird der Energieball auf den Ritter geschossen und der Kampf gilt als verloren.
+- Beim Sieg wird die Bossmusik ausgeblendet und `castle_finale_itsover.mp3` eingespielt.
