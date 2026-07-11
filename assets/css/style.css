@@ -5852,3 +5852,78 @@ p { line-height: 1.5; }
     bottom: 16.5%;
   }
 }
+
+/* === v100: kompakte Infobox und sichtbare Schlaganimation === */
+.castle-finale-stage {
+  aspect-ratio: 941 / 1672;
+  height: min(92svh, 860px);
+  width: auto;
+  max-width: 100%;
+}
+.castle-finale-bg {
+  object-fit: fill;
+}
+.castle-finale-caption {
+  top: max(12px, env(safe-area-inset-top)) !important;
+  bottom: auto !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: 24% !important;
+  width: min(90%, 470px) !important;
+  box-sizing: border-box;
+  display: block;
+  overflow: auto;
+  padding: 12px 15px !important;
+}
+.castle-finale-knight {
+  width: 30%;
+  left: -31%;
+  bottom: 17.1%;
+  transform-origin: 28% 86%;
+}
+.castle-finale-knight.entered { left: 20%; }
+.castle-finale-knight.attacking {
+  animation: castleKnightSlashV100 .78s ease-in-out both;
+}
+@keyframes castleKnightSlashV100 {
+  0% { transform: translateX(0) translateY(0) rotate(0deg); }
+  28% { transform: translateX(8%) translateY(-1.5%) rotate(-3deg); }
+  48% { transform: translateX(13%) translateY(-1%) rotate(-5deg); }
+  72% { transform: translateX(5%) translateY(0) rotate(-1deg); }
+  100% { transform: translateX(0) translateY(0) rotate(0deg); }
+}
+.castle-finale-orb {
+  width: 43%;
+  right: 5.5%;
+  bottom: 16.2%;
+}
+
+@media (max-width: 560px) {
+  .castle-finale-stage {
+    height: min(100svh, calc(100vw * 1672 / 941));
+    width: min(100vw, calc(100svh * 941 / 1672));
+    max-width: 100vw;
+  }
+  .castle-finale-caption {
+    top: max(8px, env(safe-area-inset-top)) !important;
+    max-height: 20% !important;
+    width: min(92%, 430px) !important;
+    padding: 10px 13px !important;
+    font-size: .94rem;
+    line-height: 1.28;
+  }
+  .castle-finale-controls {
+    padding: 9px 12px max(12px, env(safe-area-inset-bottom));
+  }
+  .castle-finale-knight {
+    width: 31%;
+    left: -32%;
+    bottom: 17.6%;
+  }
+  .castle-finale-knight.entered { left: 18%; }
+  .castle-finale-orb {
+    width: 44%;
+    right: 4.5%;
+    bottom: 16.7%;
+  }
+}

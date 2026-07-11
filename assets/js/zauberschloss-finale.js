@@ -282,7 +282,9 @@ function performStrike() {
   if (busy || finished) return;
   busy = true;
   attackButton.disabled = true;
-  knight.src = '../assets/images/characters/ritter_attack.png';
+  knight.src = '../assets/images/finale/knight_attack_finale.png';
+  knight.classList.remove('attacking');
+  void knight.offsetWidth;
   knight.classList.add('attacking');
   playAudio(hitSfx);
 
@@ -291,12 +293,12 @@ function performStrike() {
     orb.src = orbFrames[orbIndex];
     orb.classList.add('hit');
     setCaption(orbIndex);
-  }, 220);
+  }, 330);
 
   window.setTimeout(() => {
     orb.classList.remove('hit');
     knight.classList.remove('attacking');
-    knight.src = '../assets/images/characters/knight.png';
+    knight.src = '../assets/images/finale/knight_idle_finale.png';
 
     if (orbIndex === orbFrames.length - 1) {
       finishFinale();
@@ -305,7 +307,7 @@ function performStrike() {
 
     busy = false;
     attackButton.disabled = false;
-  }, 620);
+  }, 780);
 }
 
 attackButton?.addEventListener('click', performStrike);
@@ -313,6 +315,8 @@ window.addEventListener('resize', syncStoryCardHeight);
 outroImage?.addEventListener('load', syncStoryCardHeight);
 hopefulMusic?.addEventListener('ended', showFinishButton);
 
+
+['../assets/images/finale/knight_idle_finale.png', '../assets/images/finale/knight_attack_finale.png'].forEach(src => { const img = new Image(); img.src = src; });
 orbFrames.forEach(src => { const img = new Image(); img.src = src; });
 outroPanels.forEach(panel => { const img = new Image(); img.src = panel.img; });
 enterKnight();
