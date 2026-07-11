@@ -1380,10 +1380,13 @@ async function handleLevelFour() {
     return;
   }
   await moveToNode('level4');
+  saveCurrentNode('level4');
+  const alreadyDone = !!progress.level4Completed;
   showLevelPopup(
-    levelMarkers[3]?.dataset.title || 'Finale',
-    `<div class="visual-notice"><div class="visual-notice-icon">✨🏰</div><p>${levelMarkers[3]?.dataset.text || 'Hier startet später das Finale.'}</p></div>`,
-    'OK'
+    levelMarkers[3]?.dataset.title || 'Finale im Schloss',
+    `<div class="visual-notice"><div class="visual-notice-icon">🏰💥</div><p>${levelMarkers[3]?.dataset.text || 'Dringe in den Thronsaal ein, stelle dich der Glaskugel und befreie die Sinnesmagie.'}</p></div>`,
+    alreadyDone ? 'Finale erneut spielen' : 'Finale starten',
+    () => { pauseLevelMusic(); window.location.href = 'zauberschloss-finale.html'; }
   );
 }
 
@@ -4920,8 +4923,8 @@ if (pendingNotice?.type === 'minigameComplete' && pendingNotice.area === current
   startLevelMusic();
   window.setTimeout(() => {
     showLevelPopup(
-      'Nächstes Level freigeschaltet',
-      '<div class="visual-notice"><div class="visual-notice-icon">🏰✨</div><p>Der nächste Punkt vor dem Zauberschloss ist jetzt freigeschaltet.</p></div>',
+      'Du hast den Magier besiegt!',
+      '<div class="visual-notice"><div class="visual-notice-icon">🏰✨</div><p>Begebe dich schnell ins Schloss und hol die Magie der Sinne zurück.</p></div>',
       'Weiter'
     );
   }, 320);
