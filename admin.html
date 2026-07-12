@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Admin-Bereich | Sinnesmagie</title>
-  <link rel="stylesheet" href="assets/css/style.css?v=113">
+  <link rel="stylesheet" href="assets/css/style.css?v=115">
 </head>
 <body class="admin-page">
   <div id="globalPageLoader" class="global-page-loader" role="status" aria-live="polite" aria-label="Admin-Bereich wird geladen">
@@ -25,6 +25,7 @@
     </div>
     <div class="admin-header-actions">
       <button id="adminRefreshButton" class="primary-button" type="button">Aktualisieren</button>
+      <button id="adminClearAllButton" class="ghost-button admin-danger-button" type="button">Liste komplett leeren</button>
       <button id="adminLogoutButton" class="ghost-button" type="button">Abmelden</button>
       <a class="ghost-button" href="game.html">Zur Weltkarte</a>
     </div>
@@ -56,16 +57,16 @@
             <tr>
               <th data-sort="name">Name</th><th data-sort="deviceId">Geräte-ID</th><th data-sort="totalScore">Gesamt</th>
               <th data-sort="progress.duftgarten">Duft Fortschritt</th><th data-sort="progress.klangwald">Klang Fortschritt</th><th data-sort="progress.farbenreich">Farben Fortschritt</th><th data-sort="progress.tastminen">Tastminen Fortschritt</th><th data-sort="progress.flammenkueche">Flammen Fortschritt</th><th data-sort="progress.zauberschloss">Schloss Fortschritt</th>
-              <th data-sort="scores.duftgarten1">Duft L1</th><th data-sort="scores.duftgarten2">Duft L2</th><th data-sort="scores.klangwald1">Klang L1</th><th data-sort="scores.klangwald2">Klang L2</th><th data-sort="scores.farbenreich1">Farben L1</th><th data-sort="scores.farbenreich2">Farben L2</th><th data-sort="scores.tastminen1">Tastminen L1</th><th data-sort="scores.tastminen2">Tastminen L2</th><th data-sort="scores.flammen1">Flammen L1</th><th data-sort="scores.flammen2">Flammen L2</th><th data-sort="scores.zauber1">Schloss L1</th><th data-sort="scores.zauber2">Schloss L2</th><th data-sort="scores.zauber3">Schloss L3</th><th data-sort="updatedAt">Aktualisiert</th>
+              <th data-sort="scores.duftgarten1">Duft L1</th><th data-sort="scores.duftgarten2">Duft L2</th><th data-sort="scores.klangwald1">Klang L1</th><th data-sort="scores.klangwald2">Klang L2</th><th data-sort="scores.farbenreich1">Farben L1</th><th data-sort="scores.farbenreich2">Farben L2</th><th data-sort="scores.tastminen1">Tastminen L1</th><th data-sort="scores.tastminen2">Tastminen L2</th><th data-sort="scores.flammen1">Flammen L1</th><th data-sort="scores.flammen2">Flammen L2</th><th data-sort="scores.zauber1">Schloss L1</th><th data-sort="scores.zauber2">Schloss L2</th><th data-sort="scores.zauber3">Schloss L3</th><th data-sort="updatedAt">Aktualisiert</th><th>Aktionen</th>
             </tr>
           </thead>
-          <tbody id="adminTableBody"><tr><td colspan="23">Daten werden geladen …</td></tr></tbody>
+          <tbody id="adminTableBody"><tr><td colspan="24">Daten werden geladen …</td></tr></tbody>
         </table>
       </div>
     </section>
   </main>
 
-  <script src="assets/js/cloud-save.js?v=112"></script>
-  <script src="assets/js/admin.js?v=113"></script>
+  <script src="assets/js/cloud-save.js?v=115"></script>
+  <script src="assets/js/admin.js?v=115"></script>
 </body>
 </html>

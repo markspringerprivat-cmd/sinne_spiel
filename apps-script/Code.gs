@@ -1,6 +1,6 @@
 /******************************************************
  * Sinnesmagie Cloud- und Highscore-API
- * Version 2.0 – öffentliche Bestenliste + Adminbereich
+ * Version 2.1 – Admin: Einträge löschen und Liste leeren
  ******************************************************/
 
 const SPREADSHEET_ID = '1u0FokOg9_mRPydS2iY4vQnh5FW0_xFyEhL0Z5R6qgZw';
@@ -35,6 +35,22 @@ function doPost(e) {
   setupSheet_();
   try {
     const input = JSON.parse((e && e.postData && e.postData.contents) || '{}');
+    const action = String(input.action || 'save');
+
+    if (action === 'adminDelete') {
+      if (String(input.password || '') !== ADMIN_PASSWORD) {
+        return json_({ success: false, error: 'Zugriff verweigert.' });
+      }
+      return deletePlayer_(cleanText_(input.deviceId, 100));
+    }
+
+    if (action === 'adminClear') {
+      if (String(input.password || '') !== ADMIN_PASSWORD) {
+        return json_({ success: false, error: 'Zugriff verweigert.' });
+      }
+      return clearPlayers_();
+    }
+
     const deviceId = cleanText_(input.deviceId, 100);
     const name = cleanText_(input.name, 24);
     if (!deviceId) return json_({ success: false, error: 'Geräte-ID fehlt.' });
@@ -93,6 +109,39 @@ function doPost(e) {
     }
   } catch (error) {
     return json_({ success: false, error: String(error) });
+  }
+}
+
+function deletePlayer_(deviceId) {
+  if (!deviceId) return json_({ success: false, error: 'Geräte-ID fehlt.' });
+
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const sheet = getSheet_();
+    const values = sheet.getDataRange().getValues();
+    for (let i = values.length - 1; i >= 1; i -= 1) {
+      if (String(values[i][0] || '') === deviceId) {
+        sheet.deleteRow(i + 1);
+        return json_({ success: true, deleted: true, deviceId: deviceId });
+      }
+    }
+    return json_({ success: true, deleted: false, deviceId: deviceId });
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function clearPlayers_() {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const sheet = getSheet_();
+    const lastRow = sheet.getLastRow();
+    if (lastRow > 1) sheet.deleteRows(2, lastRow - 1);
+    return json_({ success: true, cleared: Math.max(0, lastRow - 1) });
+  } finally {
+    lock.releaseLock();
   }
 }
 

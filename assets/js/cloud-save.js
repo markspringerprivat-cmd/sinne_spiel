@@ -192,6 +192,27 @@
     return Array.isArray(result?.players) ? result.players : [];
   }
 
+  async function adminPost(action, password, extra = {}) {
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action, password: String(password || ''), ...extra }),
+      cache: 'no-store'
+    });
+    if (!response.ok) throw new Error(`Cloud HTTP ${response.status}`);
+    const result = await response.json();
+    if (!result?.success) throw new Error(result?.message || result?.error || 'Admin-Aktion fehlgeschlagen.');
+    return result;
+  }
+
+  function deleteAdminPlayer(password, deviceId) {
+    return adminPost('adminDelete', password, { deviceId: String(deviceId || '') });
+  }
+
+  function clearAdminPlayers(password) {
+    return adminPost('adminClear', password);
+  }
+
   const nativeSetItem = Storage.prototype.setItem;
   const nativeRemoveItem = Storage.prototype.removeItem;
   Storage.prototype.setItem = function patchedSetItem(key, value) {
@@ -220,6 +241,8 @@
     syncNow,
     retryPending,
     loadPublicRanking,
-    loadAdminData
+    loadAdminData,
+    deleteAdminPlayer,
+    clearAdminPlayers
   };
 })();

@@ -1,14 +1,27 @@
-GOOGLE APPS SCRIPT AKTUALISIEREN
+Sinnesmagie – Apps Script Version 2.1
+=====================================
 
-1. Öffne deine Google-Tabelle.
-2. Erweiterungen → Apps Script.
-3. Den bisherigen Inhalt von Code.gs vollständig durch die beigefügte Code.gs ersetzen.
-4. Speichern.
-5. Bereitstellen → Bereitstellungen verwalten.
-6. Die vorhandene Web-App bearbeiten, „Neue Version“ auswählen und erneut bereitstellen.
-7. Die /exec-URL bleibt normalerweise gleich.
+Diese Version ergänzt den Admin-Bereich um:
+- einzelne Spieler-/Highscore-Einträge löschen
+- die komplette Highscore-Liste leeren
 
-Ohne diese Aktualisierung funktioniert die öffentliche Bestenliste weiterhin, aber die vollständigen Admin-Daten können nicht abgerufen werden.
+Einrichtung
+-----------
+1. Öffne die Google-Tabelle „Sinnesmagie Highscores“.
+2. Gehe zu Erweiterungen → Apps Script.
+3. Lösche den bisherigen Inhalt von Code.gs vollständig.
+4. Kopiere den gesamten Inhalt der mitgelieferten Datei Code.gs hinein.
+5. Speichere das Projekt.
+6. Gehe zu Bereitstellen → Bereitstellungen verwalten.
+7. Öffne die vorhandene Web-App über das Stiftsymbol.
+8. Wähle „Neue Version“ und klicke auf „Bereitstellen“.
+9. Einstellungen müssen weiterhin sein:
+   - Ausführen als: Ich
+   - Zugriff: Jeder
 
+Wichtig
+-------
+Nur das Speichern des Codes reicht nicht. Die Web-App muss als neue Version
+bereitgestellt werden, damit Löschen und Leeren aus dem Spiel funktionieren.
 
-Version 112: Die Tabellen-ID ist bereits fest im Code hinterlegt. Nach dem Ersetzen von Code.gs die Web-App als neue Version bereitstellen.
+Admin-Passwort: Mark123

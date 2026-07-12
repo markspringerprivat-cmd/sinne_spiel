@@ -23,6 +23,7 @@
   const mobileList = document.getElementById('adminMobileList');
   const sortSelect = document.getElementById('adminSortSelect');
   const sortDirectionButton = document.getElementById('adminSortDirection');
+  const clearAllButton = document.getElementById('adminClearAllButton');
 
   let players = [];
   let sortKey = 'totalScore';
@@ -91,6 +92,7 @@
       <td>${p.duftgarten}/2</td><td>${p.klangwald}/2</td><td>${p.farbenreich}/2</td><td>${p.tastminen}/2</td><td>${p.flammenkueche}/2</td><td>${p.zauberschloss}/3</td>
       <td>${s.duftgarten1}</td><td>${s.duftgarten2}</td><td>${s.klangwald1}</td><td>${s.klangwald2}</td><td>${s.farbenreich1}</td><td>${s.farbenreich2}</td><td>${s.tastminen1}</td><td>${s.tastminen2}</td><td>${s.flammen1}</td><td>${s.flammen2}</td><td>${s.zauber1}</td><td>${s.zauber2}</td><td>${s.zauber3}</td>
       <td>${formatDate(player.updatedAt)}</td>
+      <td><button class="admin-delete-player admin-danger-button" type="button" data-device-id="${escapeHtml(player.deviceId)}" data-player-name="${escapeHtml(player.name)}">Löschen</button></td>
     </tr>`;
   }
 
@@ -116,6 +118,7 @@
           <span>Flammen L1 <b>${s.flammen1}</b></span><span>Flammen L2 <b>${s.flammen2}</b></span>
           <span>Schloss L1 <b>${s.zauber1}</b></span><span>Schloss L2 <b>${s.zauber2}</b></span><span>Schloss L3 <b>${s.zauber3}</b></span>
         </div>
+        <button class="admin-delete-player admin-danger-button admin-mobile-delete" type="button" data-device-id="${escapeHtml(player.deviceId)}" data-player-name="${escapeHtml(player.name)}">Diesen Eintrag löschen</button>
       </div>
     </details>`;
   }
@@ -135,9 +138,59 @@
   function renderTable() {
     const term = (search.value || '').trim().toLowerCase();
     const filtered = sortRows(players.filter(player => !term || player.name.toLowerCase().includes(term) || player.deviceId.toLowerCase().includes(term)));
-    tableBody.innerHTML = filtered.length ? filtered.map(rowHtml).join('') : '<tr><td colspan="23">Keine passenden Einträge.</td></tr>';
+    tableBody.innerHTML = filtered.length ? filtered.map(rowHtml).join('') : '<tr><td colspan="24">Keine passenden Einträge.</td></tr>';
     if (mobileList) mobileList.innerHTML = filtered.length ? filtered.map(mobileCardHtml).join('') : '<p class="admin-mobile-empty">Keine passenden Einträge.</p>';
     status.textContent = `${filtered.length} von ${players.length} Spielern angezeigt.`;
+  }
+
+  async function deletePlayer(deviceId, playerName) {
+    if (!deviceId) return;
+    const confirmed = window.confirm(`Eintrag von „${playerName || 'Spieler'}“ wirklich dauerhaft löschen?`);
+    if (!confirmed) return;
+
+    const password = sessionStorage.getItem(PASSWORD_KEY) || '';
+    status.textContent = `Eintrag von ${playerName || 'Spieler'} wird gelöscht …`;
+    try {
+      await window.SinnesCloud.deleteAdminPlayer(password, deviceId);
+      players = players.filter(player => player.deviceId !== deviceId);
+      renderSummary(players);
+      renderTable();
+      status.textContent = `Eintrag von ${playerName || 'Spieler'} wurde gelöscht.`;
+    } catch (error) {
+      errorBox.innerHTML = `<strong>Eintrag konnte nicht gelöscht werden.</strong><br>${escapeHtml(error.message || error)}`;
+      errorBox.classList.remove('hidden');
+    }
+  }
+
+  async function clearAllPlayers() {
+    if (!players.length) {
+      window.alert('Die Liste ist bereits leer.');
+      return;
+    }
+
+    const firstConfirm = window.confirm(`Wirklich alle ${players.length} Einträge dauerhaft löschen?`);
+    if (!firstConfirm) return;
+    const confirmationText = window.prompt('Zur Sicherheit bitte LEEREN eingeben:');
+    if (String(confirmationText || '').trim().toUpperCase() !== 'LEEREN') {
+      window.alert('Vorgang abgebrochen.');
+      return;
+    }
+
+    const password = sessionStorage.getItem(PASSWORD_KEY) || '';
+    clearAllButton.disabled = true;
+    status.textContent = 'Alle Einträge werden gelöscht …';
+    try {
+      await window.SinnesCloud.clearAdminPlayers(password);
+      players = [];
+      renderSummary(players);
+      renderTable();
+      status.textContent = 'Die Highscore-Liste wurde vollständig geleert.';
+    } catch (error) {
+      errorBox.innerHTML = `<strong>Liste konnte nicht geleert werden.</strong><br>${escapeHtml(error.message || error)}`;
+      errorBox.classList.remove('hidden');
+    } finally {
+      clearAllButton.disabled = false;
+    }
   }
 
   async function load() {
@@ -151,7 +204,7 @@
       renderSummary(players);
       renderTable();
     } catch (error) {
-      tableBody.innerHTML = '<tr><td colspan="23">Keine Admin-Daten verfügbar.</td></tr>';
+      tableBody.innerHTML = '<tr><td colspan="24">Keine Admin-Daten verfügbar.</td></tr>';
       status.textContent = 'Abruf fehlgeschlagen.';
       errorBox.innerHTML = `<strong>Admin-Daten konnten nicht geladen werden.</strong><br>${escapeHtml(error.message || error)}<br><small>Die beigefügte Apps-Script-Datei muss in Google Apps Script eingesetzt und erneut als Web-App bereitgestellt werden.</small>`;
       errorBox.classList.remove('hidden');
@@ -165,6 +218,14 @@
   sortSelect?.addEventListener('change', () => { sortKey = sortSelect.value; renderTable(); });
   sortDirectionButton?.addEventListener('click', () => { sortDirection *= -1; sortDirectionButton.textContent = sortDirection < 0 ? '↓' : '↑'; renderTable(); });
   document.querySelectorAll('.admin-table th[data-sort]').forEach(th => th.addEventListener('click', () => { const key=th.dataset.sort; if(sortKey===key) sortDirection*=-1; else {sortKey=key; sortDirection= key==='name'||key==='deviceId' ? 1 : -1;} if(sortSelect) sortSelect.value=key; if(sortDirectionButton) sortDirectionButton.textContent=sortDirection<0?'↓':'↑'; renderTable(); }));
+  document.addEventListener('click', event => {
+    const button = event.target.closest('.admin-delete-player');
+    if (!button) return;
+    event.preventDefault();
+    deletePlayer(button.dataset.deviceId || '', button.dataset.playerName || 'Spieler');
+  });
+  clearAllButton?.addEventListener('click', clearAllPlayers);
+
   logout.addEventListener('click', () => {
     sessionStorage.removeItem(AUTH_KEY);
     sessionStorage.removeItem(PASSWORD_KEY);
