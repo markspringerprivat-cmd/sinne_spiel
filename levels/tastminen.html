@@ -1,12 +1,25 @@
 <!doctype html>
-<html lang="de">
+<html lang="de" class="sm-page-loading">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Tastminen | Die verlorene Sinnesmagie</title>
-  <link rel="stylesheet" href="../assets/css/style.css?v=89">
+  <link rel="stylesheet" href="../assets/css/style.css?v=102">
 </head>
 <body class="level-map-page">
+  <div id="globalPageLoader" class="global-page-loader" role="status" aria-live="polite" aria-label="Spiel wird geladen">
+    <div class="global-page-loader-card">
+      <div class="global-page-loader-icon" aria-hidden="true">✨</div>
+      <div class="global-page-loader-title">Spiel wird vorbereitet …</div>
+      <div class="global-page-loader-track"><div id="globalPageLoaderFill" class="global-page-loader-fill"></div></div>
+      <div class="global-page-loader-meta">
+        <span id="globalPageLoaderNote" class="global-page-loader-note">Benötigte Dateien werden geladen.</span>
+        <span id="globalPageLoaderPercent" class="global-page-loader-percent">0 %</span>
+      </div>
+    </div>
+  </div>
+  <script src="../assets/js/page-loader.js?v=102"></script>
+
   <audio id="levelMusic" src="../assets/audio/cave.mp3" preload="auto"></audio>
   <main class="level-map-shell" aria-label="Tastminen">
     <section class="level-map-stage" style="--level-w:1024;--level-h:1536;--start-x:19%;--start-y:82%;" aria-label="Levelkarte Tastminen">
@@ -28,9 +41,7 @@
       <button id="levelPopupClose" class="primary-button" type="button">Weiter</button>
     </div>
   </div>
-
-  <script src="../assets/js/preloader.js"></script>
-  <script src="../assets/js/audio-crossfade.js"></script>
+<script src="../assets/js/audio-crossfade.js"></script>
   <script src="../assets/js/quiz-data.js"></script>
   <script src="../assets/js/level.js?v=97"></script>
 </body>

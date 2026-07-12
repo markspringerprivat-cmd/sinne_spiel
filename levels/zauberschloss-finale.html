@@ -1,12 +1,25 @@
 <!doctype html>
-<html lang="de">
+<html lang="de" class="sm-page-loading">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Finale im Schloss | Die verlorene Sinnesmagie</title>
-  <link rel="stylesheet" href="../assets/css/style.css?v=100">
+  <link rel="stylesheet" href="../assets/css/style.css?v=102">
 </head>
 <body class="castle-finale-page">
+  <div id="globalPageLoader" class="global-page-loader" role="status" aria-live="polite" aria-label="Spiel wird geladen">
+    <div class="global-page-loader-card">
+      <div class="global-page-loader-icon" aria-hidden="true">✨</div>
+      <div class="global-page-loader-title">Spiel wird vorbereitet …</div>
+      <div class="global-page-loader-track"><div id="globalPageLoaderFill" class="global-page-loader-fill"></div></div>
+      <div class="global-page-loader-meta">
+        <span id="globalPageLoaderNote" class="global-page-loader-note">Benötigte Dateien werden geladen.</span>
+        <span id="globalPageLoaderPercent" class="global-page-loader-percent">0 %</span>
+      </div>
+    </div>
+  </div>
+  <script src="../assets/js/page-loader.js?v=102"></script>
+
   <main id="castleFinaleShell" class="castle-finale-shell" aria-label="Finale im Schloss des Magiers">
     <section id="castleFinaleStage" class="castle-finale-stage" aria-live="polite">
       <img class="castle-finale-bg" src="../assets/images/finale/background.png" alt="Dunkler Thronsaal im Schloss des Magiers" draggable="false">
@@ -101,6 +114,6 @@
   <audio id="castleFinaleHitSfx" src="../assets/audio/slice_cut.mp3" preload="auto"></audio>
   <audio id="castleFinaleCrashSfx" src="../assets/audio/magehit.mp3" preload="auto"></audio>
   <audio id="castleHopefulMusic" src="../assets/audio/hopeful_happy_ending.mp3" preload="auto"></audio>
-  <script src="../assets/js/zauberschloss-finale.js?v=100"></script>
+  <script src="../assets/js/zauberschloss-finale.js?v=101"></script>
 </body>
 </html>

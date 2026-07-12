@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="de">
+<html lang="de" class="sm-page-loading">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Farben-Memory | Farbenreich</title>
-  <link rel="stylesheet" href="../assets/css/style.css?v=89">
+  <link rel="stylesheet" href="../assets/css/style.css?v=102">
   <style>
     :root {
       --paint-ui: rgba(255, 250, 232, 0.94);
@@ -270,6 +270,19 @@
   </style>
 </head>
 <body class="color-minigame-page">
+  <div id="globalPageLoader" class="global-page-loader" role="status" aria-live="polite" aria-label="Spiel wird geladen">
+    <div class="global-page-loader-card">
+      <div class="global-page-loader-icon" aria-hidden="true">✨</div>
+      <div class="global-page-loader-title">Spiel wird vorbereitet …</div>
+      <div class="global-page-loader-track"><div id="globalPageLoaderFill" class="global-page-loader-fill"></div></div>
+      <div class="global-page-loader-meta">
+        <span id="globalPageLoaderNote" class="global-page-loader-note">Benötigte Dateien werden geladen.</span>
+        <span id="globalPageLoaderPercent" class="global-page-loader-percent">0 %</span>
+      </div>
+    </div>
+  </div>
+  <script src="../assets/js/page-loader.js?v=102"></script>
+
   <audio id="paintMusic" src="../assets/audio/farbenreich_new.mp3" preload="auto"></audio>
 
   <main class="paint-shell" aria-label="Farbenreich Minispiel">
@@ -299,9 +312,7 @@
   <div id="paintOverlay" class="paint-overlay" role="dialog" aria-modal="true">
     <section id="paintPopup" class="paint-popup"></section>
   </div>
-
-  <script src="../assets/js/preloader.js"></script>
-  <script src="../assets/js/audio-crossfade.js"></script>
+<script src="../assets/js/audio-crossfade.js"></script>
   <script src="../assets/js/farbenreich-malen.js"></script>
 </body>
 </html>

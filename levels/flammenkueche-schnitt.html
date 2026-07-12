@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="de">
+<html lang="de" class="sm-page-loading">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Flammenküchen-Schnippelchaos | Die verlorene Sinnesmagie</title>
-  <link rel="stylesheet" href="../assets/css/style.css?v=89">
+  <link rel="stylesheet" href="../assets/css/style.css?v=102">
   <style>
     html, body {
       width: 100%;
@@ -192,6 +192,19 @@
   </style>
 </head>
 <body class="flame-slice-page">
+  <div id="globalPageLoader" class="global-page-loader" role="status" aria-live="polite" aria-label="Spiel wird geladen">
+    <div class="global-page-loader-card">
+      <div class="global-page-loader-icon" aria-hidden="true">✨</div>
+      <div class="global-page-loader-title">Spiel wird vorbereitet …</div>
+      <div class="global-page-loader-track"><div id="globalPageLoaderFill" class="global-page-loader-fill"></div></div>
+      <div class="global-page-loader-meta">
+        <span id="globalPageLoaderNote" class="global-page-loader-note">Benötigte Dateien werden geladen.</span>
+        <span id="globalPageLoaderPercent" class="global-page-loader-percent">0 %</span>
+      </div>
+    </div>
+  </div>
+  <script src="../assets/js/page-loader.js?v=102"></script>
+
   <audio id="sliceCutSound" src="../assets/audio/slice_cut.mp3" preload="auto"></audio>
   <audio id="sliceSlimeSound" src="../assets/audio/slime_squish.mp3" preload="auto"></audio>
 
@@ -211,8 +224,6 @@
   <div id="sliceOverlay" class="slice-overlay" role="dialog" aria-modal="true">
     <section id="slicePopup" class="slice-popup"></section>
   </div>
-
-  <script src="../assets/js/preloader.js"></script>
-  <script src="../assets/js/flammenkueche-schnitt.js"></script>
+<script src="../assets/js/flammenkueche-schnitt.js"></script>
 </body>
 </html>
