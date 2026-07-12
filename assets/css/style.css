@@ -6069,3 +6069,100 @@ html.sm-page-loading body > *:not(#globalPageLoader):not(script) {
   .global-page-loader-fill::after { animation: none; }
   .global-page-loader-fill { transition: none; }
 }
+
+
+/* === v104: visuelle Erklärungen zwischen den Zauberschloss-Bossphasen === */
+.castle-phase-guide {
+  width: min(92vw, 520px);
+  max-height: min(82vh, 700px);
+  overflow: hidden;
+  box-sizing: border-box;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: 18px 18px 16px;
+}
+.castle-phase-guide h2 {
+  margin: 0;
+  color: #4c2e12;
+  font-size: clamp(1.35rem, 4vw, 1.8rem);
+}
+.castle-phase-guide-lead {
+  margin: 0 !important;
+  max-width: 420px;
+  text-align: center;
+  font-weight: 850;
+  line-height: 1.35;
+  color: #5a3a1c;
+}
+.castle-phase-guide-slider {
+  width: min(100%, 460px);
+  margin: 0 auto;
+  grid-auto-columns: min(82%, 210px);
+}
+.castle-phase-guide .mini-guide-card {
+  min-height: 148px;
+}
+.castle-phase-guide .mini-guide-icon {
+  white-space: nowrap;
+  overflow: visible;
+}
+.castle-phase-guide .mini-guide-inline-row,
+.castle-phase-guide .mini-guide-emoji-row {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  gap: 5px;
+}
+.castle-phase-guide .mini-guide-inline-item,
+.castle-phase-guide .mini-guide-emoji {
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 38px;
+  line-height: 1;
+  vertical-align: middle;
+}
+.castle-phase-guide .mini-guide-inline-row.tight .mini-guide-inline-item {
+  width: 31px;
+  height: 31px;
+  flex-basis: 31px;
+}
+.castle-phase-guide > .primary-button {
+  min-width: min(240px, 82vw);
+}
+.castle-ultimate-intro {
+  margin: auto;
+  background: rgba(255,247,228,.97);
+  border-radius: 24px;
+  box-shadow: 0 18px 44px rgba(0,0,0,.35);
+}
+@media (max-width: 560px) {
+  .castle-phase-guide {
+    width: min(94vw, 470px);
+    max-height: min(80vh, 650px);
+    padding: 14px 12px 13px;
+  }
+  .castle-phase-guide-slider {
+    width: 100%;
+    grid-auto-columns: min(84%, 205px);
+  }
+  .castle-phase-guide .mini-guide-card {
+    min-height: 142px;
+  }
+  .castle-phase-guide .mini-guide-inline-item,
+  .castle-phase-guide .mini-guide-emoji {
+    width: 34px;
+    height: 34px;
+    flex-basis: 34px;
+  }
+  .castle-phase-guide .mini-guide-inline-row.tight .mini-guide-inline-item {
+    width: 27px;
+    height: 27px;
+    flex-basis: 27px;
+  }
+}

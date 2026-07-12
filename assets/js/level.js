@@ -1994,10 +1994,27 @@ function buildCastleTastePanel() {
     </div>
     <p class="castle-dodge-info">Nutze den Sinn des Geschmacks, um die scharfen Chilis von den süßen Äpfeln zu trennen. Sammle die Äpfel und stärke dich für den Kampf gegen den Zauberer.</p>
     <div id="castleDodgeFeedback" class="castle-dodge-feedback hidden"></div>
-    <div id="castleTasteIntro" class="castle-taste-dialog" role="dialog" aria-modal="true" aria-label="Geschmackssinn Hinweis">
-      <p>Nutze den Sinn des Geschmacks, um die scharfen Chilis von den süßen Äpfeln zu trennen.</p>
-      <p>Sammle die Äpfel und stärke dich für den Kampf gegen den Zauberer.</p>
-      <button id="castleTasteStartButton" class="primary-button" type="button">OK</button>
+    <div id="castleTasteIntro" class="castle-taste-dialog castle-phase-guide" role="dialog" aria-modal="true" aria-label="Geschmackssinn Hinweis">
+      <h2>Geschmackssinn</h2>
+      <p class="castle-phase-guide-lead">Sammle Süßes und weiche Scharfem aus.</p>
+      <div class="mini-guide-slider castle-phase-guide-slider" aria-label="Erklärung Geschmackssinn">
+        <article class="mini-guide-card">
+          <div class="mini-guide-icon"><span class="mini-guide-inline-row"><span class="mini-guide-inline-item">🍎</span></span></div>
+          <p class="mini-guide-title">Äpfel sammeln</p>
+          <p class="mini-guide-text">Jeder Apfel stärkt den Ritter.</p>
+        </article>
+        <article class="mini-guide-card">
+          <div class="mini-guide-icon"><span class="mini-guide-inline-row"><span class="mini-guide-inline-item">🌶️</span></span></div>
+          <p class="mini-guide-title">Chilis meiden</p>
+          <p class="mini-guide-text">Scharfe Chilis kosten Kraft.</p>
+        </article>
+        <article class="mini-guide-card">
+          <div class="mini-guide-icon"><span class="mini-guide-inline-row tight"><span class="mini-guide-inline-item">⬅️</span><span class="mini-guide-inline-item">➡️</span></span></div>
+          <p class="mini-guide-title">Bewegen</p>
+          <p class="mini-guide-text">Laufe nach links oder rechts.</p>
+        </article>
+      </div>
+      <button id="castleTasteStartButton" class="primary-button" type="button">Starten</button>
     </div>
     <div class="castle-dodge-controls">
       <button id="castleMoveLeft" class="ghost-button castle-arrow-button" type="button" aria-label="Nach links laufen">←</button>
@@ -2563,9 +2580,27 @@ function startCastleCloneSearch() {
       <strong class="castle-clone-hud-title">Sinn des Sehens</strong>
       <span id="castleCloneRound">Runde 1 / ${CASTLE_CLONE_ROUNDS_TOTAL}</span>
     </div>
-    <div id="castleCloneDialog" class="castle-clone-dialog" role="dialog" aria-modal="true" aria-label="Hinweis zur Sehphase">
-      <p>Der Magier nutzt eine optische Täuschung, um sich zu verstecken. Benutze den Sinn des Sehens und finde den Zauberer, der nicht blinkt.</p>
-      <button id="castleCloneStartButton" class="primary-button" type="button">OK</button>
+    <div id="castleCloneDialog" class="castle-clone-dialog castle-phase-guide" role="dialog" aria-modal="true" aria-label="Hinweis zur Sehphase">
+      <h2>Sehsinn</h2>
+      <p class="castle-phase-guide-lead">Finde den echten Magier zwischen seinen Kopien.</p>
+      <div class="mini-guide-slider castle-phase-guide-slider" aria-label="Erklärung Sehsinn">
+        <article class="mini-guide-card">
+          <div class="mini-guide-icon">👀</div>
+          <p class="mini-guide-title">Genau beobachten</p>
+          <p class="mini-guide-text">Vergleiche alle Magier miteinander.</p>
+        </article>
+        <article class="mini-guide-card">
+          <div class="mini-guide-icon"><span class="mini-guide-inline-row"><span class="mini-guide-inline-item">✨</span><span class="mini-guide-inline-item">🧙</span></span></div>
+          <p class="mini-guide-title">Kopien blinken</p>
+          <p class="mini-guide-text">Die falschen Magier blinken kurz.</p>
+        </article>
+        <article class="mini-guide-card">
+          <div class="mini-guide-icon">🧙</div>
+          <p class="mini-guide-title">Echter Magier</p>
+          <p class="mini-guide-text">Tippe den Magier an, der nicht blinkt.</p>
+        </article>
+      </div>
+      <button id="castleCloneStartButton" class="primary-button" type="button">Starten</button>
     </div>
     <div id="castleClonePlayfield" class="castle-clone-playfield hidden" aria-live="polite"></div>
   `;
@@ -2851,10 +2886,27 @@ async function startCastleBushSearchSequence() {
       <strong class="castle-clone-hud-title">Sinn des Tastens</strong>
       <span id="castleCloneRound">Treffer 0 / ${CASTLE_BUSH_TARGET_HITS}</span>
     </div>
-    <div id="castleCloneDialog" class="castle-clone-dialog" role="dialog" aria-modal="true" aria-label="Hinweis zur Tastphase">
-      <p>Vertraue jetzt deinem Tastsinn. Springe nur auf den echten Magier, sobald er hinter einem Busch erscheint.</p>
-      <p>Die spitze Magier-Attrappe fühlt sich gefährlich an – ein Sprung darauf tut weh.</p>
-      <button id="castleCloneStartButton" class="primary-button" type="button">OK</button>
+    <div id="castleCloneDialog" class="castle-clone-dialog castle-phase-guide" role="dialog" aria-modal="true" aria-label="Hinweis zur Tastphase">
+      <h2>Tastsinn</h2>
+      <p class="castle-phase-guide-lead">Erkenne, welche Figur sich sicher anfühlt.</p>
+      <div class="mini-guide-slider castle-phase-guide-slider" aria-label="Erklärung Tastsinn">
+        <article class="mini-guide-card">
+          <div class="mini-guide-icon">🌳</div>
+          <p class="mini-guide-title">Busch beobachten</p>
+          <p class="mini-guide-text">Warte, bis eine Figur erscheint.</p>
+        </article>
+        <article class="mini-guide-card">
+          <div class="mini-guide-icon">🧙</div>
+          <p class="mini-guide-title">Echt und sicher</p>
+          <p class="mini-guide-text">Springe nur auf den echten Magier.</p>
+        </article>
+        <article class="mini-guide-card">
+          <div class="mini-guide-icon"><span class="mini-guide-inline-row"><span class="mini-guide-inline-item">⚠️</span><span class="mini-guide-inline-item">🗡️</span></span></div>
+          <p class="mini-guide-title">Spitze Attrappe</p>
+          <p class="mini-guide-text">Die falsche Figur verletzt den Ritter.</p>
+        </article>
+      </div>
+      <button id="castleCloneStartButton" class="primary-button" type="button">Starten</button>
     </div>
   `;
   panel.classList.remove('hidden');
@@ -3202,10 +3254,27 @@ function buildCastleSmellPanel() {
   panel.innerHTML = `
     <div class="castle-smell-hud"><strong>Riechsinn</strong><span id="castleSmellRound">Runde 1 / ${CASTLE_SMELL_ROUNDS_TOTAL}</span></div>
     <div id="castleSmellFeedback" class="castle-smell-feedback hidden" aria-live="polite"></div>
-    <div id="castleSmellIntro" class="castle-smell-dialog" role="dialog" aria-modal="true" aria-label="Hinweis zum Riechsinn">
-      <p><strong>Der Zauberer hat es auf deinen Riechsinn abgesehen!</strong></p>
-      <p>Weiche den übelriechenden Wolken aus und stelle dich in den Schutz der angenehmen Duftwolke.</p>
-      <button id="castleSmellStartButton" class="primary-button" type="button">OK</button>
+    <div id="castleSmellIntro" class="castle-smell-dialog castle-phase-guide" role="dialog" aria-modal="true" aria-label="Hinweis zum Riechsinn">
+      <h2>Riechsinn</h2>
+      <p class="castle-phase-guide-lead">Finde den angenehmen Duft zwischen den Gestankwolken.</p>
+      <div class="mini-guide-slider castle-phase-guide-slider" aria-label="Erklärung Riechsinn">
+        <article class="mini-guide-card">
+          <div class="mini-guide-icon"><span class="mini-guide-inline-row"><span class="mini-guide-inline-item">🤢</span><span class="mini-guide-inline-item">☁️</span></span></div>
+          <p class="mini-guide-title">Gestank meiden</p>
+          <p class="mini-guide-text">Weiche übelriechenden Wolken aus.</p>
+        </article>
+        <article class="mini-guide-card">
+          <div class="mini-guide-icon"><span class="mini-guide-inline-row"><span class="mini-guide-inline-item">🌸</span><span class="mini-guide-inline-item">✨</span></span></div>
+          <p class="mini-guide-title">Duft finden</p>
+          <p class="mini-guide-text">Stelle dich in die angenehme Duftwolke.</p>
+        </article>
+        <article class="mini-guide-card">
+          <div class="mini-guide-icon"><span class="mini-guide-inline-row tight"><span class="mini-guide-inline-item">⬅️</span><span class="mini-guide-inline-item">➡️</span></span></div>
+          <p class="mini-guide-title">Ausweichen</p>
+          <p class="mini-guide-text">Bewege den Ritter in die sichere Spur.</p>
+        </article>
+      </div>
+      <button id="castleSmellStartButton" class="primary-button" type="button">Starten</button>
     </div>
     <div class="castle-smell-controls">
       <button id="castleSmellMoveLeft" class="ghost-button castle-arrow-button" type="button" aria-label="Nach links laufen">←</button>
@@ -3519,10 +3588,27 @@ function buildCastleHearingPanel() {
       <span id="castleHearingRound">Runde 1 / ${CASTLE_HEARING_ROUNDS_TOTAL}</span>
     </div>
     <div id="castleHearingFeedback" class="castle-hearing-feedback hidden" aria-live="polite"></div>
-    <div id="castleHearingIntro" class="castle-hearing-dialog" role="dialog" aria-modal="true" aria-label="Hinweis zum Hörsinn">
-      <p><strong>Der Zauberer greift deinen Hörsinn an!</strong></p>
-      <p>Merke dir pro Runde 4 Töne und lasse den Ritter dieselbe Reihenfolge nachspielen.</p>
-      <button id="castleHearingStartButton" class="primary-button" type="button">Weiter</button>
+    <div id="castleHearingIntro" class="castle-hearing-dialog castle-phase-guide" role="dialog" aria-modal="true" aria-label="Hinweis zum Hörsinn">
+      <h2>Hörsinn</h2>
+      <p class="castle-phase-guide-lead">Höre genau zu und spiele die Tonfolge nach.</p>
+      <div class="mini-guide-slider castle-phase-guide-slider" aria-label="Erklärung Hörsinn">
+        <article class="mini-guide-card">
+          <div class="mini-guide-icon">👂</div>
+          <p class="mini-guide-title">Anhören</p>
+          <p class="mini-guide-text">Merke dir die vier Töne.</p>
+        </article>
+        <article class="mini-guide-card">
+          <div class="mini-guide-icon"><span class="mini-guide-inline-row tight"><span class="mini-guide-inline-item">🎵</span><span class="mini-guide-inline-item">🎵</span><span class="mini-guide-inline-item">🎵</span><span class="mini-guide-inline-item">🎵</span></span></div>
+          <p class="mini-guide-title">Reihenfolge merken</p>
+          <p class="mini-guide-text">Die Reihenfolge ist entscheidend.</p>
+        </article>
+        <article class="mini-guide-card">
+          <div class="mini-guide-icon">🎹</div>
+          <p class="mini-guide-title">Nachspielen</p>
+          <p class="mini-guide-text">Tippe dieselben Töne nacheinander.</p>
+        </article>
+      </div>
+      <button id="castleHearingStartButton" class="primary-button" type="button">Starten</button>
     </div>
     <div id="castleHearingAudioGate" class="castle-hearing-audio-gate hidden" role="dialog" aria-modal="true" aria-label="Ton aktivieren">
       <div class="castle-hearing-audio-gate-card">
@@ -4225,6 +4311,39 @@ function clearCastleUltimateQuestionOverlay() {
   panel.classList.add('castle-ultimate-panel-fading');
 }
 
+function showCastleUltimateIntro() {
+  const panel = document.getElementById('castleUltimatePanel');
+  if (!panel) return Promise.resolve();
+  panel.className = 'quiz-panel castle-ultimate-panel';
+  panel.innerHTML = `
+    <div class="castle-phase-guide castle-ultimate-intro" role="dialog" aria-modal="true" aria-label="Hinweis zur letzten Prüfung">
+      <h2>Letzte Prüfung</h2>
+      <p class="castle-phase-guide-lead">Nutze jetzt dein Wissen über alle fünf Sinne.</p>
+      <div class="mini-guide-slider castle-phase-guide-slider" aria-label="Erklärung letzte Prüfung">
+        <article class="mini-guide-card">
+          <div class="mini-guide-icon"><span class="mini-guide-inline-row tight"><span class="mini-guide-inline-item">👀</span><span class="mini-guide-inline-item">👂</span><span class="mini-guide-inline-item">👃</span><span class="mini-guide-inline-item">👅</span><span class="mini-guide-inline-item">✋</span></span></div>
+          <p class="mini-guide-title">Alle Sinne</p>
+          <p class="mini-guide-text">Denke an alles, was du gelernt hast.</p>
+        </article>
+        <article class="mini-guide-card">
+          <div class="mini-guide-icon"><span class="mini-guide-inline-row"><span class="mini-guide-inline-item">✅</span><span class="mini-guide-inline-item">❌</span></span></div>
+          <p class="mini-guide-title">Richtig oder falsch</p>
+          <p class="mini-guide-text">Bewerte jede Aussage sorgfältig.</p>
+        </article>
+        <article class="mini-guide-card">
+          <div class="mini-guide-icon">⏱️</div>
+          <p class="mini-guide-title">Zeit beachten</p>
+          <p class="mini-guide-text">Beantworte alle Fragen rechtzeitig.</p>
+        </article>
+      </div>
+      <button id="castleUltimateIntroButton" class="primary-button" type="button">Letzte Prüfung starten</button>
+    </div>`;
+  panel.classList.remove('hidden');
+  return new Promise(resolve => {
+    document.getElementById('castleUltimateIntroButton')?.addEventListener('click', resolve, { once: true });
+  });
+}
+
 function buildCastleUltimatePanel() {
   const state = activeQuiz?.castleUltimate;
   const panel = document.getElementById('castleUltimatePanel');
@@ -4681,6 +4800,8 @@ async function startCastleUltimateSequence() {
   if (!entered || !activeQuiz?.castleUltimate?.running) return;
   alignCastleUltimateColumn();
   stabilizeCastleUltimateBossMusic();
+  await showCastleUltimateIntro();
+  if (!activeQuiz?.castleUltimate?.running) return;
   buildCastleUltimatePanel();
   document.getElementById('castleUltimateOrb')?.classList.add('visible');
   const finalState = activeQuiz.castleUltimate;
