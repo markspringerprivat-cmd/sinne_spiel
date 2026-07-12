@@ -18,6 +18,8 @@
   const loaderBar = document.getElementById('pongLoaderBar');
   const wallText = document.getElementById('pongWallText');
   const speedText = document.getElementById('pongSpeedText');
+  const pongMusic = document.getElementById('pongMusic');
+  let pongMusicStarted = false;
 
   const preloadFiles = [
     '../assets/images/minigame/zauberschloss-pong/background.jpg',
@@ -50,6 +52,22 @@
   function currentVolume() {
     const saved = Number(localStorage.getItem(STORAGE_VOLUME));
     return Number.isFinite(saved) ? Math.min(1, Math.max(0, saved)) : 0.5;
+  }
+
+  function startPongMusic(restart = false) {
+    if (!pongMusic) return;
+    try {
+      pongMusic.loop = true;
+      pongMusic.volume = currentVolume() * 0.62;
+      if (restart || !pongMusicStarted) pongMusic.currentTime = 0;
+      pongMusicStarted = true;
+      pongMusic.play().catch(() => {});
+    } catch {}
+  }
+
+  function pausePongMusic() {
+    if (!pongMusic) return;
+    try { pongMusic.pause(); } catch {}
   }
 
   function playImpact(frequency = 520, duration = 0.08) {
@@ -110,6 +128,7 @@
       fullReset();
       window.SinnesScore?.startSession('game_zauberschloss_pong', 1000, 0);
       window.SinnesScore?.setGameplayActive(true);
+      startPongMusic(true);
       running = true;
       last = performance.now();
       raf = requestAnimationFrame(loop);
@@ -120,6 +139,7 @@
     running = false;
     finished = true;
     cancelAnimationFrame(raf);
+    pausePongMusic();
     saveCompletion();
     const points = Math.max(0, Math.min(1000, damage * 300 - playerConceded * 250));
     window.SinnesScore?.setSession('game_zauberschloss_pong', points, 1000);
@@ -411,6 +431,10 @@
   knight.addEventListener('pointerup', stopDrag);
   knight.addEventListener('pointercancel', stopDrag);
   window.addEventListener('resize', updateSprites);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) pausePongMusic();
+    else if (running && !finished) startPongMusic(false);
+  });
 
   updateSprites();
   preloadAll();

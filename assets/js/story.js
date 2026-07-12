@@ -169,10 +169,8 @@ function finishStory() {
   progressFill.style.width = '100%';
   showPanel(panels.length - 1);
   actions.classList.remove('hidden');
-  if (storyAudio) {
-    storyAudio.pause();
-    storyAudio.currentTime = Math.min(storyAudio.duration || STORY_END_SECONDS, STORY_END_SECONDS);
-  }
+  // Die Intro-Musik läuft nach dem letzten Bild weiter und endet erst
+  // natürlich mit der Audiodatei oder beim Verlassen der Seite.
 }
 
 async function startStory(options = {}) {

@@ -17,12 +17,12 @@
   const timerEl = document.getElementById('sliceTimer');
   const badEl = document.getElementById('sliceBad');
   const progressFill = document.getElementById('sliceProgressFill');
-  const musicElement = null; // Hintergrundmusik in diesem Minispiel bewusst deaktiviert.
+  const musicElement = document.getElementById('sliceMusic');
   const cutSoundElement = document.getElementById('sliceCutSound');
   const slimeSoundElement = document.getElementById('sliceSlimeSound');
   const cutSoundPool = [];
   const slimeSoundPool = [];
-  const musicLoop = null;
+  let musicStarted = false;
 
   const background = new Image();
   background.src = '../assets/images/battle-backgrounds/flammenkueche.webp';
@@ -68,12 +68,20 @@
     return Number.isFinite(saved) ? Math.min(1, Math.max(0, saved)) : 0.5;
   }
 
-  function startMusic() {
-    // Keine Hintergrundmusik: reduziert Audiolast und hält das Fruit-Ninja-Minispiel stabiler.
+  function startMusic(restart = false) {
+    if (!musicElement) return;
+    try {
+      musicElement.loop = true;
+      musicElement.volume = currentVolume() * 0.62;
+      if (restart || !musicStarted) musicElement.currentTime = 0;
+      musicStarted = true;
+      musicElement.play().catch(() => {});
+    } catch {}
   }
 
   function pauseMusic() {
-    // Keine Hintergrundmusik aktiv.
+    if (!musicElement) return;
+    try { musicElement.pause(); } catch {}
   }
 
   function prepareAudioPool(sourceElement, pool, size = 3, volumeFactor = 0.72) {
@@ -253,7 +261,7 @@
     hidePopup();
     window.SinnesScore?.startSession('game_flammenkueche', 1000, 0);
     window.SinnesScore?.setGameplayActive(true);
-    startMusic();
+    startMusic(true);
     prepareCutSounds();
     requestAnimationFrame(loop);
   }
