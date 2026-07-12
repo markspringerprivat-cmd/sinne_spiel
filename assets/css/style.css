@@ -6723,3 +6723,26 @@ html.sm-page-loading body > *:not(#globalPageLoader):not(script) {
 @keyframes fragmentSparkBurst{0%{opacity:1;transform:translate(-50%,-50%) rotate(var(--angle)) translateX(0) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) rotate(var(--angle)) translateX(var(--distance)) scale(.2)}}
 .all-fragments-notice .visual-notice-icon{font-size:3.4rem;animation:allFragmentsPulse 1s ease-in-out infinite alternate}@keyframes allFragmentsPulse{to{transform:scale(1.12);filter:drop-shadow(0 0 16px #ffd65a)}}
 @media(max-width:720px){.admin-filter-tools{display:grid;grid-template-columns:1fr auto;width:100%}.admin-search-label{grid-column:1/-1}.admin-sort-label select{min-width:0;width:100%}.global-score-hud{max-width:48vw}}
+
+/* === v114: Admin-Testmodus und Tastminen-HUD === */
+.admin-tools {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: 16px;
+  background: rgba(91, 54, 126, .08);
+  border: 1px solid rgba(91, 54, 126, .16);
+}
+.admin-tools.hidden { display: none !important; }
+.admin-auto-complete-level {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  border: 2px dashed rgba(106, 63, 148, .45);
+}
+.admin-auto-complete-level.hidden { display: none !important; }
+.level-popup-card > #levelPopupClose,
+.level-popup-card > .admin-auto-complete-level {
+  min-height: 48px;
+}

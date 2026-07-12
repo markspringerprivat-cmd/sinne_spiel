@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Spielfeld | Die verlorene Sinnesmagie</title>
-  <link rel="stylesheet" href="assets/css/style.css?v=113">
+  <link rel="stylesheet" href="assets/css/style.css?v=114">
 </head>
 <body class="game-page">
   <div id="globalPageLoader" class="global-page-loader" role="status" aria-live="polite" aria-label="Spiel wird geladen">
@@ -91,9 +91,15 @@
         <input id="volumeSlider" type="range" min="0" max="100" value="50">
       </label>
 
-      <button id="showQrButton" class="ghost-button full-width-button" type="button">QR-Codes anzeigen</button>
-      <button id="unlockAllButton" class="ghost-button full-width-button" type="button">Alle Level freischalten (Test)</button>
-      <button id="adminAreaButton" class="ghost-button full-width-button" type="button">Zum Admin-Bereich</button>
+      <button id="adminActivateButton" class="primary-button full-width-button" type="button">Admin aktivieren</button>
+
+      <div id="adminTools" class="admin-tools hidden" aria-label="Admin-Werkzeuge">
+        <button id="adminEvaluationButton" class="ghost-button full-width-button" type="button">Zur Auswertung</button>
+        <button id="unlockAdminLevelsButton" class="ghost-button full-width-button" type="button">Alle Level freischalten</button>
+        <button id="removeAreaLocksButton" class="ghost-button full-width-button" type="button">Schlösser entfernen</button>
+        <button id="showQrButton" class="ghost-button full-width-button" type="button">QR-Codes anzeigen</button>
+      </div>
+
       <button id="resetGameButton" class="ghost-button full-width-button settings-danger-button" type="button">Spiel zurücksetzen</button>
 
       <div id="qrOverview" class="qr-overview hidden" aria-label="QR-Code-Übersicht">
@@ -111,13 +117,13 @@
   <div id="adminPasswordModal" class="game-modal hidden" role="dialog" aria-modal="true" aria-labelledby="adminPasswordTitle">
     <div class="game-modal-card admin-password-card">
       <button class="modal-close" type="button" data-close-admin-password aria-label="Passwortabfrage schließen">×</button>
-      <h2 id="adminPasswordTitle">Admin-Bereich</h2>
+      <h2 id="adminPasswordTitle">Admin aktivieren</h2>
       <p>Bitte das Admin-Passwort eingeben.</p>
       <input id="adminPasswordInput" class="admin-password-input" type="password" autocomplete="current-password" placeholder="Passwort">
       <p id="adminPasswordError" class="admin-password-error hidden">Das Passwort ist nicht korrekt.</p>
       <div class="modal-actions compact-actions">
         <button id="adminPasswordCancel" class="ghost-button" type="button">Abbrechen</button>
-        <button id="adminPasswordSubmit" class="primary-button" type="button">Öffnen</button>
+        <button id="adminPasswordSubmit" class="primary-button" type="button">Aktivieren</button>
       </div>
     </div>
   </div>
@@ -132,7 +138,7 @@
   </div>
 <script src="https://unpkg.com/html5-qrcode" defer></script>
   <script src="assets/js/audio-crossfade.js"></script>
-  <script src="assets/js/game.js?v=113"></script>
+  <script src="assets/js/game.js?v=114"></script>
   <script src="assets/js/cloud-save.js?v=112"></script>
   <script src="assets/js/score-system.js?v=113"></script>
 </body>

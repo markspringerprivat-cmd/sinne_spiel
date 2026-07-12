@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Loren-Minispiel | Tastminen</title>
-  <link rel="stylesheet" href="../assets/css/style.css?v=113">
+  <link rel="stylesheet" href="../assets/css/style.css?v=114">
   <style>
     :root {
       --mine-ui: rgba(255, 248, 222, 0.92);
@@ -44,7 +44,7 @@
 
     .mine-hud {
       position: fixed;
-      top: max(14px, env(safe-area-inset-top));
+      top: calc(max(14px, env(safe-area-inset-top)) + 19px);
       left: 50%;
       transform: translateX(-50%);
       width: min(92vw, 620px);

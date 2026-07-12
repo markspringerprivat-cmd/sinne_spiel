@@ -15,6 +15,8 @@ const STORAGE_FRAGMENTS = 'sinnesmagie-fragments';
 const STORAGE_LEVEL_PROGRESS = 'sinnesmagie-level-progress';
 const STORAGE_LEVEL_NODE = 'sinnesmagie-level-node';
 const STORAGE_PENDING_NOTICE = 'sinnesmagie-pending-notice';
+const STORAGE_ADMIN_MODE = 'sinnesmagie-admin-mode';
+const STORAGE_ADMIN_LEVELS_UNLOCKED = 'sinnesmagie-admin-levels-unlocked';
 const QUIZ_SECONDS = 30;
 const QUIZ_TRANSITION_MS = 560;
 const BATTLE_ANIMATION_MS = 1500;
@@ -865,6 +867,7 @@ async function preloadQuizAssetsAsync(data, quizId) {
 let activeQuiz = null;
 let quizTimer = null;
 let popupCloseHandler = null;
+let adminPopupLevelIndex = null;
 let currentNode = 'start';
 
 const sfxCorrect = new Audio('../assets/audio/correct.mp3');
@@ -1154,6 +1157,67 @@ function pauseBossMusic() {
   } catch {}
 }
 
+function isAdminMode() {
+  return sessionStorage.getItem(STORAGE_ADMIN_MODE) === '1';
+}
+
+function areAdminLevelsUnlocked() {
+  return isAdminMode() && localStorage.getItem(STORAGE_ADMIN_LEVELS_UNLOCKED) === '1';
+}
+
+function ensureAdminCompleteButton() {
+  if (!levelPopupClose) return null;
+  let button = document.getElementById('adminAutoCompleteLevel');
+  if (!button) {
+    button = document.createElement('button');
+    button.id = 'adminAutoCompleteLevel';
+    button.type = 'button';
+    button.className = 'ghost-button admin-auto-complete-level';
+    button.textContent = 'Level automatisch abschließen';
+    levelPopupClose.insertAdjacentElement('afterend', button);
+  }
+  return button;
+}
+
+function updateAdminCompleteButton() {
+  const button = ensureAdminCompleteButton();
+  if (!button) return;
+  const visible = isAdminMode() && Number.isInteger(adminPopupLevelIndex);
+  button.classList.toggle('hidden', !visible);
+}
+
+function adminCompleteSelectedLevel() {
+  if (!isAdminMode() || !Number.isInteger(adminPopupLevelIndex)) return;
+  const index = adminPopupLevelIndex;
+  adminPopupLevelIndex = null;
+
+  if (index === 0) {
+    setAreaProgress({ level1Completed: true });
+    saveCurrentNode('level1');
+  } else if (index === 1) {
+    setAreaProgress({ level1Completed: true, level2Completed: true });
+    saveCurrentNode('level2');
+    if (currentArea !== 'zauberschloss') {
+      const fragmentStatus = awardFragment(currentArea);
+      writePendingNotice({ type: 'fragment', area: currentArea, gained: fragmentStatus.gained, allCollected: fragmentStatus.allCollected });
+    } else {
+      writePendingNotice({ type: 'castleBossComplete', area: 'zauberschloss' });
+    }
+  } else if (index === 2 && currentArea === 'zauberschloss') {
+    setAreaProgress({ level1Completed: true, level2Completed: true, level3Completed: true, level4Completed: true, finaleCompleted: true });
+    saveCurrentNode('level3');
+  }
+
+  applyMarkerStates();
+  popupCloseHandler = null;
+  closeLevelPopup();
+  showLevelPopup(
+    'Admin-Abschluss gespeichert',
+    'Dieses Level wurde für Testzwecke als abgeschlossen markiert. Es wurden keine zusätzlichen Punkte vergeben.',
+    'Weiter'
+  );
+}
+
 function showLevelPopup(title, text, buttonLabel = 'Weiter', onClose = null) {
   if (!levelPopup || !levelPopupTitle || !levelPopupText || !levelPopupClose) return;
   levelPopupTitle.textContent = title || 'Level';
@@ -1162,6 +1226,7 @@ function showLevelPopup(title, text, buttonLabel = 'Weiter', onClose = null) {
   levelPopupClose.textContent = buttonLabel || 'Weiter';
   popupCloseHandler = onClose;
   levelPopup.classList.remove('hidden');
+  updateAdminCompleteButton();
 }
 
 function closeLevelPopup() {
@@ -1169,6 +1234,8 @@ function closeLevelPopup() {
   levelPopup.classList.add('hidden');
   const handler = popupCloseHandler;
   popupCloseHandler = null;
+  adminPopupLevelIndex = null;
+  updateAdminCompleteButton();
 
   // Popups mit eigener Folgeaktion (Seitenwechsel, Minispiel oder Bosskampf)
   // steuern die Musik selbst. Dadurch wird die Gebietsmusik nicht versehentlich
@@ -1384,6 +1451,7 @@ function applyMarkerStates() {
       completed = !!progress[levelKey];
       locked = index > 0 && !progress[previousKey];
     }
+    if (areAdminLevelsUnlocked()) locked = false;
     marker.classList.toggle('completed', completed);
     marker.classList.toggle('locked', locked);
     marker.classList.toggle('available', !locked && !completed);
@@ -1446,18 +1514,27 @@ async function handleLevelOne() {
 
 async function handleLevelTwo() {
   const progress = getAreaProgress();
-  if (!progress.level1Completed) {
+  if (!progress.level1Completed && !areAdminLevelsUnlocked()) {
     showLevelPopup('Noch gesperrt', 'Du musst zuerst das erste Level mit dem Minispiel abschließen, bevor du das Quiz betreten kannst.');
     return;
   }
 
   await moveToNode('level2');
+  if (isAdminMode()) {
+    showLevelPopup(
+      levelMarkers[1]?.dataset.title || 'Quiz / Bossbegegnung',
+      `<div class="visual-notice"><div class="visual-notice-icon">⚔️</div><p>${levelMarkers[1]?.dataset.text || 'Starte das Quiz und stelle dich der Bossbegegnung.'}</p></div>`,
+      progress.level2Completed ? 'Boss erneut spielen' : 'Boss starten',
+      () => { pauseLevelMusic(); openQuizIntro(levelMarkers[1].dataset.quizId || currentArea); }
+    );
+    return;
+  }
   await openQuizIntro(levelMarkers[1].dataset.quizId || currentArea);
 }
 
 async function handleLevelThree() {
   const progress = getAreaProgress();
-  if (!progress.level2Completed) {
+  if (!progress.level2Completed && !areAdminLevelsUnlocked()) {
     showLevelPopup('Noch gesperrt', 'Du musst zuerst die Bossbegegnung schaffen, bevor du das Schlosstor betreten kannst.');
     return;
   }
@@ -1476,7 +1553,9 @@ async function handleLevelThree() {
 }
 
 async function moveLevelKnightTo(marker, index) {
-  if (marker.disabled || marker.classList.contains('movement-disabled')) return;
+  const adminUnlocked = areAdminLevelsUnlocked();
+  if (!adminUnlocked && (marker.disabled || marker.classList.contains('movement-disabled'))) return;
+  adminPopupLevelIndex = isAdminMode() ? index : null;
   if (index === 0) await handleLevelOne();
   else if (index === 1) await handleLevelTwo();
   else if (index === 2) await handleLevelThree();
@@ -1489,6 +1568,9 @@ levelMarkers.forEach((marker, index) => {
 if (levelPopupClose) {
   levelPopupClose.addEventListener('click', closeLevelPopup);
 }
+
+ensureAdminCompleteButton()?.addEventListener('click', adminCompleteSelectedLevel);
+updateAdminCompleteButton();
 
 if (levelPopup) {
   levelPopup.addEventListener('click', event => {

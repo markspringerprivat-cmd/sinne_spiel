@@ -26,9 +26,12 @@ const infoModalActions = document.getElementById('infoModalActions');
 const settingsButton = document.getElementById('settingsButton');
 const settingsModal = document.getElementById('settingsModal');
 const showQrButton = document.getElementById('showQrButton');
-const unlockAllButton = document.getElementById('unlockAllButton');
+const adminActivateButton = document.getElementById('adminActivateButton');
+const adminTools = document.getElementById('adminTools');
+const adminEvaluationButton = document.getElementById('adminEvaluationButton');
+const unlockAdminLevelsButton = document.getElementById('unlockAdminLevelsButton');
+const removeAreaLocksButton = document.getElementById('removeAreaLocksButton');
 const resetGameButton = document.getElementById('resetGameButton');
-const adminAreaButton = document.getElementById('adminAreaButton');
 const adminPasswordModal = document.getElementById('adminPasswordModal');
 const adminPasswordInput = document.getElementById('adminPasswordInput');
 const adminPasswordError = document.getElementById('adminPasswordError');
@@ -48,6 +51,8 @@ const STORAGE_VOLUME = 'sinnesmagie-volume';
 const STORAGE_FRAGMENTS = 'sinnesmagie-fragments';
 const STORAGE_LEVEL_PROGRESS = 'sinnesmagie-level-progress';
 const STORAGE_PENDING_NOTICE = 'sinnesmagie-pending-notice';
+const STORAGE_ADMIN_MODE = 'sinnesmagie-admin-mode';
+const STORAGE_ADMIN_LEVELS_UNLOCKED = 'sinnesmagie-admin-levels-unlocked';
 
 const areaNames = {
   koenigsschloss: 'Königsschloss',
@@ -493,6 +498,24 @@ function closeAdminPassword() {
   adminPasswordError?.classList.add('hidden');
 }
 
+function isAdminMode() {
+  return sessionStorage.getItem(STORAGE_ADMIN_MODE) === '1';
+}
+
+function updateAdminTools() {
+  const active = isAdminMode();
+  adminTools?.classList.toggle('hidden', !active);
+  if (adminActivateButton) adminActivateButton.textContent = active ? 'Admin deaktivieren' : 'Admin aktivieren';
+}
+
+function deactivateAdminMode() {
+  sessionStorage.removeItem(STORAGE_ADMIN_MODE);
+  sessionStorage.removeItem('sinnesmagie-admin-auth');
+  sessionStorage.removeItem('sinnesmagie-admin-password');
+  localStorage.removeItem(STORAGE_ADMIN_LEVELS_UNLOCKED);
+  updateAdminTools();
+}
+
 function submitAdminPassword() {
   const password = adminPasswordInput?.value || '';
   if (password !== 'Mark123') {
@@ -501,9 +524,12 @@ function submitAdminPassword() {
     adminPasswordInput?.select();
     return;
   }
+  sessionStorage.setItem(STORAGE_ADMIN_MODE, '1');
   sessionStorage.setItem('sinnesmagie-admin-auth', '1');
   sessionStorage.setItem('sinnesmagie-admin-password', password);
-  window.location.href = 'admin.html';
+  closeAdminPassword();
+  updateAdminTools();
+  openSettings();
 }
 
 function showLockedInfo(area) {
@@ -813,16 +839,20 @@ function maybeShowEntryModal() {
   }
 }
 
-function unlockAllForTesting() {
-  const confirmed = window.confirm('Alle Gebiete für Testzwecke freischalten? Kristalle und Level-Fortschritte bleiben unverändert.');
+function removeAllAreaLocks() {
+  const confirmed = window.confirm('Alle Gebietsschlösser entfernen? Die Level-Fortschritte bleiben unverändert.');
   if (!confirmed) return;
-
   unlockedAreas = new Set(['koenigsschloss', ...Object.keys(levelPages)]);
   saveUnlocked(unlockedAreas);
-
   updateLocks();
   closeSettings();
-  showInfo('Test-Freischaltung aktiv', 'Alle Gebietsschlösser wurden entfernt. Die Level selbst müssen weiterhin nacheinander gespielt werden.', { showScanButton: false });
+  showInfo('Schlösser entfernt', 'Alle Gebiete können jetzt ohne QR-Code betreten werden.', { showScanButton: false });
+}
+
+function unlockAllLevelsForAdmin() {
+  localStorage.setItem(STORAGE_ADMIN_LEVELS_UNLOCKED, '1');
+  closeSettings();
+  showInfo('Alle Level freigeschaltet', 'Im Admin-Modus können jetzt alle Levelpunkte direkt geöffnet und bei Bedarf automatisch abgeschlossen werden.', { showScanButton: false });
 }
 
 hotspots.forEach(button => {
@@ -863,11 +893,21 @@ showQrButton.addEventListener('click', () => {
   showQrButton.textContent = qrOverview.classList.contains('hidden') ? 'QR-Codes anzeigen' : 'QR-Codes ausblenden';
 });
 
-if (unlockAllButton) {
-  unlockAllButton.addEventListener('click', unlockAllForTesting);
-}
+adminActivateButton?.addEventListener('click', () => {
+  if (isAdminMode()) {
+    deactivateAdminMode();
+    return;
+  }
+  openAdminPassword();
+});
+adminEvaluationButton?.addEventListener('click', () => {
+  sessionStorage.setItem('sinnesmagie-admin-auth', '1');
+  sessionStorage.setItem('sinnesmagie-admin-password', 'Mark123');
+  window.location.href = 'admin.html';
+});
+unlockAdminLevelsButton?.addEventListener('click', unlockAllLevelsForAdmin);
+removeAreaLocksButton?.addEventListener('click', removeAllAreaLocks);
 
-adminAreaButton?.addEventListener('click', openAdminPassword);
 adminPasswordSubmit?.addEventListener('click', submitAdminPassword);
 adminPasswordCancel?.addEventListener('click', closeAdminPassword);
 adminPasswordInput?.addEventListener('keydown', event => {
@@ -919,6 +959,7 @@ if (savedX && savedY) {
 }
 
 applyVolume(currentVolume());
+updateAdminTools();
 updateLocks();
 applyUnlockFromUrl();
 maybeShowEntryModal();
