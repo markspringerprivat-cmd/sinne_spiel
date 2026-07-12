@@ -159,7 +159,8 @@
   }
 
   function miniGuideEmojiRow(emojis = []) {
-    return `<span class="mini-guide-emoji-row">${emojis.map((emoji) => `<span class="mini-guide-emoji">${emoji}</span>`).join('')}</span>`;
+    const tightClass = emojis.length >= 3 ? ' tight' : '';
+    return `<span class="mini-guide-emoji-row${tightClass}">${emojis.map((emoji) => `<span class="mini-guide-emoji" data-emoji="${emoji}">${emoji}</span>`).join('')}</span>`;
   }
 
   function resizeCanvas() {
