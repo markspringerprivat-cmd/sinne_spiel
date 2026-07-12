@@ -52,7 +52,7 @@ function doPost(e) {
     }
 
     const deviceId = cleanText_(input.deviceId, 100);
-    const name = cleanText_(input.name, 24);
+    const name = cleanText_(input.name, 70);
     if (!deviceId) return json_({ success: false, error: 'Geräte-ID fehlt.' });
     if (!name) return json_({ success: false, error: 'Name fehlt.' });
 
@@ -151,7 +151,7 @@ function publicRanking_() {
     .sort(function(a, b) { return b.score - a.score || a.name.localeCompare(b.name); })
     .slice(0, 100)
     .map(function(player) {
-      return { name: player.name, score: player.score, progress: { zauberschloss: player.progress.zauberschloss } };
+      return { name: publicName_(player.name), score: player.score, progress: { zauberschloss: player.progress.zauberschloss } };
     });
   return json_({ success: true, ranking: rows });
 }
@@ -200,6 +200,15 @@ function setupSheet_() {
 function getSheet_() {
   const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
   return spreadsheet.getSheetByName(SHEET_NAME) || spreadsheet.insertSheet(SHEET_NAME);
+}
+
+function publicName_(fullName) {
+  const parts = String(fullName || '').trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return 'Spieler';
+  const firstName = parts[0];
+  if (parts.length === 1) return firstName;
+  const lastName = parts[parts.length - 1];
+  return firstName + ' ' + lastName.charAt(0).toUpperCase() + '.';
 }
 
 function cleanText_(value, maxLength) {

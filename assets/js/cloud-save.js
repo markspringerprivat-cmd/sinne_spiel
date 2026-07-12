@@ -38,7 +38,7 @@
   }
 
   function getName() {
-    return (localStorage.getItem(NAME_KEY) || '').trim().slice(0, 24);
+    return (localStorage.getItem(NAME_KEY) || '').trim().slice(0, 70);
   }
 
   function scoreValue(scores, key) {

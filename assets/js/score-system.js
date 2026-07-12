@@ -7,7 +7,7 @@
     try { return JSON.parse(localStorage.getItem(key) || '') || fallback; } catch { return fallback; }
   }
   function getName() { return (localStorage.getItem(NAME_KEY) || '').trim(); }
-  function setName(name) { localStorage.setItem(NAME_KEY, String(name || '').trim().slice(0, 24)); syncBoard(); renderAll(); window.SinnesCloud?.scheduleSync(100); }
+  function setName(name) { localStorage.setItem(NAME_KEY, String(name || '').trim().slice(0, 70)); syncBoard(); renderAll(); window.SinnesCloud?.scheduleSync(100); }
   function getData() {
     const data = safeJson(KEY, { scores: {}, total: 0 });
     data.scores = data.scores && typeof data.scores === 'object' ? data.scores : {};
@@ -146,7 +146,7 @@
       let modal = document.getElementById('playerNameModal');
       if (!modal) {
         modal = document.createElement('div'); modal.id = 'playerNameModal'; modal.className = 'score-modal';
-        modal.innerHTML = `<div class="score-modal-card"><h2>Wie heißt du?</h2><p>Dein Name wird mit deinem Highscore gespeichert.</p><input id="playerNameInput" maxlength="24" autocomplete="name" placeholder="Dein Name"><button id="savePlayerName" class="primary-button" type="button">Spiel beginnen</button></div>`;
+        modal.innerHTML = `<div class="score-modal-card"><h2>Wie heißt du?</h2><p>Dein Name wird mit deinem Highscore gespeichert.</p><input id="playerNameInput" maxlength="70" autocomplete="name" placeholder="Dein Name"><button id="savePlayerName" class="primary-button" type="button">Spiel beginnen</button></div>`;
         document.body.appendChild(modal);
       }
       modal.classList.remove('hidden');
@@ -187,7 +187,7 @@
       boardRoot.innerHTML = ranking.length
         ? ranking.slice(0, 100).map((entry, index) => `
             <div class="score-board-row">
-              <span><b>${index + 1}.</b> ${escapeHtml(entry.name || 'Spieler')}</span>
+              <span><b>${index + 1}.</b> ${escapeHtml(publicDisplayName(entry.name || 'Spieler'))}</span>
               <strong>${Math.max(0, Number(entry.score) || 0).toLocaleString('de-DE')}</strong>
             </div>`).join('')
         : '<p>Noch keine Online-Einträge.</p>';
@@ -200,6 +200,7 @@
           : '<p>Noch keine lokalen Einträge.</p>'}`;
     }
   }
+  function publicDisplayName(fullName){const parts=String(fullName||'').trim().split(/\s+/).filter(Boolean);if(!parts.length)return 'Spieler';if(parts.length===1)return parts[0];return `${parts[0]} ${parts[parts.length-1].charAt(0).toUpperCase()}.`;}
   function escapeHtml(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
   function addLeaderboardButton() {
     const settings = document.getElementById('settingsButton');
@@ -230,6 +231,6 @@
       }, { once: true });
     }
   }
-  document.addEventListener('DOMContentLoaded',()=>{ensureHud(); renderAll(); addLeaderboardButton(); if(document.body.classList.contains('cover-page')) nameDialog(false).then(()=>window.SinnesCloud?.syncNow()); else window.SinnesCloud?.scheduleSync(1200);});
+  document.addEventListener('DOMContentLoaded',()=>{ensureHud(); renderAll(); addLeaderboardButton(); if(getName()) window.SinnesCloud?.scheduleSync(1200);});
   window.SinnesScore={record,total,liveTotal,getData,getName,setName,nameDialog,showLeaderboard,board,render:renderAll,startSession,addPoints,setSession,sessionValue,finishSession,setGameplayActive,showDelta,showLevelSummary};
 })();

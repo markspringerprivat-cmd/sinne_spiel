@@ -1,27 +1,13 @@
-Sinnesmagie – Apps Script Version 2.1
-=====================================
+Sinnesmagie – Apps Script Aktualisierung für Version 116
 
-Diese Version ergänzt den Admin-Bereich um:
-- einzelne Spieler-/Highscore-Einträge löschen
-- die komplette Highscore-Liste leeren
+1. Öffne die Google-Tabelle.
+2. Erweiterungen → Apps Script.
+3. Ersetze den bisherigen Inhalt von Code.gs vollständig durch die mitgelieferte Datei Code.gs.
+4. Speichern.
+5. Bereitstellen → Bereitstellungen verwalten → Stiftsymbol.
+6. Neue Version auswählen und erneut bereitstellen.
 
-Einrichtung
------------
-1. Öffne die Google-Tabelle „Sinnesmagie Highscores“.
-2. Gehe zu Erweiterungen → Apps Script.
-3. Lösche den bisherigen Inhalt von Code.gs vollständig.
-4. Kopiere den gesamten Inhalt der mitgelieferten Datei Code.gs hinein.
-5. Speichere das Projekt.
-6. Gehe zu Bereitstellen → Bereitstellungen verwalten.
-7. Öffne die vorhandene Web-App über das Stiftsymbol.
-8. Wähle „Neue Version“ und klicke auf „Bereitstellen“.
-9. Einstellungen müssen weiterhin sein:
-   - Ausführen als: Ich
-   - Zugriff: Jeder
-
-Wichtig
--------
-Nur das Speichern des Codes reicht nicht. Die Web-App muss als neue Version
-bereitgestellt werden, damit Löschen und Leeren aus dem Spiel funktionieren.
-
-Admin-Passwort: Mark123
+Die Tabellenstruktur bleibt unverändert. Neu ist nur:
+- vollständiger Vor- und Nachname wird gespeichert,
+- öffentliche Bestenliste zeigt nur Vorname + ersten Buchstaben des Nachnamens,
+- Adminbereich zeigt weiterhin den vollständigen Namen.

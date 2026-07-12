@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Die verlorene Sinnesmagie</title>
-  <link rel="stylesheet" href="assets/css/style.css?v=113">
+  <link rel="stylesheet" href="assets/css/style.css?v=116">
 </head>
 <body class="cover-page">
   <div id="globalPageLoader" class="global-page-loader" role="status" aria-live="polite" aria-label="Spiel wird geladen">
@@ -20,13 +20,40 @@
   </div>
   <script src="assets/js/page-loader.js?v=107"></script>
 
-  <main class="cover-card">
-    <div class="crest">🔑</div>
+  <main class="cover-card cover-card-welcome">
+    <div class="crest">✨🔑✨</div>
     <h1>Die verlorene Sinnesmagie</h1>
-    <p>Ein hybrides Smartphone-Spiel zu den fünf Sinnen. Scanne später die QR-Codes an den Stationen, sammle Schlüsselfragmente und hilf dem Königreich.</p>
-    <a class="primary-button" href="story.html">Spiel starten</a>
+    <p class="cover-lead">Willkommen bei <strong>Sinnesmagie</strong> – einem Lernabenteuer rund um Sehen, Hören, Riechen, Schmecken und Fühlen.</p>
+    <p>Du begleitest einen Ritter durch fünf magische Gebiete, löst kurze Minispiele und Quizfragen, sammelst Schlüsselfragmente und hilfst dabei, die Sinnesmagie ins Königreich zurückzubringen.</p>
+    <button id="openStartFlow" class="primary-button cover-start-button" type="button">Spiel starten</button>
   </main>
-  <script src="assets/js/cloud-save.js?v=112"></script>
-  <script src="assets/js/score-system.js?v=113"></script>
+
+  <div id="startFlowModal" class="start-flow-modal hidden" aria-hidden="true">
+    <div class="start-flow-card">
+      <section id="nameStep" class="start-flow-step">
+        <h2>Wie heißt du?</h2>
+        <p>Bitte gib deinen Vor- und Nachnamen ein. Im Adminbereich wird der vollständige Name gespeichert. In der öffentlichen Bestenliste erscheint später nur dein Vorname mit dem ersten Buchstaben des Nachnamens.</p>
+        <label for="playerFirstName">Vorname</label>
+        <input id="playerFirstName" maxlength="30" autocomplete="given-name" placeholder="Vorname">
+        <label for="playerLastName">Nachname</label>
+        <input id="playerLastName" maxlength="40" autocomplete="family-name" placeholder="Nachname">
+        <p id="nameStepError" class="start-flow-error hidden">Bitte trage Vor- und Nachnamen ein.</p>
+        <button id="saveFullName" class="primary-button" type="button">Weiter</button>
+      </section>
+
+      <section id="storyChoiceStep" class="start-flow-step hidden">
+        <h2>Wie möchtest du beginnen?</h2>
+        <p>Die Vorgeschichte dauert etwa 1 Minute und 15 Sekunden und erklärt, warum die Sinne aus dem Königreich verschwunden sind.</p>
+        <div class="start-flow-actions">
+          <a class="primary-button" href="story.html?autoplay=1">Geschichte ansehen</a>
+          <a class="ghost-button" href="game.html">Geschichte überspringen</a>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script src="assets/js/cloud-save.js?v=116"></script>
+  <script src="assets/js/score-system.js?v=116"></script>
+  <script src="assets/js/start-flow.js?v=116"></script>
 </body>
 </html>

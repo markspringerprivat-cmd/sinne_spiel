@@ -86,7 +86,7 @@
 
     if (pageStem === 'story') {
       core.push('assets/images/story/panel-01.jpg');
-      deferred.push(...Array.from({ length: 13 }, (_, i) => `assets/images/story/panel-${String(i + 2).padStart(2, '0')}.jpg`), 'assets/audio/story_music.mp3');
+      deferred.push(...Array.from({ length: 13 }, (_, i) => `assets/images/story/panel-${String(i + 2).padStart(2, '0')}.jpg`), 'assets/audio/intro_music.mp3');
     } else if (pageStem === 'game') {
       core.push('assets/images/map/overworld.webp', 'assets/images/characters/knight.png');
       deferred.push('assets/audio/overworld_new.mp3',
