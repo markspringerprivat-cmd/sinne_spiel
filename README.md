@@ -154,3 +154,11 @@ Verwendete Web-App:
 ### Notwendige Apps-Script-Aktualisierung
 
 Damit `admin.html` die vollständigen Online-Daten abrufen kann, muss der Inhalt aus `apps-script/Code.gs` in das Google-Apps-Script-Projekt übernommen und die bestehende Web-App als **neue Version** erneut bereitgestellt werden. Die `/exec`-Adresse bleibt normalerweise unverändert.
+
+## Version 123
+- Highscore-Anzeige während Intro- und Outro-Geschichten ausgeblendet.
+- Abspann-Button zur Weltkarte mobil oberhalb der Browserleiste positioniert.
+- Abschlussmeldung auf der Weltkarte auf „Königreich gerettet“ umgestellt.
+- Goldene Hinweise auf Bestenliste und Dorf nach Spielabschluss.
+- Neues Musikdorf mit vier lokalen Rhythmus-Minispielen und drei Schwierigkeitsgraden.
+- Einheitlicher Pergamentstil und zentrierte Startbuttons für Boss- und Quiz-Popups.
