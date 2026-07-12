@@ -128,6 +128,44 @@
   }
   function board() { syncBoard(); return safeJson(BOARD_KEY, []); }
 
+
+  const UNIFIED_HUD_SELECTOR = '.rhythm-hud, .duft-hop-hud, .mine-hud, .slice-hud, .paint-hud, .pong-hud, .castle-dodge-hud';
+  let unifiedHudScheduled = false;
+
+  function supportsUnifiedHud() {
+    return !!document.body && document.body.matches('.game-page, .level-map-page, .duft-hop-page, .color-minigame-page, .flame-slice-page, .klang-rhythm-page, .mine-minigame-page, .pong-page, .castle-dodge-page, .castle-finale-page');
+  }
+
+  function organizeUnifiedHud() {
+    unifiedHudScheduled = false;
+    if (!supportsUnifiedHud()) return;
+    ensureHud();
+    let bar = document.getElementById('unifiedGameHud');
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.id = 'unifiedGameHud';
+      bar.className = 'unified-game-hud';
+      bar.setAttribute('aria-label', 'Spielstatus');
+      document.body.appendChild(bar);
+    }
+    const scoreHud = document.getElementById('globalScoreHud');
+    if (scoreHud && scoreHud.parentElement !== bar) bar.prepend(scoreHud);
+
+    const extraHuds = [...document.querySelectorAll(UNIFIED_HUD_SELECTOR)].filter(node => node !== bar && !node.closest('.score-modal'));
+    extraHuds.forEach(node => {
+      node.classList.add('unified-game-hud-content');
+      if (node.parentElement !== bar) bar.appendChild(node);
+    });
+    bar.classList.toggle('hud-only-score', !bar.querySelector('.unified-game-hud-content'));
+    document.body.classList.add('unified-game-hud-enabled');
+  }
+
+  function scheduleUnifiedHud() {
+    if (unifiedHudScheduled) return;
+    unifiedHudScheduled = true;
+    requestAnimationFrame(organizeUnifiedHud);
+  }
+
   function ensureHud() {
     if (document.getElementById('globalScoreHud')) return;
     const el = document.createElement('div');
@@ -231,6 +269,11 @@
       }, { once: true });
     }
   }
-  document.addEventListener('DOMContentLoaded',()=>{ensureHud(); renderAll(); addLeaderboardButton(); if(getName()) window.SinnesCloud?.scheduleSync(1200);});
+  document.addEventListener('DOMContentLoaded',()=>{
+    ensureHud(); renderAll(); addLeaderboardButton(); scheduleUnifiedHud();
+    const observer = new MutationObserver(() => scheduleUnifiedHud());
+    observer.observe(document.body, { childList: true, subtree: true });
+    if(getName()) window.SinnesCloud?.scheduleSync(1200);
+  });
   window.SinnesScore={record,total,liveTotal,getData,getName,setName,nameDialog,showLeaderboard,board,render:renderAll,startSession,addPoints,setSession,sessionValue,finishSession,setGameplayActive,showDelta,showLevelSummary};
 })();

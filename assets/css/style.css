@@ -7280,3 +7280,375 @@ html.sm-page-loading body > *:not(#globalPageLoader):not(script) {
     line-height: 1.48 !important;
   }
 }
+
+/* === v122: Einheitliche kompakte Statusleiste für alle Spielseiten === */
+.unified-game-hud {
+  position: fixed;
+  top: max(8px, env(safe-area-inset-top));
+  left: 8px;
+  right: 8px;
+  z-index: 9500;
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+  width: auto;
+  max-width: 980px;
+  min-height: 52px;
+  margin: 0 auto;
+  padding: 6px;
+  box-sizing: border-box;
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 22px;
+  background: rgba(22,15,39,.88);
+  box-shadow: 0 8px 24px rgba(0,0,0,.26);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  pointer-events: none;
+}
+.unified-game-hud.hud-only-score {
+  right: auto;
+  width: max-content;
+  max-width: calc(100vw - 16px);
+}
+.unified-game-hud > .global-score-hud {
+  position: static !important;
+  inset: auto !important;
+  left: auto !important;
+  right: auto !important;
+  top: auto !important;
+  transform: none !important;
+  flex: 0 0 auto;
+  display: flex !important;
+  align-items: center;
+  gap: 6px;
+  min-width: max-content;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 9px 12px !important;
+  border-radius: 16px !important;
+  background: rgba(12,8,25,.68) !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+.unified-game-hud > .unified-game-hud-content {
+  position: static !important;
+  inset: auto !important;
+  left: auto !important;
+  right: auto !important;
+  top: auto !important;
+  bottom: auto !important;
+  transform: none !important;
+  flex: 1 1 auto;
+  width: auto !important;
+  max-width: none !important;
+  min-width: 0;
+  min-height: 0;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+/* Die jeweiligen Statusinhalte bleiben kompakt und sitzen direkt am Highscore. */
+.unified-game-hud > .rhythm-hud,
+.unified-game-hud > .duft-hop-hud,
+.unified-game-hud > .mine-hud,
+.unified-game-hud > .slice-hud,
+.unified-game-hud > .paint-hud,
+.unified-game-hud > .pong-hud,
+.unified-game-hud > .castle-dodge-hud {
+  display: flex !important;
+  align-items: stretch !important;
+  justify-content: flex-end !important;
+  gap: 6px !important;
+  background: transparent !important;
+}
+.unified-game-hud .rhythm-hud-card,
+.unified-game-hud .duft-card,
+.unified-game-hud .mine-hud-card,
+.unified-game-hud .slice-hud-card,
+.unified-game-hud .paint-pill,
+.unified-game-hud .pong-pill,
+.unified-game-hud .castle-dodge-hud {
+  min-width: 0 !important;
+  margin: 0 !important;
+  border-radius: 14px !important;
+  box-shadow: none !important;
+}
+.unified-game-hud .rhythm-hud-card,
+.unified-game-hud .duft-card,
+.unified-game-hud .mine-hud-card,
+.unified-game-hud .slice-hud-card,
+.unified-game-hud .paint-pill,
+.unified-game-hud .pong-pill {
+  padding: 7px 10px !important;
+  background: rgba(255,247,224,.94) !important;
+  color: #492d18 !important;
+}
+.unified-game-hud .rhythm-hud-card,
+.unified-game-hud .mine-hud-card,
+.unified-game-hud .duft-card {
+  flex: 1 1 auto !important;
+}
+.unified-game-hud .rhythm-energy-track,
+.unified-game-hud .mine-progress-track,
+.unified-game-hud .duft-progress,
+.unified-game-hud .slice-hud-wide {
+  margin-top: 4px !important;
+}
+.unified-game-hud .slice-hud-wide {
+  flex: 1 1 100% !important;
+  min-width: 100px;
+  align-self: center;
+}
+.unified-game-hud > .slice-hud,
+.unified-game-hud > .paint-hud {
+  flex-wrap: wrap !important;
+}
+.unified-game-hud > .castle-dodge-hud {
+  flex: 0 1 auto !important;
+  padding: 7px 14px !important;
+  background: rgba(255,247,224,.94) !important;
+  color: #492d18 !important;
+}
+
+/* Alte Abstandskorrekturen werden in der gemeinsamen Leiste nicht mehr benötigt. */
+.unified-game-hud-enabled .rhythm-hud,
+.unified-game-hud-enabled .duft-hop-hud,
+.unified-game-hud-enabled .mine-hud,
+.unified-game-hud-enabled .slice-hud,
+.unified-game-hud-enabled .paint-hud,
+.unified-game-hud-enabled .pong-hud,
+.unified-game-hud-enabled .castle-dodge-hud {
+  top: auto !important;
+}
+
+@media (max-width: 620px) {
+  .unified-game-hud {
+    left: 6px;
+    right: 6px;
+    top: max(6px, env(safe-area-inset-top));
+    gap: 4px;
+    min-height: 48px;
+    padding: 4px;
+    border-radius: 18px;
+  }
+  .unified-game-hud > .global-score-hud {
+    padding: 7px 9px !important;
+    border-radius: 14px !important;
+    font-size: 12px !important;
+  }
+  .unified-game-hud > .global-score-hud span { font-size: 11px !important; }
+  .unified-game-hud > .global-score-hud strong { font-size: 14px !important; }
+  .unified-game-hud > .unified-game-hud-content {
+    gap: 4px !important;
+  }
+  .unified-game-hud .rhythm-hud-card,
+  .unified-game-hud .duft-card,
+  .unified-game-hud .mine-hud-card,
+  .unified-game-hud .slice-hud-card,
+  .unified-game-hud .paint-pill,
+  .unified-game-hud .pong-pill,
+  .unified-game-hud > .castle-dodge-hud {
+    padding: 5px 7px !important;
+    font-size: 11px !important;
+    line-height: 1.15 !important;
+  }
+  .unified-game-hud .slice-hud-wide {
+    min-width: 72px;
+  }
+  .unified-game-hud > .duft-hop-hud .duft-card:last-child {
+    flex: 0 1 34% !important;
+  }
+  .unified-game-hud > .mine-hud .mine-hud-card:last-child {
+    flex: 0 0 auto !important;
+  }
+}
+
+/* === v123: Geschichten ohne Highscore, Postgame-Musikdorf und einheitliche Quizkarten === */
+.story-page .global-score-hud,
+.story-page .unified-game-hud,
+.castle-finale-page.castle-outro-active .global-score-hud,
+.castle-finale-page.castle-outro-active .unified-game-hud {
+  display: none !important;
+}
+
+/* Abspannabschluss oberhalb der mobilen Browserleiste halten */
+.castle-outro-flow {
+  padding-bottom: calc(150px + env(safe-area-inset-bottom)) !important;
+}
+.castle-credits-actions {
+  position: sticky;
+  bottom: calc(76px + env(safe-area-inset-bottom));
+  z-index: 40;
+  padding: 16px 12px;
+  background: linear-gradient(180deg, transparent, rgba(11,6,18,.9) 35%, rgba(11,6,18,.98));
+}
+.castle-credits-actions .primary-button {
+  width: min(92vw, 440px);
+  text-align: center;
+}
+
+/* Öffentliche Bestenliste + Dorf erhalten je einen goldenen Hinweis */
+.village-gold-arrow {
+  position: absolute;
+  left: 50%;
+  top: 45.5%;
+  transform: translateX(-50%);
+  z-index: 36;
+  display: grid;
+  justify-items: center;
+  pointer-events: none;
+  color: #ffd34f;
+  text-shadow: 0 2px 0 #6b3d08, 0 5px 12px rgba(0,0,0,.45);
+  animation: villageArrowBounce 1.15s ease-in-out infinite;
+}
+.village-gold-arrow span {
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: rgba(37,22,51,.92);
+  font-size: 12px;
+  font-weight: 950;
+  white-space: nowrap;
+}
+.village-gold-arrow b { font-size: 38px; line-height: .9; }
+@keyframes villageArrowBounce {
+  0%,100% { transform: translate(-50%,0); }
+  50% { transform: translate(-50%,11px); }
+}
+
+/* Sämtliche Quiz-Start- und Ergebnisfenster in einem gemeinsamen Pergamentstil */
+.quiz-intro,
+.quiz-result,
+.quiz-final-result,
+.castle-final-question-panel,
+.castle-dodge-panel {
+  box-sizing: border-box !important;
+  background:
+    radial-gradient(circle at top, rgba(255,255,255,.65), transparent 45%),
+    linear-gradient(180deg, #fff8e6 0%, #f3dfb7 100%) !important;
+  color: #432913 !important;
+  border: 2px solid rgba(151,103,42,.42) !important;
+  border-radius: 26px !important;
+  box-shadow: 0 22px 58px rgba(0,0,0,.38) !important;
+  text-align: center !important;
+}
+.quiz-intro h2,
+.quiz-result h2,
+.quiz-final-result h2,
+.castle-final-question-panel h2,
+.castle-dodge-panel h2,
+.quiz-intro p,
+.quiz-result p,
+.quiz-final-result p,
+.castle-final-question-panel p,
+.castle-dodge-panel p {
+  color: #432913 !important;
+  text-align: center !important;
+}
+.quiz-intro .primary-button,
+.quiz-result .primary-button,
+.quiz-final-result .primary-button,
+.castle-final-question-panel .primary-button,
+.castle-dodge-panel .primary-button,
+.quiz-result-actions .primary-button {
+  display: block !important;
+  width: min(100%, 430px) !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  text-align: center !important;
+}
+.quiz-intro,
+.quiz-result,
+.quiz-final-result {
+  padding-left: clamp(18px, 4vw, 34px) !important;
+  padding-right: clamp(18px, 4vw, 34px) !important;
+}
+
+/* Musikdorf */
+.music-village-page {
+  min-height: 100svh;
+  margin: 0;
+  color: #fff4da;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background:
+    linear-gradient(rgba(18,9,31,.7), rgba(18,9,31,.88)),
+    url('../images/map/overworld.webp') center/cover fixed;
+}
+.music-village-shell {
+  width: min(1160px, 100%);
+  margin: 0 auto;
+  padding: max(28px, env(safe-area-inset-top)) 18px calc(44px + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+}
+.music-village-hero {
+  max-width: 820px;
+  margin: 0 auto 24px;
+  padding: 24px;
+  border-radius: 28px;
+  background: rgba(255,247,225,.96);
+  color: #432913;
+  text-align: center;
+  box-shadow: 0 24px 60px rgba(0,0,0,.38);
+}
+.music-village-kicker { color:#8558a8; font-weight:950; letter-spacing:.08em; text-transform:uppercase; }
+.music-village-hero h1 { margin:8px 0 10px; font-size:clamp(2rem,6vw,3.5rem); }
+.music-village-hero p { margin:0; font-size:clamp(1rem,2.5vw,1.2rem); line-height:1.58; }
+.music-world-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; }
+.music-world-card {
+  min-height: 330px;
+  padding: 22px;
+  border-radius: 26px;
+  overflow: hidden;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-end;
+  gap:18px;
+  background: linear-gradient(180deg, transparent 10%, rgba(13,8,25,.25) 38%, rgba(13,8,25,.94) 100%), var(--card-image) center/cover;
+  border:2px solid rgba(255,255,255,.18);
+  box-shadow:0 20px 45px rgba(0,0,0,.36);
+}
+.music-world-card h2 { margin:0 0 5px; font-size:clamp(1.5rem,4vw,2.15rem); }
+.music-world-card p { margin:0; line-height:1.45; }
+.music-difficulty-row { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.music-difficulty-row a {
+  padding:12px 8px;
+  border-radius:15px;
+  background:linear-gradient(#ffd86a,#f5a923);
+  color:#3f260e;
+  font-weight:950;
+  text-align:center;
+  text-decoration:none;
+  box-shadow:0 6px 0 #aa6816;
+}
+.music-difficulty-row a:active { transform:translateY(4px); box-shadow:0 2px 0 #aa6816; }
+.music-village-back { display:block; width:min(320px,90%); margin:28px auto 0; text-align:center; }
+
+/* Barden-Rhythmusspiel */
+.bard-game-page { margin:0; min-height:100svh; overflow:hidden; font-family:system-ui,sans-serif; background:#0e0a18; }
+.bard-stage {
+  position:relative;
+  min-height:100svh;
+  overflow:hidden;
+  color:white;
+  background:linear-gradient(rgba(8,5,17,.28),rgba(8,5,17,.58)), var(--bard-bg) center/cover;
+}
+.bard-topbar {
+  position:absolute; top:max(8px,env(safe-area-inset-top)); left:10px; right:10px; z-index:30;
+  min-height:58px; padding:8px 12px; box-sizing:border-box;
+  display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:10px;
+  border-radius:20px; background:rgba(22,15,39,.9); backdrop-filter:blur(10px); box-shadow:0 9px 24px rgba(0,0,0,.32);
+}
+.bard-back { color:#fff; font-weight:850; text-decoration:none; }
+.bard-topbar>div:nth-child(2){display:grid;text-align:center}.bard-topbar span,.bard-local-score small{font-size:.76rem;opacity:.8}.bard-local-score{display:grid;text-align:right}.bard-local-score b{color:#ffd75e;font-size:1.2rem}
+.bard-lanes { position:absolute; inset:82px 0 150px; display:grid; grid-template-columns:repeat(4,1fr); overflow:hidden; }
+.bard-lane { position:relative; border-left:2px solid rgba(255,255,255,.2); background:rgba(255,255,255,.055); }
+.bard-lane:last-child{border-right:2px solid rgba(255,255,255,.2)}
+.bard-lane>span{position:absolute;left:50%;bottom:5%;transform:translateX(-50%);width:58px;height:58px;border-radius:50%;display:grid;place-items:center;background:#fff4cf;color:#41260e;font-size:1.7rem;font-weight:950;border:5px solid #77502c}
+.bard-hit-line{position:absolute;left:0;right:0;bottom:13%;height:5px;background:#ffd45a;box-shadow:0 0 18px #ffd45a;z-index:5}
+.bard-note{position:absolute;left:50%;top:-12%;transform:translateX(-50%);width:54px;height:54px;border-radius:50%;display:grid;place-items:center;background:#ffe17d;color:#3e260e;font-size:2rem;font-style:normal;font-weight:950;box-shadow:0 0 24px rgba(255,218,89,.8);z-index:8}
+.bard-controls{position:absolute;left:8px;right:8px;bottom:max(8px,env(safe-area-inset-bottom));z-index:20;display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.bard-controls button{min-height:110px;border:0;border-radius:23px;background:linear-gradient(#fff3a4,#eebd42);color:#39220d;font-size:2.2rem;font-weight:950;box-shadow:0 8px 0 #8e641b;touch-action:manipulation}.bard-controls button:active{transform:translateY(5px);box-shadow:0 3px 0 #8e641b}
+.bard-feedback{position:absolute;left:50%;top:48%;transform:translate(-50%,-50%);z-index:22;padding:9px 16px;border-radius:999px;background:rgba(25,15,39,.86);font-weight:950;opacity:.45}.bard-feedback.great{color:#74ff8e;opacity:1}.bard-feedback.good{color:#ffdf67;opacity:1}.bard-feedback.bad{color:#ff7474;opacity:1}
+.bard-modal{position:absolute;inset:0;z-index:60;display:grid;place-items:center;padding:18px;background:rgba(10,6,18,.65);backdrop-filter:blur(8px)}.bard-modal.hidden{display:none}.bard-modal-card{width:min(92vw,500px);padding:26px;border-radius:28px;background:linear-gradient(#fff8e7,#f2dfb8);color:#432913;text-align:center;box-shadow:0 25px 70px rgba(0,0,0,.45)}.bard-modal-card h1{margin:0 0 12px}.bard-modal-card p{font-size:1.08rem;line-height:1.5}.bard-modal-card .modal-actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
+@media(max-width:700px){.music-world-grid{grid-template-columns:1fr}.music-world-card{min-height:285px}.bard-topbar{grid-template-columns:auto 1fr}.bard-local-score{grid-column:1/-1;display:flex;justify-content:center;gap:10px}.bard-lanes{top:105px;bottom:138px}.bard-controls button{min-height:92px}.bard-lane>span{width:48px;height:48px;font-size:1.4rem}.bard-note{width:46px;height:46px;font-size:1.7rem}}

@@ -246,7 +246,39 @@ function celebrateAllFragments() {
   });
 }
 
+
+function isWholeGameCompleted() {
+  try {
+    const progress = JSON.parse(localStorage.getItem(STORAGE_LEVEL_PROGRESS) || '{}');
+    return !!(progress.zauberschloss?.finaleCompleted || progress.zauberschloss?.level4Completed || progress.zauberschloss?.level3Completed);
+  } catch { return false; }
+}
+
+function addPostgameVillageArrow() {
+  if (!isWholeGameCompleted()) return;
+  const stage = document.querySelector('.map-stage');
+  if (!stage || stage.querySelector('.village-gold-arrow')) return;
+  const hint = document.createElement('div');
+  hint.className = 'village-gold-arrow';
+  hint.innerHTML = '<span>Musik im Dorf</span><b>↓</b>';
+  hint.setAttribute('aria-hidden','true');
+  stage.appendChild(hint);
+}
+
 function showReturnGuidance(pending = null) {
+  if (isWholeGameCompleted()) {
+    addPostgameVillageArrow();
+    showInfo(
+      'Das Königreich ist gerettet!',
+      `<div class="visual-notice kingdom-saved-notice">
+        <div class="visual-notice-icon">🏰✨🎶</div>
+        <p>Die Sinnesmagie ist zurückgekehrt und im Königreich wird wieder gefeiert.</p>
+        <p>Du kannst jetzt die Bestenliste öffnen oder das Dorf in der Kartenmitte besuchen. Dort versucht sich der Ritter als Barde.</p>
+      </div>`,
+      { html:true, showScanButton:false, backLabel:'Weiter', onClose:()=>startMusic() }
+    );
+    return;
+  }
   if (pending?.type === 'fragment' && pending.allCollected) { celebrateAllFragments(); return; }
   if (pending?.type === 'castleBossComplete' || (pending?.area === 'zauberschloss' && isAreaCompleted('zauberschloss'))) {
     showInfo(
@@ -674,7 +706,11 @@ function moveKnightTo(button) {
     localStorage.setItem(STORAGE_POS_Y, String(targetY));
     localStorage.setItem(STORAGE_AREA, area);
 
-    if (levelPages[area]) {
+    if (area === 'koenigsschloss' && isWholeGameCompleted()) {
+      pendingNavigation = window.setTimeout(() => {
+        window.location.href = 'musikdorf.html';
+      }, 180);
+    } else if (levelPages[area]) {
       pendingNavigation = window.setTimeout(() => {
         window.location.href = levelPages[area];
       }, 180);
@@ -1000,5 +1036,6 @@ if (savedX && savedY) {
 applyVolume(currentVolume());
 updateAdminTools();
 updateLocks();
+addPostgameVillageArrow();
 applyUnlockFromUrl();
 maybeShowEntryModal();

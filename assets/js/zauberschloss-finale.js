@@ -288,6 +288,7 @@ async function startOutro() {
   if (outroStarted) return;
   outroStarted = true;
   finaleShell.classList.add('hidden');
+  document.body.classList.add('castle-outro-active');
   outroOverlay.classList.remove('hidden');
   outroOverlay.scrollTop = 0;
   prepareCreditWordReveals();
