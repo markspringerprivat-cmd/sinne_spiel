@@ -21,8 +21,12 @@
   const averageEl = document.getElementById('adminAverageScore');
   const topEl = document.getElementById('adminTopScore');
   const mobileList = document.getElementById('adminMobileList');
+  const sortSelect = document.getElementById('adminSortSelect');
+  const sortDirectionButton = document.getElementById('adminSortDirection');
 
   let players = [];
+  let sortKey = 'totalScore';
+  let sortDirection = -1;
 
   function escapeHtml(value) {
     return String(value ?? '').replace(/[&<>"']/g, char => ({
@@ -73,7 +77,8 @@
     countEl.textContent = rows.length.toLocaleString('de-DE');
     completedEl.textContent = completed.toLocaleString('de-DE');
     averageEl.textContent = (rows.length ? Math.round(scores.reduce((sum, value) => sum + value, 0) / rows.length) : 0).toLocaleString('de-DE');
-    topEl.textContent = (scores.length ? Math.max(...scores) : 0).toLocaleString('de-DE');
+    const topPlayer = [...rows].sort((a,b)=>b.totalScore-a.totalScore)[0];
+    topEl.textContent = topPlayer ? `${topPlayer.totalScore.toLocaleString('de-DE')} · ${topPlayer.name}` : '0';
   }
 
   function rowHtml(player) {
@@ -115,9 +120,21 @@
     </details>`;
   }
 
+
+  function valueAt(object, path) {
+    return String(path || '').split('.').reduce((value, key) => value == null ? undefined : value[key], object);
+  }
+  function sortRows(rows) {
+    return [...rows].sort((a,b) => {
+      const av=valueAt(a,sortKey), bv=valueAt(b,sortKey);
+      if (sortKey==='name' || sortKey==='deviceId') return String(av||'').localeCompare(String(bv||''),'de') * sortDirection;
+      return ((Number(av)||0)-(Number(bv)||0)) * sortDirection;
+    });
+  }
+
   function renderTable() {
     const term = (search.value || '').trim().toLowerCase();
-    const filtered = players.filter(player => !term || player.name.toLowerCase().includes(term) || player.deviceId.toLowerCase().includes(term));
+    const filtered = sortRows(players.filter(player => !term || player.name.toLowerCase().includes(term) || player.deviceId.toLowerCase().includes(term)));
     tableBody.innerHTML = filtered.length ? filtered.map(rowHtml).join('') : '<tr><td colspan="23">Keine passenden Einträge.</td></tr>';
     if (mobileList) mobileList.innerHTML = filtered.length ? filtered.map(mobileCardHtml).join('') : '<p class="admin-mobile-empty">Keine passenden Einträge.</p>';
     status.textContent = `${filtered.length} von ${players.length} Spielern angezeigt.`;
@@ -130,7 +147,7 @@
     try {
       const password = sessionStorage.getItem(PASSWORD_KEY) || '';
       const result = await window.SinnesCloud.loadAdminData(password);
-      players = result.map(normalize).sort((a, b) => b.totalScore - a.totalScore || a.name.localeCompare(b.name, 'de'));
+      players = result.map(normalize);
       renderSummary(players);
       renderTable();
     } catch (error) {
@@ -145,6 +162,9 @@
 
   refresh.addEventListener('click', load);
   search.addEventListener('input', renderTable);
+  sortSelect?.addEventListener('change', () => { sortKey = sortSelect.value; renderTable(); });
+  sortDirectionButton?.addEventListener('click', () => { sortDirection *= -1; sortDirectionButton.textContent = sortDirection < 0 ? '↓' : '↑'; renderTable(); });
+  document.querySelectorAll('.admin-table th[data-sort]').forEach(th => th.addEventListener('click', () => { const key=th.dataset.sort; if(sortKey===key) sortDirection*=-1; else {sortKey=key; sortDirection= key==='name'||key==='deviceId' ? 1 : -1;} if(sortSelect) sortSelect.value=key; if(sortDirectionButton) sortDirectionButton.textContent=sortDirection<0?'↓':'↑'; renderTable(); }));
   logout.addEventListener('click', () => {
     sessionStorage.removeItem(AUTH_KEY);
     sessionStorage.removeItem(PASSWORD_KEY);

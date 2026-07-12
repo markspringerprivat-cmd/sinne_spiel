@@ -29,33 +29,91 @@
   }
   function total() { return getData().total; }
   const sessions = new Map();
+  let deltaTimer = 0;
+  let summaryTimer = 0;
   function startSession(activity, max = 1000, initial = 0) {
     if (!activity) return 0;
-    const session = { activity, max: Math.max(0, Number(max) || 1000), points: Number(initial) || 0 };
+    const data = getData();
+    const session = { activity, max: Math.max(0, Number(max) || 1000), points: Number(initial) || 0, previousBest: Number(data.scores[activity]) || 0 };
     sessions.set(activity, session);
     return session.points;
   }
   function sessionValue(activity) { return Math.round(Number(sessions.get(activity)?.points) || 0); }
+  function liveTotal() {
+    const data = getData();
+    let value = data.total;
+    sessions.forEach(session => {
+      value -= Math.max(0, Number(session.previousBest) || 0);
+      value += Math.max(0, Math.round(Number(session.points) || 0));
+    });
+    return Math.max(0, Math.round(value));
+  }
+  function ensureDeltaNode() {
+    ensureHud();
+    const hud = document.getElementById('globalScoreHud');
+    let node = hud?.querySelector('[data-score-delta]');
+    if (!node && hud) {
+      node = document.createElement('small');
+      node.setAttribute('data-score-delta', '');
+      node.className = 'global-score-delta';
+      hud.appendChild(node);
+    }
+    return node;
+  }
+  function showDelta(delta) {
+    const amount = Math.round(Number(delta) || 0);
+    if (!amount) return;
+    const node = ensureDeltaNode();
+    if (!node) return;
+    clearTimeout(deltaTimer);
+    node.className = `global-score-delta ${amount > 0 ? 'positive' : 'negative'} show`;
+    node.textContent = `${amount > 0 ? '+' : '−'}${Math.abs(amount).toLocaleString('de-DE')}`;
+    deltaTimer = window.setTimeout(() => node.classList.remove('show'), 1250);
+  }
+  function showLevelSummary(points) {
+    let toast = document.getElementById('levelScoreSummary');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'levelScoreSummary';
+      toast.className = 'level-score-summary';
+      document.body.appendChild(toast);
+    }
+    clearTimeout(summaryTimer);
+    toast.innerHTML = `<strong>Level beendet</strong><span>Du hast ${Math.max(0, Math.round(Number(points) || 0)).toLocaleString('de-DE')} Punkte gesammelt.</span>`;
+    toast.classList.add('show');
+    summaryTimer = window.setTimeout(() => toast.classList.remove('show'), 3000);
+  }
   function addPoints(activity, delta, max = null) {
     let session = sessions.get(activity);
     if (!session) { startSession(activity, max || 1000, 0); session = sessions.get(activity); }
     if (max != null) session.max = Math.max(0, Number(max) || session.max);
+    const before = session.points;
     session.points = Math.max(0, Math.min(session.max, session.points + (Number(delta) || 0)));
-    document.dispatchEvent(new CustomEvent('sinnesmagie:score-session', { detail: { activity, points: Math.round(session.points), max: session.max } }));
+    const actualDelta = Math.round(session.points - before);
+    if (actualDelta) showDelta(actualDelta);
+    renderAll();
+    document.dispatchEvent(new CustomEvent('sinnesmagie:score-session', { detail: { activity, points: Math.round(session.points), max: session.max, delta: actualDelta } }));
     return Math.round(session.points);
   }
   function setSession(activity, value, max = null) {
     let session = sessions.get(activity);
     if (!session) { startSession(activity, max || 1000, 0); session = sessions.get(activity); }
     if (max != null) session.max = Math.max(0, Number(max) || session.max);
+    const before = session.points;
     session.points = Math.max(0, Math.min(session.max, Number(value) || 0));
+    const actualDelta = Math.round(session.points - before);
+    if (actualDelta) showDelta(actualDelta);
+    renderAll();
     return Math.round(session.points);
   }
   function finishSession(activity, fallback = 0, max = 1000) {
     const session = sessions.get(activity);
     const value = session ? Math.round(session.points) : Math.round(Number(fallback) || 0);
     sessions.delete(activity);
-    return record(activity, value, session?.max || max);
+    const result = record(activity, value, session?.max || max);
+    showLevelSummary(value);
+    renderAll();
+    return result;
   }
   function setGameplayActive(active) {
     document.body?.classList.toggle('score-gameplay-active', !!active);
@@ -74,11 +132,11 @@
     if (document.getElementById('globalScoreHud')) return;
     const el = document.createElement('div');
     el.id = 'globalScoreHud'; el.className = 'global-score-hud';
-    el.innerHTML = '<span>Highscore:</span> <strong data-global-score>0</strong>';
+    el.innerHTML = '<span>Highscore:</span> <strong data-global-score>0</strong><small data-score-delta class="global-score-delta"></small>';
     document.body.appendChild(el);
   }
   function renderAll() {
-    document.querySelectorAll('[data-global-score]').forEach(el => el.textContent = total().toLocaleString('de-DE'));
+    document.querySelectorAll('[data-global-score]').forEach(el => el.textContent = liveTotal().toLocaleString('de-DE'));
     document.querySelectorAll('[data-player-name]').forEach(el => el.textContent = getName() || 'Spieler');
     document.querySelectorAll('[data-final-score]').forEach(el => el.textContent = total().toLocaleString('de-DE'));
   }
@@ -173,5 +231,5 @@
     }
   }
   document.addEventListener('DOMContentLoaded',()=>{ensureHud(); renderAll(); addLeaderboardButton(); if(document.body.classList.contains('cover-page')) nameDialog(false).then(()=>window.SinnesCloud?.syncNow()); else window.SinnesCloud?.scheduleSync(1200);});
-  window.SinnesScore={record,total,getData,getName,setName,nameDialog,showLeaderboard,board,render:renderAll,startSession,addPoints,setSession,sessionValue,finishSession,setGameplayActive};
+  window.SinnesScore={record,total,liveTotal,getData,getName,setName,nameDialog,showLeaderboard,board,render:renderAll,startSession,addPoints,setSession,sessionValue,finishSession,setGameplayActive,showDelta,showLevelSummary};
 })();

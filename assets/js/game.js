@@ -204,7 +204,37 @@ function nextPlayableStep() {
   };
 }
 
+
+function celebrateAllFragments() {
+  return new Promise(resolve => {
+    moveKnightHome();
+    renderFragments();
+    const layer = ensureFragmentOrbitLayer();
+    const fragments = [...layer.querySelectorAll('.castle-fragment-orbit')];
+    const colors = { farbenreich:'#ff4b67', klangwald:'#48a8ff', tastminen:'#ffd34f', duftgarten:'#b66cff', flammenkueche:'#55d86a' };
+    fragments.forEach((wrap,index) => {
+      const area = wrap.dataset.area || fragmentAreas[index];
+      wrap.style.setProperty('--burst-color', colors[area] || '#fff');
+      window.setTimeout(() => {
+        wrap.classList.add('fragment-bursting');
+        for(let i=0;i<14;i+=1){
+          const spark=document.createElement('i');
+          spark.className='fragment-burst-spark';
+          spark.style.setProperty('--angle',`${(360/14)*i}deg`);
+          spark.style.setProperty('--distance',`${45+Math.random()*55}px`);
+          wrap.appendChild(spark);
+        }
+      }, index*180);
+    });
+    window.setTimeout(() => {
+      layer.innerHTML='';
+      showInfo('Alle Fragmente gesammelt!', `<div class="visual-notice all-fragments-notice"><div class="visual-notice-icon">💎✨🏰</div><p>Alle fünf Schlüsselfragmente sind vereint.</p><p>Das Siegel am Zauberschloss ist gebrochen. Begib dich jetzt zum Schloss und stelle dich dem Zauberer!</p></div>`, { html:true, showScanButton:false, backLabel:'Zum Zauberschloss', onClose:()=>{ startMusic(); resolve(); } });
+    }, fragments.length*180+1050);
+  });
+}
+
 function showReturnGuidance(pending = null) {
+  if (pending?.type === 'fragment' && pending.allCollected) { celebrateAllFragments(); return; }
   if (pending?.type === 'castleBossComplete' || (pending?.area === 'zauberschloss' && isAreaCompleted('zauberschloss'))) {
     showInfo(
       'Boss besiegt!',
@@ -314,6 +344,7 @@ function renderFragments() {
     if (!meta || !pos) return;
     const wrap = document.createElement('div');
     wrap.className = 'castle-fragment-orbit';
+    wrap.dataset.area = area;
     wrap.style.setProperty('--x', `${pos.x}%`);
     wrap.style.setProperty('--y', `${pos.y}%`);
     wrap.style.setProperty('--delay', `${pos.delay}s`);

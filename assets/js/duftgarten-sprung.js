@@ -277,7 +277,7 @@
     jumpOne.disabled = true;
     jumpTwo.disabled = true;
     pauseMusic();
-    if (won) { completeLevelOne(); const points = Math.max(0, 1000 - (game.obstacleHits || 0) * 50); window.SinnesScore?.setSession('game_duftgarten', points, 1000); window.SinnesScore?.finishSession('game_duftgarten', points, 1000); }
+    if (won) { completeLevelOne(); const points = Math.max(0, 1000 - (game.obstacleHits || 0) * 100); window.SinnesScore?.setSession('game_duftgarten', points, 1000); window.SinnesScore?.finishSession('game_duftgarten', points, 1000); }
     window.SinnesScore?.setGameplayActive(false);
     setTimeout(() => showPopup(won ? 'won' : 'lost'), 420);
   }
@@ -378,6 +378,7 @@
     const now = performance.now();
     if (field.type === 'cloud' || field.type === 'slime' || field.type === 'rotten') {
       game.obstacleHits = (game.obstacleHits || 0) + 1;
+      window.SinnesScore?.addPoints('game_duftgarten', -100, 1000);
       window.SinnesScore?.addPoints('game_duftgarten', -50, 1000);
     }
 

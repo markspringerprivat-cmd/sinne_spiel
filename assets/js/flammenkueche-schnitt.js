@@ -263,7 +263,7 @@
     game.running = false;
     game.finished = true;
     pauseMusic();
-    if (won) { completeFlameLevelOne(); const points = Math.max(0, Math.min(1000, (game.goodCuts || 0) * 100 - (game.badHits || 0) * 50 - (game.missedGood || 0) * 25)); window.SinnesScore?.setSession('game_flammenkueche', points, 1000); window.SinnesScore?.finishSession('game_flammenkueche', points, 1000); }
+    if (won) { completeFlameLevelOne(); const points = Math.max(0, Math.min(1000, (game.goodCuts || 0) * 25 - (game.badHits || 0) * 50 - (game.missedGood || 0) * 25)); window.SinnesScore?.setSession('game_flammenkueche', points, 1000); window.SinnesScore?.finishSession('game_flammenkueche', points, 1000); }
     window.SinnesScore?.setGameplayActive(false);
     setTimeout(() => showPopup(won ? 'won' : 'lost'), 360);
   }
@@ -388,7 +388,7 @@
     }
 
     game.goodCuts = (game.goodCuts || 0) + 1;
-    window.SinnesScore?.addPoints('game_flammenkueche', 100, 1000);
+    window.SinnesScore?.addPoints('game_flammenkueche', 25, 1000);
     game.combo += 1;
     const comboBonus = game.combo >= 8 ? 3 : game.combo >= 4 ? 2 : 0;
     game.score += obj.points + comboBonus;
