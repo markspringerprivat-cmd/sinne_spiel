@@ -367,8 +367,22 @@
     }
   }
 
+  function canSteerNow() {
+    if (!game.running) return false;
+    if (['race', 'finalRace'].includes(game.state)) return true;
+    if (game.state === 'approachBridge') {
+      const remaining = Math.max(0, BIG_GAP_STOP_CENTER - game.bigGapCenter);
+      return remaining > 0.105;
+    }
+    if (game.state === 'finalPlatform') {
+      const remaining = Math.max(0, PLAYER_Y - game.finalPlatformCenter);
+      return remaining > 0.10;
+    }
+    return false;
+  }
+
   function setLane(direction) {
-    if (!game.running || !['race', 'finalRace'].includes(game.state)) return;
+    if (!canSteerNow()) return;
     const now = performance.now();
     if (now - game.lastLaneInputAt < 80) return;
     const next = Math.max(0, Math.min(LANES.length - 1, game.targetLane + direction));
@@ -749,8 +763,14 @@
       checkGapCollision(now);
 
       if (raceElapsed >= raceLimit) {
-        if (isFinalRace) startFinalPlatformApproach(now);
-        else startBridgeApproach();
+        const unresolvedGapAhead = game.gaps.some((gap) => {
+          const gapRear = gap.y - gap.length / 2;
+          return gapRear < PLAYER_Y + 0.08;
+        });
+        if (!unresolvedGapAhead) {
+          if (isFinalRace) startFinalPlatformApproach(now);
+          else startBridgeApproach();
+        }
       }
     } else if (game.state === 'approachBridge') {
       if (!game.bridgeWaitStart) {
@@ -1089,12 +1109,12 @@
 
   let pointerStartX = null;
   function handlePointerDown(event) {
-    if (!['race', 'finalRace'].includes(game.state)) return;
+    if (!canSteerNow()) return;
     pointerStartX = event.clientX;
   }
 
   function handlePointerUp(event) {
-    if (pointerStartX == null || !['race', 'finalRace'].includes(game.state)) return;
+    if (pointerStartX == null || !canSteerNow()) return;
     const dx = event.clientX - pointerStartX;
     pointerStartX = null;
     if (Math.abs(dx) > 35) {

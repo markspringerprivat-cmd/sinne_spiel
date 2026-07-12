@@ -7115,3 +7115,168 @@ html.sm-page-loading body > *:not(#globalPageLoader):not(script) {
     right: 10px !important;
   }
 }
+
+
+/* === v120: HUD-Kollisionsschutz, zentrierte Ergebnis-Emojis === */
+:root{
+  --score-safe-top: calc(max(10px, env(safe-area-inset-top)) + 58px);
+}
+
+/* Der globale Highscore bleibt allein in der linken oberen Ecke. */
+.global-score-hud{
+  left:max(10px, env(safe-area-inset-left))!important;
+  right:auto!important;
+  top:max(8px, env(safe-area-inset-top))!important;
+  max-width:min(48vw, 350px)!important;
+}
+
+/* Spiel-HUDs werden unter die reservierte Highscore-Zone gesetzt. */
+.rhythm-hud,
+.duft-hop-hud,
+.mine-hud,
+.slice-hud,
+.paint-hud,
+.pong-hud,
+.castle-dodge-hud{
+  top:var(--score-safe-top)!important;
+}
+
+/* Klangwald: Multiplikator entfernen, weil er keine Spielfunktion hat. */
+#rhythmCombo{
+  display:none!important;
+}
+.rhythm-hud{
+  grid-template-columns:1fr!important;
+  width:min(92vw, 620px)!important;
+}
+
+/* Duftgarten: Herz-/Infoleiste nicht mehr hinter dem Highscore. */
+.duft-hop-hud{
+  width:min(92vw, 680px)!important;
+}
+
+/* Tastminen: Fortschrittsleiste noch etwas tiefer. */
+.mine-hud{
+  top:calc(var(--score-safe-top) + 10px)!important;
+}
+
+/* Flammenküche/Farbenreich: obere Statusleisten ebenfalls freihalten. */
+.slice-hud,
+.paint-hud{
+  width:min(92vw, 720px)!important;
+}
+
+/* Ergebnis-Popups: Inhalt und Einzel-Emoji immer exakt mittig. */
+.slice-popup > div,
+.duft-popup > div,
+.mine-popup > div,
+.paint-popup > div,
+.rhythm-popup > div,
+.pong-popup > div,
+.castle-dodge-popup > div{
+  width:100%!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  text-align:center!important;
+  box-sizing:border-box!important;
+}
+.slice-popup > div > .mini-guide-icon,
+.duft-popup > div > .mini-guide-icon,
+.mine-popup > div > .mini-guide-icon,
+.paint-popup > div > .mini-guide-icon,
+.rhythm-popup > div > .mini-guide-icon,
+.pong-popup > div > .mini-guide-icon,
+.castle-dodge-popup > div > .mini-guide-icon{
+  margin-left:auto!important;
+  margin-right:auto!important;
+  justify-self:center!important;
+  align-self:center!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  text-align:center!important;
+}
+.slice-popup .mini-guide-icon img,
+.duft-popup .mini-guide-icon img,
+.mine-popup .mini-guide-icon img,
+.paint-popup .mini-guide-icon img{
+  display:block!important;
+  margin:0 auto!important;
+  object-position:center!important;
+}
+
+@media(max-width:560px){
+  :root{ --score-safe-top: calc(max(8px, env(safe-area-inset-top)) + 62px); }
+  .global-score-hud{max-width:52vw!important;}
+  .rhythm-hud,
+  .duft-hop-hud,
+  .slice-hud,
+  .paint-hud,
+  .pong-hud,
+  .castle-dodge-hud{
+    width:calc(100vw - 20px)!important;
+  }
+  .mine-hud{
+    width:calc(100vw - 20px)!important;
+    top:calc(var(--score-safe-top) + 12px)!important;
+  }
+}
+
+/* === v121: Intro-Kinobalken, Fortschrittsleiste und größere Erzählung === */
+.story-image-wrap {
+  aspect-ratio: auto !important;
+  height: auto !important;
+  padding: 18px 0 !important;
+  background: #000 !important;
+  overflow: hidden;
+}
+.story-image {
+  display: block;
+  width: 100% !important;
+  height: auto !important;
+  aspect-ratio: 16 / 9 !important;
+  object-fit: cover !important;
+  object-position: center;
+}
+.story-text-card {
+  justify-content: flex-start !important;
+  padding-top: 0 !important;
+}
+.story-progress {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 0 22px !important;
+  padding: 0 !important;
+}
+.story-progress > span {
+  display: none !important;
+}
+.story-progress-bar {
+  margin: 0 !important;
+  border-radius: 0 0 999px 999px;
+}
+.story-text {
+  margin-top: clamp(24px, 4vh, 42px) !important;
+  font-size: clamp(1.28rem, 2.8vw, 1.72rem) !important;
+  line-height: 1.5 !important;
+}
+
+@media (max-width: 700px) {
+  .story-image-wrap {
+    padding: 18px 0 !important;
+  }
+  .story-text-card {
+    padding: 0 20px max(26px, env(safe-area-inset-bottom)) !important;
+  }
+  .story-progress {
+    margin-bottom: 18px !important;
+  }
+  .story-text {
+    margin-top: 28px !important;
+    min-height: 5.6em;
+    font-size: clamp(1.18rem, 5.2vw, 1.42rem) !important;
+    line-height: 1.48 !important;
+  }
+}
