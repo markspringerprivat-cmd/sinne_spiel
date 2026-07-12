@@ -111,6 +111,14 @@ let html5QrCode = null;
 let scannerRunning = false;
 let scannerBusy = false;
 let pendingNavigation = null;
+let overworldJumpFrame = 0;
+let overworldMoving = false;
+const OVERWORLD_JUMP_ASSETS = {
+  right: { jump: 'assets/images/characters/knight_right_jump.png', fall: 'assets/images/characters/knight_right_fall.png' },
+  left: { jump: 'assets/images/characters/knight_left_jump.png', fall: 'assets/images/characters/knight_left_fall.png' },
+  stand: 'assets/images/characters/knight.png'
+};
+
 let fragmentOrbitLayer = null;
 let completedAreaLayer = null;
 let currentInfoOnClose = null;
@@ -628,20 +636,51 @@ function moveKnightTo(button) {
     clearTimeout(pendingNavigation);
     pendingNavigation = null;
   }
+  if (overworldJumpFrame) cancelAnimationFrame(overworldJumpFrame);
 
-  const x = button.dataset.targetX;
-  const y = button.dataset.targetY;
-  knight.style.left = `${x}%`;
-  knight.style.top = `${y}%`;
-  localStorage.setItem(STORAGE_POS_X, x);
-  localStorage.setItem(STORAGE_POS_Y, y);
-  localStorage.setItem(STORAGE_AREA, area);
+  const targetX = Number(button.dataset.targetX || 50);
+  const targetY = Number(button.dataset.targetY || 60);
+  const startX = Number.parseFloat(knight.style.left) || Number(localStorage.getItem(STORAGE_POS_X)) || 50;
+  const startY = Number.parseFloat(knight.style.top) || Number(localStorage.getItem(STORAGE_POS_Y)) || 60;
+  const dx = targetX - startX;
+  const dy = targetY - startY;
+  const direction = dx < 0 ? 'left' : 'right';
+  const assets = OVERWORLD_JUMP_ASSETS[direction];
+  const distance = Math.hypot(dx, dy);
+  const duration = Math.max(620, Math.min(1150, 540 + distance * 13));
+  const arcHeight = Math.max(5.5, Math.min(13, 5 + distance * 0.16));
+  const started = performance.now();
 
-  if (levelPages[area]) {
-    pendingNavigation = window.setTimeout(() => {
-      window.location.href = levelPages[area];
-    }, 850);
-  }
+  overworldMoving = true;
+  knight.classList.add('overworld-knight-jumping');
+
+  const frame = now => {
+    const raw = Math.min(1, (now - started) / duration);
+    const eased = raw < 0.5 ? 2 * raw * raw : 1 - Math.pow(-2 * raw + 2, 2) / 2;
+    knight.style.left = `${startX + dx * eased}%`;
+    knight.style.top = `${startY + dy * eased - Math.sin(Math.PI * raw) * arcHeight}%`;
+    knight.src = raw < 0.5 ? assets.jump : assets.fall;
+    if (raw < 1) {
+      overworldJumpFrame = requestAnimationFrame(frame);
+      return;
+    }
+    overworldJumpFrame = 0;
+    overworldMoving = false;
+    knight.classList.remove('overworld-knight-jumping');
+    knight.src = OVERWORLD_JUMP_ASSETS.stand;
+    knight.style.left = `${targetX}%`;
+    knight.style.top = `${targetY}%`;
+    localStorage.setItem(STORAGE_POS_X, String(targetX));
+    localStorage.setItem(STORAGE_POS_Y, String(targetY));
+    localStorage.setItem(STORAGE_AREA, area);
+
+    if (levelPages[area]) {
+      pendingNavigation = window.setTimeout(() => {
+        window.location.href = levelPages[area];
+      }, 180);
+    }
+  };
+  overworldJumpFrame = requestAnimationFrame(frame);
 }
 
 function normalizeScannedArea(rawText) {

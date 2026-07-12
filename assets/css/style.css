@@ -7054,3 +7054,64 @@ html.sm-page-loading body > *:not(#globalPageLoader):not(script) {
     padding: 18px 18px max(24px, env(safe-area-inset-bottom));
   }
 }
+
+
+/* === v119: Gebietseinführungen, Popup-X und Overworld-Sprung === */
+.game-modal-card,
+.level-popup-card,
+.settings-card,
+.scanner-card,
+.admin-password-card,
+.score-leaderboard-card {
+  position: relative;
+}
+.modal-close,
+.game-modal-card > .modal-close,
+.settings-card > .modal-close,
+.scanner-card > .modal-close,
+.admin-password-card > .modal-close,
+.score-leaderboard-card > .modal-close {
+  position: absolute !important;
+  top: 12px !important;
+  right: 12px !important;
+  left: auto !important;
+  bottom: auto !important;
+  margin: 0 !important;
+  transform: none !important;
+  z-index: 999 !important;
+}
+.area-intro-popup {
+  width: min(100%, 520px);
+  margin: 0 auto;
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+  text-align: center;
+}
+.area-intro-popup p {
+  margin: 0;
+  line-height: 1.55;
+  font-weight: 780;
+  color: #4f3820;
+}
+.area-intro-icon {
+  font-size: clamp(42px, 10vw, 66px);
+  line-height: 1;
+  white-space: nowrap;
+}
+.knight-sprite.overworld-knight-jumping {
+  transition: none !important;
+  animation: none !important;
+  will-change: left, top;
+}
+@media (max-width: 520px) {
+  .modal-close,
+  .game-modal-card > .modal-close,
+  .settings-card > .modal-close,
+  .scanner-card > .modal-close,
+  .admin-password-card > .modal-close,
+  .score-leaderboard-card > .modal-close {
+    top: 10px !important;
+    right: 10px !important;
+  }
+}

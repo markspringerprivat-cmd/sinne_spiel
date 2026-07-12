@@ -17,6 +17,35 @@ const STORAGE_LEVEL_NODE = 'sinnesmagie-level-node';
 const STORAGE_PENDING_NOTICE = 'sinnesmagie-pending-notice';
 const STORAGE_ADMIN_MODE = 'sinnesmagie-admin-mode';
 const STORAGE_ADMIN_LEVELS_UNLOCKED = 'sinnesmagie-admin-levels-unlocked';
+const STORAGE_AREA_INTROS_SEEN = 'sinnesmagie-area-intros-seen';
+
+const AREA_INTRO_CONTENT = {
+  farbenreich: {
+    title: 'Willkommen im Farbenreich',
+    html: '<div class="area-intro-popup"><div class="area-intro-icon">🎨👀</div><p>Im Farbenreich leuchten Formen, Muster und Farben an jeder Ecke. Der Sehsinn hilft uns, Unterschiede zu erkennen, uns zu orientieren und Gefahren oder wichtige Zeichen rechtzeitig wahrzunehmen.</p></div>'
+  },
+  klangwald: {
+    title: 'Willkommen im Klangwald',
+    html: '<div class="area-intro-popup"><div class="area-intro-icon">🌲🎵</div><p>Im Klangwald rascheln Blätter, Vögel singen und jedes Geräusch erzählt eine Geschichte. Mit unserem Gehör finden wir uns zurecht, hören Warnungen und erleben Sprache und Musik.</p></div>'
+  },
+  tastminen: {
+    title: 'Willkommen in den Tastminen',
+    html: '<div class="area-intro-popup"><div class="area-intro-icon">⛏️✋</div><p>In den Tastminen liegen raue Steine, glattes Metall und weiche Materialien verborgen. Der Tastsinn zeigt uns, wie sich Dinge anfühlen, und warnt uns vor Hitze, Kälte oder Schmerz.</p></div>'
+  },
+  duftgarten: {
+    title: 'Willkommen im Duftgarten',
+    html: '<div class="area-intro-popup"><div class="area-intro-icon">🌸👃</div><p>Im Duftgarten mischen sich der Geruch von Blumen, Kräutern und geheimnisvollen Wolken. Die Nase weckt Erinnerungen und Gefühle und kann uns zugleich vor Rauch oder verdorbenem Essen warnen.</p></div>'
+  },
+  flammenkueche: {
+    title: 'Willkommen in der Flammenküche',
+    html: '<div class="area-intro-popup"><div class="area-intro-icon">🔥👅</div><p>In der Flammenküche treffen süße, saure, salzige und bittere Geschmäcker aufeinander. Der Geschmack macht Essen zum Erlebnis und hilft uns dabei, Nahrung zu prüfen und Ungenießbares zu erkennen.</p></div>'
+  },
+  zauberschloss: {
+    title: 'Willkommen im Zauberschloss',
+    html: '<div class="area-intro-popup"><div class="area-intro-icon">🏰✨</div><p>Im Zauberschloss hält der Magier die Sinnesmagie gefangen. Hier werden alle fünf Sinne gebraucht, denn nur wer aufmerksam sieht, hört, riecht, schmeckt und fühlt, kann seine Prüfungen bestehen.</p></div>'
+  }
+};
+
 const QUIZ_SECONDS = 30;
 const QUIZ_TRANSITION_MS = 560;
 const BATTLE_ANIMATION_MS = 1500;
@@ -970,26 +999,21 @@ let sfxUnlocked = false;
 function unlockSfxForMobile() {
   if (sfxUnlocked) return;
   sfxUnlocked = true;
-  [sfxCorrect, sfxWrong, sfxClick, sfxMageHit, castleUltimateMusic, castleWinMusic].forEach(audio => {
-    if (!audio) return;
-    try {
-      const previousMuted = audio.muted;
-      audio.muted = true;
-      audio.volume = 0;
-      audio.currentTime = 0;
-      const finishUnlock = () => {
-        try {
-          audio.pause();
-          audio.currentTime = 0;
-          audio.volume = currentVolume();
-          audio.muted = previousMuted;
-        } catch {}
-      };
-      const played = audio.play();
-      if (played && typeof played.then === 'function') played.then(finishUnlock).catch(finishUnlock);
-      else finishUnlock();
-    } catch {}
-  });
+  try {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return;
+    const context = new AudioContextClass();
+    const buffer = context.createBuffer(1, 1, 22050);
+    const source = context.createBufferSource();
+    const gain = context.createGain();
+    gain.gain.value = 0;
+    source.buffer = buffer;
+    source.connect(gain);
+    gain.connect(context.destination);
+    source.start(0);
+    if (context.state === 'suspended') context.resume().catch(() => {});
+    window.setTimeout(() => context.close().catch(() => {}), 120);
+  } catch {}
 }
 
 function currentVolume() {
@@ -2176,7 +2200,6 @@ function waitForCastleTasteStart() {
       return;
     }
     button.addEventListener('click', () => {
-      unlockSfxForMobile();
       dialog?.classList.add('hidden');
       resolve();
     }, { once: true });
@@ -2387,6 +2410,9 @@ function installCastleHoldControls() {
 
 async function startCastleDodgeGame() {
   if (!activeQuiz) return;
+  pauseCastleWinMusic();
+  pauseCastleUltimateMusic();
+  pauseLevelMusic();
   const zone = document.getElementById('quizBattleZone');
   const layer = document.getElementById('castleProjectileLayer');
   const dodgePanel = document.getElementById('castleDodgePanel');
@@ -5227,6 +5253,26 @@ if (backButton) {
 }
 
 
+
+function showAreaIntroductionIfNeeded() {
+  const content = AREA_INTRO_CONTENT[currentArea];
+  if (!content) return false;
+  let seen = {};
+  try {
+    seen = JSON.parse(localStorage.getItem(STORAGE_AREA_INTROS_SEEN) || '{}') || {};
+  } catch {
+    seen = {};
+  }
+  if (seen[currentArea]) return false;
+  seen[currentArea] = true;
+  localStorage.setItem(STORAGE_AREA_INTROS_SEEN, JSON.stringify(seen));
+  pauseLevelMusic();
+  window.setTimeout(() => {
+    showLevelPopup(content.title, content.html, 'OK', () => startLevelMusic());
+  }, 220);
+  return true;
+}
+
 function ensureLevelKnightVisible() {
   if (!levelKnight) return;
   levelKnight.style.display = 'block';
@@ -5245,10 +5291,11 @@ levelKnight.style.left = `${initialPoint.x}%`;
 levelKnight.style.top = `${initialPoint.y}%`;
 applyMarkerStates();
 const pendingNotice = readPendingNotice();
-if (pendingNotice?.type === 'minigameComplete' && pendingNotice.area === currentArea) {
+const areaIntroShown = showAreaIntroductionIfNeeded();
+if (!areaIntroShown && pendingNotice?.type === 'minigameComplete' && pendingNotice.area === currentArea) {
   clearPendingNotice();
   window.setTimeout(() => showBossUnlockedNotice(currentArea), 260);
-} else if (pendingNotice?.type === 'castleNextLevelUnlocked' && currentArea === 'zauberschloss') {
+} else if (!areaIntroShown && pendingNotice?.type === 'castleNextLevelUnlocked' && currentArea === 'zauberschloss') {
   clearPendingNotice();
   startLevelMusic();
   window.setTimeout(() => {
@@ -5258,6 +5305,6 @@ if (pendingNotice?.type === 'minigameComplete' && pendingNotice.area === current
       'Weiter'
     );
   }, 320);
-} else {
+} else if (!areaIntroShown) {
   startLevelMusic();
 }
