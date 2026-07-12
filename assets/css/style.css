@@ -1906,6 +1906,36 @@ p { line-height: 1.5; }
   font-size: 48px;
   line-height: 1;
   text-shadow: 0 2px 0 rgba(255,255,255,.4);
+  overflow: visible;
+  white-space: nowrap;
+}
+.mini-guide-inline-row {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: nowrap;
+  gap: 6px;
+  white-space: nowrap;
+  line-height: 1;
+  max-width: none;
+  font-size: .78em;
+}
+.mini-guide-inline-row.tight {
+  gap: 2px;
+  font-size: .7em;
+}
+.mini-guide-inline-item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  flex: 0 0 auto;
+}
+.mini-guide-inline-item.keycap {
+  min-width: .68em;
+  font-size: .88em;
+  font-weight: 1000;
+  letter-spacing: .01em;
 }
 .mini-guide-icon img {
   width: 100%;
@@ -1983,6 +2013,8 @@ p { line-height: 1.5; }
   .mini-guide-slider { grid-auto-columns: min(86%, 218px); gap: 10px; }
   .mini-guide-card { min-height: 142px; grid-template-rows: 62px auto auto; padding: 10px 8px; }
   .mini-guide-icon { width: 62px; height: 62px; font-size: 42px; }
+  .mini-guide-inline-row { gap: 4px; font-size: .72em; }
+  .mini-guide-inline-row.tight { gap: 1px; font-size: .64em; }
   .mini-guide-wrap { width: min(100%, 330px); }
 }
 

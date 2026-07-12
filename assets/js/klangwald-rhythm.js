@@ -134,7 +134,7 @@
                 <p class="mini-guide-text">Drücke erst, wenn die Note im Kreis ist.</p>
               </article>
               <article class="mini-guide-card">
-                <div class="mini-guide-icon">A S D F</div>
+                <div class="mini-guide-icon"><span class="mini-guide-inline-row tight"><span class="mini-guide-inline-item keycap">A</span><span class="mini-guide-inline-item keycap">S</span><span class="mini-guide-inline-item keycap">D</span><span class="mini-guide-inline-item keycap">F</span></span></div>
                 <p class="mini-guide-title">Tasten</p>
                 <p class="mini-guide-text">Am Handy nutzt du die vier Knöpfe unten.</p>
               </article>

@@ -160,17 +160,17 @@
             <p class="mini-guide-hint">Wische über gute Zutaten.</p>
             <div class="mini-guide-slider" aria-label="Flammenküche Anleitung">
               <article class="mini-guide-card">
-                <div class="mini-guide-icon">🥕🍅</div>
+                <div class="mini-guide-icon"><span class="mini-guide-inline-row"><span class="mini-guide-inline-item">🥕</span><span class="mini-guide-inline-item">🍅</span></span></div>
                 <p class="mini-guide-title">Schneiden</p>
                 <p class="mini-guide-text">Gemüse mit einer Wischbewegung treffen.</p>
               </article>
               <article class="mini-guide-card">
-                <div class="mini-guide-icon">🧦🐞🍄</div>
+                <div class="mini-guide-icon"><span class="mini-guide-inline-row"><span class="mini-guide-inline-item">🧦</span><span class="mini-guide-inline-item">🐞</span><span class="mini-guide-inline-item">🍄</span></span></div>
                 <p class="mini-guide-title">Nicht treffen</p>
                 <p class="mini-guide-text">Ungenießbares kostet ein Leben.</p>
               </article>
               <article class="mini-guide-card">
-                <div class="mini-guide-icon">❤️❤️❤️</div>
+                <div class="mini-guide-icon"><span class="mini-guide-inline-row tight"><span class="mini-guide-inline-item">❤️</span><span class="mini-guide-inline-item">❤️</span><span class="mini-guide-inline-item">❤️</span></span></div>
                 <p class="mini-guide-title">Leben</p>
                 <p class="mini-guide-text">Verpasstes Gemüse kostet nur wenig.</p>
               </article>

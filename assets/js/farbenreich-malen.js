@@ -164,7 +164,7 @@
                 <p class="mini-guide-text">Schau dir das Muster kurz an.</p>
               </article>
               <article class="mini-guide-card">
-                <div class="mini-guide-icon">🟦🔺</div>
+                <div class="mini-guide-icon"><span class="mini-guide-inline-row"><span class="mini-guide-inline-item">🟦</span><span class="mini-guide-inline-item">🔺</span></span></div>
                 <p class="mini-guide-title">Nachmalen</p>
                 <p class="mini-guide-text">Setze Formen und Farben passend.</p>
               </article>
