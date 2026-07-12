@@ -263,6 +263,7 @@
     game.state = 'race';
     game.section = 1;
     game.hearts = MAX_HEARTS;
+    game.scorePenalty = 0;
     game.stateStart = now;
     game.lastTime = now;
     game.lane = 1;
@@ -302,6 +303,8 @@
     hidePopup();
     bridgeOverlay.classList.add('hidden');
     updateHud(true);
+    window.SinnesScore?.startSession('game_tastminen', 1000, 1000);
+    window.SinnesScore?.setGameplayActive(true);
     startMusic();
     requestAnimationFrame(loop);
   }
@@ -312,7 +315,8 @@
     game.finished = true;
     pauseMusic();
     bridgeOverlay.classList.add('hidden');
-    if (won) { completeMineLevelOne(); window.SinnesScore?.record('game_tastminen', 700 + Math.round((game.hearts / MAX_HEARTS) * 300), 1000); }
+    if (won) { completeMineLevelOne(); const score = Math.max(0, 1000 - (game.scorePenalty || 0)); window.SinnesScore?.setSession('game_tastminen', score, 1000); window.SinnesScore?.finishSession('game_tastminen', score, 1000); }
+    window.SinnesScore?.setGameplayActive(false);
     setTimeout(() => showPopup(won ? 'won' : 'lost'), 420);
   }
 
@@ -396,6 +400,8 @@
     const now = performance.now();
     if (now < game.invulnerableUntil && ['race', 'finalRace'].includes(game.state)) return;
     game.hearts -= 1;
+    game.scorePenalty = (game.scorePenalty || 0) + 250;
+    window.SinnesScore?.setSession('game_tastminen', Math.max(0, 1000 - game.scorePenalty), 1000);
     game.pendingCrashReason = reason;
     game.invulnerableUntil = now + 2700;
     game.blinkUntil = 0;

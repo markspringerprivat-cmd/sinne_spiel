@@ -239,6 +239,8 @@
     game.combo = 0;
     game.lives = MAX_LIVES;
     game.badHits = 0;
+    game.goodCuts = 0;
+    game.missedGood = 0;
     game.spawnTimer = 0.45;
     game.objects.length = 0;
     game.particles.length = 0;
@@ -249,6 +251,8 @@
     game.feedbackUntil = 0;
     updateHud(true);
     hidePopup();
+    window.SinnesScore?.startSession('game_flammenkueche', 1000, 0);
+    window.SinnesScore?.setGameplayActive(true);
     startMusic();
     prepareCutSounds();
     requestAnimationFrame(loop);
@@ -259,7 +263,8 @@
     game.running = false;
     game.finished = true;
     pauseMusic();
-    if (won) { completeFlameLevelOne(); window.SinnesScore?.record('game_flammenkueche', 700 + Math.round((game.lives / MAX_LIVES) * 200) + Math.min(100, Math.round(game.score)), 1000); }
+    if (won) { completeFlameLevelOne(); const points = Math.max(0, Math.min(1000, (game.goodCuts || 0) * 100 - (game.badHits || 0) * 50 - (game.missedGood || 0) * 25)); window.SinnesScore?.setSession('game_flammenkueche', points, 1000); window.SinnesScore?.finishSession('game_flammenkueche', points, 1000); }
+    window.SinnesScore?.setGameplayActive(false);
     setTimeout(() => showPopup(won ? 'won' : 'lost'), 360);
   }
 
@@ -376,11 +381,14 @@
     if (obj.isBad) {
       playSlimeSound();
       game.badHits += 1;
+      window.SinnesScore?.addPoints('game_flammenkueche', -50, 1000);
       loseLife(BAD_DAMAGE, 'Ungenießbar erwischt! -1 Leben', '#98ec65');
       if (navigator.vibrate) navigator.vibrate(70);
       return;
     }
 
+    game.goodCuts = (game.goodCuts || 0) + 1;
+    window.SinnesScore?.addPoints('game_flammenkueche', 100, 1000);
     game.combo += 1;
     const comboBonus = game.combo >= 8 ? 3 : game.combo >= 4 ? 2 : 0;
     game.score += obj.points + comboBonus;
@@ -432,6 +440,8 @@
         obj.resolved = true;
         obj.missedPenaltyApplied = true;
         if (!obj.isBad) {
+          game.missedGood = (game.missedGood || 0) + 1;
+          window.SinnesScore?.addPoints('game_flammenkueche', -25, 1000);
           loseLife(MISS_DAMAGE, 'Gemüse verpasst! -¼ Leben', '#ffcf5d');
         }
       }

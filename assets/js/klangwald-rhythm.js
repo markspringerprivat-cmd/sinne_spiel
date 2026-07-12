@@ -105,11 +105,14 @@
     game.good = 0;
     game.ok = 0;
     game.misses = 0;
+    game.early = 0;
     game.combo = 0;
     game.maxCombo = 0;
     game.energy = 100;
     game.lastHudUpdate = 0;
     game.feedback = [];
+    window.SinnesScore?.startSession('game_klangwald', 1000, 0);
+    window.SinnesScore?.setGameplayActive(true);
     game.laneFlash = [0, 0, 0, 0];
   }
 
@@ -239,7 +242,8 @@
     game.finished = true;
     music.pause();
 
-    if (won) { completeKlangwaldLevelOne(); const rate = game.notes.length ? game.hits / game.notes.length : 0; window.SinnesScore?.record('game_klangwald', 700 + Math.round(rate * 300), 1000); }
+    if (won) { completeKlangwaldLevelOne(); window.SinnesScore?.finishSession('game_klangwald', game.score, 1000); }
+    window.SinnesScore?.setGameplayActive(false);
     window.setTimeout(() => showPopup(won ? 'won' : 'lost'), 360);
   }
 
@@ -271,6 +275,7 @@
     if (note.state !== 'upcoming') return;
     note.state = 'missed';
     game.misses += 1;
+    window.SinnesScore?.addPoints('game_klangwald', -10, 1000);
     game.combo = 0;
     game.energy -= 3;
     addFeedback('Verpasst', note.lane, 'miss');
@@ -295,6 +300,8 @@
 
     if (!candidate) {
       game.energy = Math.max(0, game.energy - 1);
+      game.early = (game.early || 0) + 1;
+      window.SinnesScore?.addPoints('game_klangwald', -5, 1000);
       game.combo = 0;
       addFeedback('Zu früh', lane, 'miss');
       if (game.energy <= 0) endGame(false);
@@ -309,17 +316,19 @@
 
     if (bestDistance <= HIT_WINDOWS.perfect) {
       game.perfect += 1;
-      game.score += 100 + Math.min(50, game.combo);
+      game.score += 10;
+      window.SinnesScore?.addPoints('game_klangwald', 10, 1000);
       game.energy = Math.min(100, game.energy + 1.2);
       addFeedback('Perfekt', lane, 'perfect');
     } else if (bestDistance <= HIT_WINDOWS.good) {
       game.good += 1;
-      game.score += 70 + Math.min(35, Math.floor(game.combo / 2));
+      game.score += 5;
+      window.SinnesScore?.addPoints('game_klangwald', 5, 1000);
       game.energy = Math.min(100, game.energy + 0.6);
       addFeedback('Gut', lane, 'good');
     } else {
       game.ok += 1;
-      game.score += 40;
+      game.score += 0;
       addFeedback('Okay', lane, 'ok');
     }
 

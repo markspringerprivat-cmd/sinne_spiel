@@ -32,6 +32,7 @@
   let last = 0;
   let damage = 0;
   let playerHits = 0;
+  let playerConceded = 0;
   let dragging = false;
   let knightX = 0.5;
   let mageX = 0.5;
@@ -107,6 +108,8 @@
     document.getElementById('pongStart').addEventListener('click', () => {
       hideOverlay();
       fullReset();
+      window.SinnesScore?.startSession('game_zauberschloss_pong', 1000, 0);
+      window.SinnesScore?.setGameplayActive(true);
       running = true;
       last = performance.now();
       raf = requestAnimationFrame(loop);
@@ -118,7 +121,10 @@
     finished = true;
     cancelAnimationFrame(raf);
     saveCompletion();
-    window.SinnesScore?.record('game_zauberschloss_pong', 760 + Math.min(240, playerHits * 24), 1000);
+    const points = Math.max(0, Math.min(1000, damage * 300 - playerConceded * 250));
+    window.SinnesScore?.setSession('game_zauberschloss_pong', points, 1000);
+    window.SinnesScore?.finishSession('game_zauberschloss_pong', points, 1000);
+    window.SinnesScore?.setGameplayActive(false);
     showOverlay(`
       <div>
         <h2>Barriere geschwächt!</h2>
@@ -142,6 +148,7 @@
   function fullReset() {
     damage = 0;
     playerHits = 0;
+    playerConceded = 0;
     redSpawnTimer = 0;
     stunTimer = 0;
     clearRedBalls();
@@ -351,6 +358,7 @@
 
       if (ball.y < 0.135) {
         damage += 1;
+        window.SinnesScore?.addPoints('game_zauberschloss_pong', 300, 1000);
         playImpact(170, .16);
         setWallBlink();
         if (damage >= 1) {
@@ -368,6 +376,8 @@
       }
 
       if (ball.y > 1.05) {
+        playerConceded += 1;
+        window.SinnesScore?.addPoints('game_zauberschloss_pong', -250, 1000);
         playImpact(210, .09);
         scheduleGreenRespawn();
       }

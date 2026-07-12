@@ -28,6 +28,38 @@
     return saveData(data);
   }
   function total() { return getData().total; }
+  const sessions = new Map();
+  function startSession(activity, max = 1000, initial = 0) {
+    if (!activity) return 0;
+    const session = { activity, max: Math.max(0, Number(max) || 1000), points: Number(initial) || 0 };
+    sessions.set(activity, session);
+    return session.points;
+  }
+  function sessionValue(activity) { return Math.round(Number(sessions.get(activity)?.points) || 0); }
+  function addPoints(activity, delta, max = null) {
+    let session = sessions.get(activity);
+    if (!session) { startSession(activity, max || 1000, 0); session = sessions.get(activity); }
+    if (max != null) session.max = Math.max(0, Number(max) || session.max);
+    session.points = Math.max(0, Math.min(session.max, session.points + (Number(delta) || 0)));
+    document.dispatchEvent(new CustomEvent('sinnesmagie:score-session', { detail: { activity, points: Math.round(session.points), max: session.max } }));
+    return Math.round(session.points);
+  }
+  function setSession(activity, value, max = null) {
+    let session = sessions.get(activity);
+    if (!session) { startSession(activity, max || 1000, 0); session = sessions.get(activity); }
+    if (max != null) session.max = Math.max(0, Number(max) || session.max);
+    session.points = Math.max(0, Math.min(session.max, Number(value) || 0));
+    return Math.round(session.points);
+  }
+  function finishSession(activity, fallback = 0, max = 1000) {
+    const session = sessions.get(activity);
+    const value = session ? Math.round(session.points) : Math.round(Number(fallback) || 0);
+    sessions.delete(activity);
+    return record(activity, value, session?.max || max);
+  }
+  function setGameplayActive(active) {
+    document.body?.classList.toggle('score-gameplay-active', !!active);
+  }
   function syncBoard() {
     const name = getName(); if (!name) return;
     const board = safeJson(BOARD_KEY, []);
@@ -141,5 +173,5 @@
     }
   }
   document.addEventListener('DOMContentLoaded',()=>{ensureHud(); renderAll(); addLeaderboardButton(); if(document.body.classList.contains('cover-page')) nameDialog(false).then(()=>window.SinnesCloud?.syncNow()); else window.SinnesCloud?.scheduleSync(1200);});
-  window.SinnesScore={record,total,getData,getName,setName,nameDialog,showLeaderboard,board,render:renderAll};
+  window.SinnesScore={record,total,getData,getName,setName,nameDialog,showLeaderboard,board,render:renderAll,startSession,addPoints,setSession,sessionValue,finishSession,setGameplayActive};
 })();

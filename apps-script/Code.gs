@@ -3,6 +3,7 @@
  * Version 2.0 – öffentliche Bestenliste + Adminbereich
  ******************************************************/
 
+const SPREADSHEET_ID = '1u0FokOg9_mRPydS2iY4vQnh5FW0_xFyEhL0Z5R6qgZw';
 const SHEET_NAME = 'Highscores';
 const ADMIN_PASSWORD = 'Mark123';
 
@@ -148,7 +149,7 @@ function setupSheet_() {
 }
 
 function getSheet_() {
-  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
   return spreadsheet.getSheetByName(SHEET_NAME) || spreadsheet.insertSheet(SHEET_NAME);
 }
 

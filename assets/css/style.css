@@ -6634,3 +6634,70 @@ html.sm-page-loading body > *:not(#globalPageLoader):not(script) {
   .leaderboard-button { right: 72px; }
   .score-arrow { top: 58px; }
 }
+
+/* === v112: mobile Adminansicht, Score-HUD und Weltkarten-Buttons === */
+.score-gameplay-active .global-score-hud { display: none !important; }
+.game-page .leaderboard-button {
+  position: fixed;
+  left: max(68px, calc(env(safe-area-inset-left) + 68px));
+  right: auto;
+  top: auto;
+  bottom: max(10px, env(safe-area-inset-bottom));
+  z-index: 22;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 25px;
+  background: rgba(255,255,255,.94);
+  color: #34214b;
+  box-shadow: 0 10px 26px rgba(0,0,0,.3);
+}
+.game-page .settings-button {
+  left: max(10px, env(safe-area-inset-left));
+  right: auto;
+}
+.game-page .score-arrow { top: auto; bottom: 58px; }
+
+.admin-mobile-list { display: none; }
+@media (max-width: 720px) {
+  .admin-table-wrap { display: none; }
+  .admin-mobile-list { display: grid; gap: 10px; }
+  .admin-player-card {
+    border: 1px solid #d9c7af;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #fffaf1;
+    box-shadow: 0 8px 20px rgba(62,40,23,.08);
+  }
+  .admin-player-card summary {
+    list-style: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 15px 16px;
+  }
+  .admin-player-card summary::-webkit-details-marker { display: none; }
+  .admin-player-card summary span { display: grid; gap: 2px; min-width: 0; }
+  .admin-player-card summary strong { font-size: 1.02rem; overflow-wrap: anywhere; }
+  .admin-player-card summary small { color: #7a5c42; font-weight: 800; }
+  .admin-player-card summary > b { font-size: 1.35rem; transition: transform .2s ease; }
+  .admin-player-card[open] summary > b { transform: rotate(180deg); }
+  .admin-player-details { padding: 0 16px 16px; border-top: 1px solid #eadfce; }
+  .admin-player-details > p { display: grid; gap: 3px; margin: 12px 0; }
+  .admin-player-details > p span { color: #7c624b; font-size: .78rem; font-weight: 850; }
+  .admin-player-details code { white-space: normal; overflow-wrap: anywhere; }
+  .admin-player-details h3 { margin: 16px 0 8px; font-size: .93rem; }
+  .admin-progress-grid, .admin-score-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+  .admin-progress-grid span, .admin-score-grid span {
+    display: flex; justify-content: space-between; gap: 8px;
+    padding: 9px 10px; border-radius: 11px; background: #f5ecdf; font-size: .79rem;
+  }
+  .admin-score-grid b, .admin-progress-grid b { color: #5e3579; }
+  .admin-mobile-empty { padding: 18px; text-align: center; }
+  .admin-header-actions { width: 100%; }
+  .admin-header-actions > * { min-height: 48px; }
+}

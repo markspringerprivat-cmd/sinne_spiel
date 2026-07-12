@@ -169,6 +169,7 @@
     if (now < state.stunnedUntil) return;
     state.stunnedUntil = now + STUN_MS;
     state.hitsTaken += 1;
+    window.SinnesScore?.addPoints('game_zauberschloss_dodge', -150, 1000);
     state.moveDir = 0;
     knight.classList.add('dodge-knight-hit');
     setTimeout(() => knight.classList.remove('dodge-knight-hit'), STUN_MS);
@@ -203,7 +204,10 @@
     clearProjectiles();
     stopMusic();
     completeZauberschlossQuizStep();
-    window.SinnesScore?.record('game_zauberschloss_dodge', Math.max(700, 1000 - state.hitsTaken * 60), 1000);
+    const points = Math.max(0, 1000 - state.hitsTaken * 150);
+    window.SinnesScore?.setSession('game_zauberschloss_dodge', points, 1000);
+    window.SinnesScore?.finishSession('game_zauberschloss_dodge', points, 1000);
+    window.SinnesScore?.setGameplayActive(false);
     popup.classList.remove('hidden');
   }
 
@@ -242,6 +246,8 @@
 
   function startGame() {
     loader.classList.add('hidden');
+    window.SinnesScore?.startSession('game_zauberschloss_dodge', 1000, 1000);
+    window.SinnesScore?.setGameplayActive(true);
     startMusic();
     state.running = true;
     state.finished = false;

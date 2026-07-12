@@ -169,6 +169,7 @@
     game.messageUntil = 0;
     game.camera = 0;
     game.particles = [];
+    game.obstacleHits = 0;
     updateHud(now);
   }
 
@@ -263,6 +264,8 @@
     hidePopup();
     jumpOne.disabled = false;
     jumpTwo.disabled = false;
+    window.SinnesScore?.startSession('game_duftgarten', 1000, 1000);
+    window.SinnesScore?.setGameplayActive(true);
     startMusic();
     requestAnimationFrame(loop);
   }
@@ -274,7 +277,8 @@
     jumpOne.disabled = true;
     jumpTwo.disabled = true;
     pauseMusic();
-    if (won) { completeLevelOne(); const gap = Math.max(0, game.playerIndex - Math.floor(game.beetleIndex)); window.SinnesScore?.record('game_duftgarten', 760 + Math.min(240, gap * 40), 1000); }
+    if (won) { completeLevelOne(); const points = Math.max(0, 1000 - (game.obstacleHits || 0) * 50); window.SinnesScore?.setSession('game_duftgarten', points, 1000); window.SinnesScore?.finishSession('game_duftgarten', points, 1000); }
+    window.SinnesScore?.setGameplayActive(false);
     setTimeout(() => showPopup(won ? 'won' : 'lost'), 420);
   }
 
@@ -372,6 +376,10 @@
     if (!field || field.visited || index === 0) return;
     field.visited = true;
     const now = performance.now();
+    if (field.type === 'cloud' || field.type === 'slime' || field.type === 'rotten') {
+      game.obstacleHits = (game.obstacleHits || 0) + 1;
+      window.SinnesScore?.addPoints('game_duftgarten', -50, 1000);
+    }
 
     if (field.type === 'cloud') {
       game.stunUntil = Math.max(game.stunUntil, now + 2000);

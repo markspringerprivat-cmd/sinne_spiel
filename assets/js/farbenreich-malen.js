@@ -252,7 +252,10 @@
     game.phase = 'idle';
     game.round = 0;
     game.points = 0;
+    game.scorePoints = 0;
     game.lives = 3;
+    window.SinnesScore?.startSession('game_farbenreich', 1000, 0);
+    window.SinnesScore?.setGameplayActive(true);
     game.strokes = [];
     game.currentStroke = null;
     game.resultOverlay = null;
@@ -304,9 +307,12 @@
     game.phase = 'finished';
     if (game.lives > 0) {
       completeColorLevelOne();
-      window.SinnesScore?.record('game_farbenreich', 700 + Math.round((game.lives / 3) * 200) + Math.round((game.points / TOTAL_ROUNDS) * 100), 1000);
+      window.SinnesScore?.setSession('game_farbenreich', game.scorePoints, 1000);
+      window.SinnesScore?.finishSession('game_farbenreich', game.scorePoints, 1000);
+      window.SinnesScore?.setGameplayActive(false);
       showPopup('won');
     } else {
+      window.SinnesScore?.setGameplayActive(false);
       showPopup('lost');
     }
   }
@@ -317,8 +323,11 @@
     cancelAnimationFrame(game.timerFrame);
     const percent = scoreRound();
     const success = percent >= 50;
+    const roundPoints = Math.round(Math.max(0, Math.min(100, percent)) * 5);
+    game.scorePoints = Math.max(0, Math.min(1000, (game.scorePoints || 0) + roundPoints));
     if (success) game.points += 1;
-    else game.lives -= 1;
+    else { game.lives -= 1; game.scorePoints = Math.max(0, game.scorePoints - 250); }
+    window.SinnesScore?.setSession('game_farbenreich', game.scorePoints, 1000);
     game.resultOverlay = { percent, success };
     statusText.textContent = success ? `Runde geschafft: ${percent}%` : `Zu ungenau: ${percent}%`;
     updateHud(true);

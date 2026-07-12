@@ -9,3 +9,6 @@ GOOGLE APPS SCRIPT AKTUALISIEREN
 7. Die /exec-URL bleibt normalerweise gleich.
 
 Ohne diese Aktualisierung funktioniert die öffentliche Bestenliste weiterhin, aber die vollständigen Admin-Daten können nicht abgerufen werden.
+
+
+Version 112: Die Tabellen-ID ist bereits fest im Code hinterlegt. Nach dem Ersetzen von Code.gs die Web-App als neue Version bereitstellen.

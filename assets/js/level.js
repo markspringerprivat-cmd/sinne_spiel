@@ -284,6 +284,9 @@ function askCastleSenseQuestion(areaId, title) {
         const correctButton = buttons.find(btn => btn.dataset.correct === '1');
         if (!item.correct) correctButton?.classList.add('correct-answer');
 
+        if (item.correct) activeQuiz.scorePoints = Math.min(5000, (activeQuiz.scorePoints || 0) + 250);
+        else activeQuiz.scorePoints = Math.max(0, (activeQuiz.scorePoints || 0) - 50);
+        window.SinnesScore?.setSession('boss_zauberschloss_final', activeQuiz.scorePoints, 5000);
         feedback.textContent = item.correct
           ? 'Richtig – der Angriff kann beginnen!'
           : 'Falsch – du musst die Aufgabe erneut erspielen.';
@@ -1694,8 +1697,11 @@ function startQuiz(quizId) {
     castleHearing: null,
     castleUltimate: null,
     castleUltimateFailed: false,
-    senseQuestionPools: {}
+    senseQuestionPools: {},
+    scorePoints: 0
   };
+  window.SinnesScore?.startSession(isCastleBossQuiz(quizId) ? 'boss_zauberschloss_final' : `quiz_${quizId}`, isCastleBossQuiz(quizId) ? 5000 : 1000, 0);
+  window.SinnesScore?.setGameplayActive(true);
   const modal = ensureQuizModal();
   setQuizScene(modal, data, quizId);
   modal.querySelector('#quizIntro').classList.add('hidden');
@@ -1821,6 +1827,8 @@ function playBattleAnimation(correct, idx) {
 
   if (correct) {
     activeQuiz.correct += 1;
+    activeQuiz.scorePoints = Math.min(1000, (activeQuiz.scorePoints || 0) + 500);
+    window.SinnesScore?.setSession(`quiz_${activeQuiz.quizId}`, activeQuiz.scorePoints, 1000);
     feedback.textContent = 'Richtig!';
     knight.src = knightAsset('attack');
     knight.classList.add('knight-attack-pose');
@@ -1846,6 +1854,8 @@ function playBattleAnimation(correct, idx) {
     }, STRIKE_RESET_MS);
   } else {
     activeQuiz.hearts -= 1;
+    activeQuiz.scorePoints = Math.max(0, (activeQuiz.scorePoints || 0) - 250);
+    window.SinnesScore?.setSession(`quiz_${activeQuiz.quizId}`, activeQuiz.scorePoints, 1000);
     feedback.textContent = idx === -1 ? 'Zeit abgelaufen!' : 'Falsch!';
     knight.src = knightAsset('normal');
     enemy.src = enemyAttackAsset(activeQuiz.data.enemy);
@@ -1928,6 +1938,8 @@ async function playCastleQuizAnimation(correct, idx) {
 
   if (correct) {
     activeQuiz.correct += 1;
+    activeQuiz.scorePoints = Math.min(5000, (activeQuiz.scorePoints || 0) + 250);
+    window.SinnesScore?.setSession('boss_zauberschloss_final', activeQuiz.scorePoints, 5000);
     feedback.textContent = 'Richtig!';
     knight.src = castleKnightAsset('attack');
     knight.classList.add('knight-attack-pose');
@@ -1940,6 +1952,8 @@ async function playCastleQuizAnimation(correct, idx) {
     // Trefferschaden-Sound in dieser ersten Quizphase.
     await wait(1050);
   } else {
+    activeQuiz.scorePoints = Math.max(0, (activeQuiz.scorePoints || 0) - 50);
+    window.SinnesScore?.setSession('boss_zauberschloss_final', activeQuiz.scorePoints, 5000);
     feedback.textContent = idx === -1 ? 'Zeit abgelaufen!' : 'Falsch!';
     enemy.src = castleEnemyAsset('laugh');
     playSfx(sfxWrong);
@@ -2482,6 +2496,8 @@ async function answerCastleFinalQuestion(idx) {
   });
 
   if (!correct) {
+    activeQuiz.scorePoints = Math.max(0, (activeQuiz.scorePoints || 0) - 50);
+    window.SinnesScore?.setSession('boss_zauberschloss_final', activeQuiz.scorePoints, 5000);
     await wait(900);
     activeQuiz.finalAnswered = false;
     buttons.forEach(btn => {
@@ -2491,6 +2507,8 @@ async function answerCastleFinalQuestion(idx) {
     return;
   }
 
+  activeQuiz.scorePoints = Math.min(5000, (activeQuiz.scorePoints || 0) + 500);
+  window.SinnesScore?.setSession('boss_zauberschloss_final', activeQuiz.scorePoints, 5000);
   playSfx(sfxCorrect);
   await wait(520);
   if (panel) { panel.classList.remove('slide-in-right'); panel.classList.add('slide-out-left'); }
@@ -2500,6 +2518,8 @@ async function answerCastleFinalQuestion(idx) {
 }
 
 async function playCastleFinalHit() {
+  activeQuiz.scorePoints = Math.min(5000, (activeQuiz.scorePoints || 0) + 250);
+  window.SinnesScore?.setSession('boss_zauberschloss_final', activeQuiz.scorePoints, 5000);
   const zone = document.getElementById('quizBattleZone');
   const knight = document.getElementById('quizKnight');
   const enemy = document.getElementById('quizEnemy');
@@ -3255,10 +3275,14 @@ async function handleCastleBushPick(index) {
     knight.src = castleKnightAsset('normal');
     image?.classList.remove('castle-bush-hit-blink');
     state.hits += 1;
+    activeQuiz.scorePoints = Math.min(5000, (activeQuiz.scorePoints || 0) + 250);
+    window.SinnesScore?.setSession('boss_zauberschloss_final', activeQuiz.scorePoints, 5000);
     updateCastleBushLabel();
   } else {
     await animateCastleBushKnightJump(targetX, false);
     if (!activeQuiz?.castleBush?.running) return;
+    activeQuiz.scorePoints = Math.max(0, (activeQuiz.scorePoints || 0) - 200);
+    window.SinnesScore?.setSession('boss_zauberschloss_final', activeQuiz.scorePoints, 5000);
     playSfx(sfxWrong);
     knight.classList.add('castle-bush-knight-damage');
     await wait(520);
@@ -3341,7 +3365,7 @@ function prepareCastleSmellModeVisual(){const s=activeQuiz?.castleSmell,z=docume
 function setCastleSmellMagePosition(x,top=11){const z=document.getElementById('quizBattleZone');if(z){z.style.setProperty('--smell-mage-x',`${x}%`);z.style.setProperty('--smell-mage-top',`${top}%`);}}
 function updateCastleSmellRunSprite(now){const s=activeQuiz?.castleSmell,k=document.getElementById('quizKnight');if(!s||!k)return;if(s.moveDir===0||s.locked){if(s.lastRunDir!==0){k.src=castleKnightAsset('normal');k.classList.remove('castle-walking');s.lastRunDir=0;s.lastRunKey='';}return;}const f=Math.floor(now/175)%2===0?1:2,key=s.moveDir<0?`runLeft${f}`:`runRight${f}`;if(s.lastRunKey!==key){k.src=castleKnightAsset(key);k.classList.add('castle-walking');s.lastRunKey=key;}s.lastRunDir=s.moveDir;}
 function nearestCastleSmellLaneIndex(x,lanes){let n=0,d=Infinity;lanes.forEach((v,i)=>{const c=Math.abs(x-v);if(c<d){d=c;n=i;}});return n;}
-function resolveCastleSmellRow(row){const s=activeQuiz?.castleSmell,k=document.getElementById('quizKnight');if(!s||!s.running||row.resolved)return;row.resolved=true;const safe=nearestCastleSmellLaneIndex(s.playerX,s.lanes)===row.safeIndex;row.el.classList.add(safe?'castle-smell-row-safe':'castle-smell-row-danger');row.resolve?.(safe);if(safe){showCastleSmellFeedback('Die Duftwolke schützt dich!',950);return;}if(s.failureHandling)return;s.failureHandling=true;s.locked=true;s.moveDir=0;setCastleSmellControlsEnabled(false);playSfx(sfxWrong);k?.classList.add('castle-smell-knight-damage');showCastleSmellFeedback('Gestank getroffen! Diese Runde beginnt erneut.',1700);const timer=setTimeout(async()=>{const c=activeQuiz?.castleSmell;if(!c?.running)return;k?.classList.remove('castle-smell-knight-damage');c.attemptToken+=1;clearCastleSmellRows(false);c.failureHandling=false;await wait(420);if(activeQuiz?.castleSmell?.running)await restartCastleSmellRound();},720);s.timers.push(timer);}
+function resolveCastleSmellRow(row){const s=activeQuiz?.castleSmell,k=document.getElementById('quizKnight');if(!s||!s.running||row.resolved)return;row.resolved=true;const safe=nearestCastleSmellLaneIndex(s.playerX,s.lanes)===row.safeIndex;row.el.classList.add(safe?'castle-smell-row-safe':'castle-smell-row-danger');row.resolve?.(safe);if(safe){showCastleSmellFeedback('Die Duftwolke schützt dich!',950);return;}if(s.failureHandling)return;s.failureHandling=true;s.locked=true;s.moveDir=0;setCastleSmellControlsEnabled(false);activeQuiz.scorePoints=Math.max(0,(activeQuiz.scorePoints||0)-150);window.SinnesScore?.setSession('boss_zauberschloss_final',activeQuiz.scorePoints,5000);playSfx(sfxWrong);k?.classList.add('castle-smell-knight-damage');showCastleSmellFeedback('Gestank getroffen! Diese Runde beginnt erneut.',1700);const timer=setTimeout(async()=>{const c=activeQuiz?.castleSmell;if(!c?.running)return;k?.classList.remove('castle-smell-knight-damage');c.attemptToken+=1;clearCastleSmellRows(false);c.failureHandling=false;await wait(420);if(activeQuiz?.castleSmell?.running)await restartCastleSmellRound();},720);s.timers.push(timer);}
 function castleSmellFrame(now){const s=activeQuiz?.castleSmell;if(!s||!s.running)return;const delta=Math.min(.05,(now-(s.lastFrame||now))/1000||0);s.lastFrame=now;updateCastleSmellRunSprite(now);if(s.started&&!s.locked){s.playerX+=s.moveDir*53*delta;s.playerX=Math.max(4.5,Math.min(95.5,s.playerX));document.getElementById('quizBattleZone')?.style.setProperty('--smell-player-x',`${s.playerX}%`);}s.rows.forEach(row=>{if(!row.falling)return;row.y+=CASTLE_SMELL_FALL_SPEED*delta;row.el.style.top=`${row.y}%`;if(!row.resolved&&row.y>=CASTLE_SMELL_IMPACT_Y)resolveCastleSmellRow(row);if(row.y>116&&row.el.isConnected)row.el.remove();});s.rafId=requestAnimationFrame(castleSmellFrame);}
 function createCastleSmellRow(safeIndex,sequenceIndex){const s=activeQuiz?.castleSmell,layer=document.getElementById('castleSmellLayer');if(!s||!layer)return null;const el=document.createElement('div');el.className='castle-smell-row';el.style.top=`${CASTLE_SMELL_SPAWN_Y}%`;el.style.zIndex=String(30+sequenceIndex);layer.appendChild(el);let resolver;const promise=new Promise(resolve=>resolver=resolve);const row={id:++s.rowId,el,safeIndex,spawned:new Set(),y:CASTLE_SMELL_SPAWN_Y,falling:false,resolved:false,resolve:resolver,promise};s.rows.push(row);return row;}
 function appendCastleSmellCloud(row,laneIndex){const s=activeQuiz?.castleSmell;if(!s||!row||row.spawned.has(laneIndex))return;row.spawned.add(laneIndex);const kind=laneIndex===row.safeIndex?'scent':'stink',img=document.createElement('img');img.className=`castle-smell-cloud castle-smell-cloud-${kind}`;img.src=castleSmellAsset(kind);img.alt=kind==='scent'?'Duftwolke':'Gestankwolke';img.draggable=false;img.style.left=`${s.lanes[laneIndex]}%`;img.style.setProperty('--smell-cloud-delay',`${laneIndex*-.07}s`);row.el.appendChild(img);}
@@ -3352,7 +3376,7 @@ async function waitCastleSmellGap(ms,token){await wait(ms);const s=activeQuiz?.c
 async function runCastleSmellRoundAttempt(){const s=activeQuiz?.castleSmell;if(!s||!s.running||s.attemptInProgress)return;s.attemptInProgress=true;s.failureHandling=false;s.locked=false;s.moveDir=0;s.lastFrame=performance.now();clearCastleSmellRows(false);setCastleSmellControlsEnabled(true);showCastleSmellFeedback(`Runde ${s.round}: Finde die Duftwolke!`,1200);const token=++s.attemptToken,directions=castleSmellDirectionsForRound(s.round),promises=[];for(let i=0;i<directions.length;i++){const row=await animateCastleSmellMageAndSpawnRow(directions[i],i,token);if(!row||!activeQuiz?.castleSmell?.running||s.attemptToken!==token){s.attemptInProgress=false;return;}promises.push(row.promise);if(i<directions.length-1&&!(await waitCastleSmellGap(CASTLE_SMELL_ROW_GAP_MS,token))){s.attemptInProgress=false;return;}}const results=await Promise.all(promises);if(!activeQuiz?.castleSmell?.running||s.attemptToken!==token||s.failureHandling){s.attemptInProgress=false;return;}s.attemptInProgress=false;if(results.every(Boolean))await completeCastleSmellRoundAttempt();}
 async function animateCastleSmellKnightToX(targetX,duration=560){const s=activeQuiz?.castleSmell,k=document.getElementById('quizKnight'),z=document.getElementById('quizBattleZone');if(!s||!k||!z)return;const start=s.playerX,dir=targetX>=start?1:-1,t0=performance.now();let last=-1;await new Promise(resolve=>{function frame(now){if(!activeQuiz?.castleSmell?.running){resolve();return;}const p=Math.min(1,(now-t0)/duration),ease=p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2,x=start+(targetX-start)*ease;s.playerX=x;z.style.setProperty('--smell-player-x',`${x}%`);const f=Math.floor(now/150)%2;if(f!==last){k.src=dir>0?castleKnightAsset(f?'runRight2':'runRight1'):castleKnightAsset(f?'runLeft2':'runLeft1');last=f;}if(p<1)requestAnimationFrame(frame);else resolve();}requestAnimationFrame(frame);});s.playerX=targetX;z.style.setProperty('--smell-player-x',`${targetX}%`);k.src=castleKnightAsset('normal');}
 async function animateCastleSmellMageToCenter(){const s=activeQuiz?.castleSmell,e=document.getElementById('quizEnemy');if(!s||!e)return;const start=Number.isFinite(s.lastMageExitX)?s.lastMageExitX:118,end=50,t0=performance.now();e.src=castleEnemyAsset(start>end?'flyLeft':'flyRight');e.classList.remove('castle-smell-hidden','castle-phase-hidden');await new Promise(resolve=>{function frame(now){if(!activeQuiz?.castleSmell?.running){resolve();return;}const p=Math.min(1,(now-t0)/900),ease=1-Math.pow(1-p,3);setCastleSmellMagePosition(start+(end-start)*ease,9+(18-9)*ease);if(p<1)requestAnimationFrame(frame);else resolve();}requestAnimationFrame(frame);});e.src=castleEnemyAsset('hover');setCastleSmellMagePosition(50,18);}
-async function playCastleSmellAttack(){const s=activeQuiz?.castleSmell,k=document.getElementById('quizKnight'),e=document.getElementById('quizEnemy');if(!s||!k||!e)return;k.src=castleKnightAsset('finalAttack');e.classList.remove('castle-final-damage-blink');await animateCastleEnemyStrike({knight:k,enemy:e,duration:1150,impactFraction:.52,enemyHitSrc:castleEnemyAsset('surprised')});e.classList.remove('castle-final-damage-blink');k.src=castleKnightAsset('normal');e.src=castleEnemyAsset('laugh');}
+async function playCastleSmellAttack(){const s=activeQuiz?.castleSmell,k=document.getElementById('quizKnight'),e=document.getElementById('quizEnemy');if(!s||!k||!e)return;activeQuiz.scorePoints=Math.min(5000,(activeQuiz.scorePoints||0)+250);window.SinnesScore?.setSession('boss_zauberschloss_final',activeQuiz.scorePoints,5000);k.src=castleKnightAsset('finalAttack');e.classList.remove('castle-final-damage-blink');await animateCastleEnemyStrike({knight:k,enemy:e,duration:1150,impactFraction:.52,enemyHitSrc:castleEnemyAsset('surprised')});e.classList.remove('castle-final-damage-blink');k.src=castleKnightAsset('normal');e.src=castleEnemyAsset('laugh');}
 async function completeCastleSmellRoundAttempt(){const s=activeQuiz?.castleSmell;if(!s||!s.running)return;s.locked=true;s.moveDir=0;setCastleSmellControlsEnabled(false);await wait(280);clearCastleSmellRows(true);await animateCastleSmellKnightToX(50,520);await animateCastleSmellMageToCenter();if(!activeQuiz?.castleSmell?.running)return;const correct=await askCastleSenseQuestion('duftgarten','Riechsinn');if(!activeQuiz?.castleSmell?.running)return;if(!correct){showCastleSmellFeedback('Falsch beantwortet – diese Runde wird wiederholt.',1600);await wait(420);await restartCastleSmellRound();return;}await playCastleSmellAttack();if(!activeQuiz?.castleSmell?.running)return;s.round+=1;if(s.round>s.totalRounds){await finishCastleSmellSearch();return;}updateCastleSmellRoundLabel();showCastleSmellFeedback(`Treffer! Runde ${s.round} beginnt.`,1300);await wait(360);await restartCastleSmellRound();}
 async function restartCastleSmellRound(){const s=activeQuiz?.castleSmell;if(!s||!s.running)return;s.locked=true;s.moveDir=0;s.attemptToken+=1;clearCastleSmellRows(false);setCastleSmellControlsEnabled(false);setCastleStandardBattlePoseVisual();await flyCastleMageOutBeforePhase('left');if(!activeQuiz?.castleSmell?.running)return;prepareCastleSmellModeVisual();s.locked=false;s.attemptInProgress=false;s.failureHandling=false;await wait(180);runCastleSmellRoundAttempt();}
 async function startCastleSmellSearchSequence(){cleanupCastleSmellGame();const modal=ensureQuizModal(),panel=document.getElementById('castleSmellPanel'),layer=document.getElementById('castleSmellLayer'),zone=document.getElementById('quizBattleZone'),knight=document.getElementById('quizKnight'),enemy=document.getElementById('quizEnemy');if(!activeQuiz||!panel||!layer||!zone||!knight||!enemy)return;modal.querySelector('#quizGame')?.classList.add('hidden');modal.querySelector('#quizIntro')?.classList.add('hidden');modal.querySelector('#quizResult')?.classList.add('hidden');modal.querySelector('#castleDodgePanel')?.classList.add('hidden');modal.querySelector('#castleClonePanel')?.classList.add('hidden');modal.querySelector('#castleFinalQuestionPanel')?.classList.add('hidden');activeQuiz.castleSmell={running:true,started:false,round:1,totalRounds:CASTLE_SMELL_ROUNDS_TOTAL,playerX:50,moveDir:0,lastRunDir:0,lastRunKey:'',lastFrame:performance.now(),rafId:null,timers:[],rows:[],rowId:0,attemptToken:0,attemptInProgress:false,failureHandling:false,locked:true,lastMageExitX:-18,lanes:[8.5,25.1,41.7,58.3,74.9,91.5]};buildCastleSmellPanel();installCastleSmellControls();updateCastleSmellRoundLabel();prepareCastleSmellModeVisual();setCastleSmellControlsEnabled(false);activeQuiz.castleSmell.rafId=requestAnimationFrame(castleSmellFrame);document.getElementById('castleSmellStartButton')?.addEventListener('click',()=>{const st=activeQuiz?.castleSmell;if(!st||st.started)return;unlockSfxForMobile();st.started=true;st.locked=false;document.getElementById('castleSmellIntro')?.classList.add('hidden');setCastleSmellControlsEnabled(true);runCastleSmellRoundAttempt();},{once:true});}
@@ -4000,6 +4024,8 @@ async function playCastleHearingFailure() {
 
   state.locked = true;
   setCastleHearingKeysEnabled(false);
+  activeQuiz.scorePoints = Math.max(0, (activeQuiz.scorePoints || 0) - 200);
+  window.SinnesScore?.setSession('boss_zauberschloss_final', activeQuiz.scorePoints, 5000);
   playSfx(sfxWrong);
   enemy.src = castleEnemyAsset('laugh');
   showCastleSpeech('<strong>So wirst du mich niemals aufhalten!</strong>');
@@ -4097,6 +4123,8 @@ async function handleCastleHearingKeyPress(keyIndex) {
 }
 
 async function playCastleHearingAttack() {
+  activeQuiz.scorePoints = Math.min(5000, (activeQuiz.scorePoints || 0) + 250);
+  window.SinnesScore?.setSession('boss_zauberschloss_final', activeQuiz.scorePoints, 5000);
   const state = activeQuiz?.castleHearing;
   const knight = document.getElementById('quizKnight');
   const enemy = document.getElementById('quizEnemy');
@@ -4547,6 +4575,8 @@ async function answerCastleUltimateStatement(selectedValue) {
   const correct = selectedValue === current.answer;
 
   if (!correct) {
+    activeQuiz.scorePoints = Math.max(0, (activeQuiz.scorePoints || 0) - 50);
+    window.SinnesScore?.setSession('boss_zauberschloss_final', activeQuiz.scorePoints, 5000);
     state.deadline -= CASTLE_ULTIMATE_WRONG_PENALTY_MS;
     playSfx(sfxWrong);
     scheduleCastleUltimateMusicRestore();
@@ -4560,6 +4590,8 @@ async function answerCastleUltimateStatement(selectedValue) {
     return;
   }
 
+  activeQuiz.scorePoints = Math.min(5000, (activeQuiz.scorePoints || 0) + 250);
+  window.SinnesScore?.setSession('boss_zauberschloss_final', activeQuiz.scorePoints, 5000);
   card?.classList.add('correct');
   setCastleUltimateFeedback('Richtig!', 'correct');
   const completesFinale = state.index + 1 >= state.questions.length;
@@ -4926,6 +4958,7 @@ function showQuizEndPanel() {
 }
 
 function showQuizResult() {
+  window.SinnesScore?.setGameplayActive(false);
   const won = activeQuiz.hearts > 0;
   const modal = ensureQuizModal();
   const quizGame = modal.querySelector('#quizGame');
@@ -4951,11 +4984,10 @@ function showQuizResult() {
   let fragmentStatus = { gained: false, reward: null, total: readFragments().size, allCollected: false };
   if (won) {
     const quizMax = castleVictory ? 5000 : 1000;
-    const questionCount = Math.max(1, activeQuizQuestions().length);
-    const correctness = Math.max(0, Math.min(1, activeQuiz.correct / questionCount));
-    const heartBonus = Math.max(0, Math.min(1, activeQuiz.hearts / 3));
-    const earnedScore = Math.round(quizMax * (0.82 * correctness + 0.18 * heartBonus));
-    window.SinnesScore?.record(castleVictory ? 'boss_zauberschloss_final' : `quiz_${activeQuiz.quizId}`, earnedScore, quizMax);
+    const activityId = castleVictory ? 'boss_zauberschloss_final' : `quiz_${activeQuiz.quizId}`;
+    const earnedScore = Math.max(0, Math.min(quizMax, Math.round(activeQuiz.scorePoints || 0)));
+    window.SinnesScore?.setSession(activityId, earnedScore, quizMax);
+    window.SinnesScore?.finishSession(activityId, earnedScore, quizMax);
     setAreaProgress({ level2Completed: true });
     applyMarkerStates();
     fragmentStatus = awardFragment(activeQuiz.quizId);

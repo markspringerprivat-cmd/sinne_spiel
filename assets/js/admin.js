@@ -20,6 +20,7 @@
   const completedEl = document.getElementById('adminCompletedCount');
   const averageEl = document.getElementById('adminAverageScore');
   const topEl = document.getElementById('adminTopScore');
+  const mobileList = document.getElementById('adminMobileList');
 
   let players = [];
 
@@ -88,10 +89,37 @@
     </tr>`;
   }
 
+  function mobileCardHtml(player) {
+    const p = player.progress, s = player.scores;
+    return `<details class="admin-player-card">
+      <summary><span><strong>${escapeHtml(player.name)}</strong><small>${player.totalScore.toLocaleString('de-DE')} Punkte</small></span><b>⌄</b></summary>
+      <div class="admin-player-details">
+        <p><span>Geräte-ID</span><code>${escapeHtml(player.deviceId)}</code></p>
+        <p><span>Aktualisiert</span><strong>${formatDate(player.updatedAt)}</strong></p>
+        <h3>Fortschritt</h3>
+        <div class="admin-progress-grid">
+          <span>Duftgarten <b>${p.duftgarten}/2</b></span><span>Klangwald <b>${p.klangwald}/2</b></span>
+          <span>Farbenreich <b>${p.farbenreich}/2</b></span><span>Tastminen <b>${p.tastminen}/2</b></span>
+          <span>Flammenküche <b>${p.flammenkueche}/2</b></span><span>Zauberschloss <b>${p.zauberschloss}/3</b></span>
+        </div>
+        <h3>Level-Highscores</h3>
+        <div class="admin-score-grid">
+          <span>Duft L1 <b>${s.duftgarten1}</b></span><span>Duft L2 <b>${s.duftgarten2}</b></span>
+          <span>Klang L1 <b>${s.klangwald1}</b></span><span>Klang L2 <b>${s.klangwald2}</b></span>
+          <span>Farben L1 <b>${s.farbenreich1}</b></span><span>Farben L2 <b>${s.farbenreich2}</b></span>
+          <span>Tast L1 <b>${s.tastminen1}</b></span><span>Tast L2 <b>${s.tastminen2}</b></span>
+          <span>Flammen L1 <b>${s.flammen1}</b></span><span>Flammen L2 <b>${s.flammen2}</b></span>
+          <span>Schloss L1 <b>${s.zauber1}</b></span><span>Schloss L2 <b>${s.zauber2}</b></span><span>Schloss L3 <b>${s.zauber3}</b></span>
+        </div>
+      </div>
+    </details>`;
+  }
+
   function renderTable() {
     const term = (search.value || '').trim().toLowerCase();
     const filtered = players.filter(player => !term || player.name.toLowerCase().includes(term) || player.deviceId.toLowerCase().includes(term));
     tableBody.innerHTML = filtered.length ? filtered.map(rowHtml).join('') : '<tr><td colspan="23">Keine passenden Einträge.</td></tr>';
+    if (mobileList) mobileList.innerHTML = filtered.length ? filtered.map(mobileCardHtml).join('') : '<p class="admin-mobile-empty">Keine passenden Einträge.</p>';
     status.textContent = `${filtered.length} von ${players.length} Spielern angezeigt.`;
   }
 
