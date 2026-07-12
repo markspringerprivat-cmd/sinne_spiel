@@ -597,6 +597,47 @@ function setCastleStandardBattlePoseVisual() {
   hideCastleSpeech();
 }
 
+async function animateCastleActorsToStandardPose(duration = 720) {
+  const zone = document.getElementById('quizBattleZone');
+  const knight = document.getElementById('quizKnight');
+  const enemy = document.getElementById('quizEnemy');
+  if (!zone || !knight || !enemy) {
+    setCastleStandardBattlePoseVisual();
+    return;
+  }
+
+  const knightStart = knight.getBoundingClientRect();
+  const enemyStart = enemy.getBoundingClientRect();
+  setCastleStandardBattlePoseVisual();
+  const knightEnd = knight.getBoundingClientRect();
+  const enemyEnd = enemy.getBoundingClientRect();
+
+  const setup = (element, start, end) => {
+    const dx = start.left - end.left;
+    const dy = start.top - end.top;
+    const sx = end.width ? start.width / end.width : 1;
+    const sy = end.height ? start.height / end.height : 1;
+    element.style.setProperty('transition', 'none', 'important');
+    element.style.setProperty('transform-origin', 'center bottom', 'important');
+    element.style.setProperty('transform', `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`, 'important');
+  };
+  setup(knight, knightStart, knightEnd);
+  setup(enemy, enemyStart, enemyEnd);
+  void zone.offsetWidth;
+  [knight, enemy].forEach(element => {
+    element.style.setProperty('transition', `transform ${duration}ms cubic-bezier(.22,.78,.28,1), opacity ${duration}ms ease`, 'important');
+    element.style.setProperty('transform', 'translate(0, 0) scale(1)', 'important');
+    element.style.setProperty('opacity', '1', 'important');
+  });
+  await wait(duration + 40);
+  [knight, enemy].forEach(element => {
+    element.style.removeProperty('transition');
+    element.style.removeProperty('transform');
+    element.style.removeProperty('transform-origin');
+    element.style.removeProperty('opacity');
+  });
+}
+
 async function flyCastleMageOutBeforePhase(direction = 'left') {
   const enemy = document.getElementById('quizEnemy');
   if (!enemy) return;
@@ -715,7 +756,7 @@ async function animateCastleEnemyStrike({
 }
 
 async function pauseCastleBeforeNextPhase(speechHtml, direction = 'left', delayMs = 5000) {
-  setCastleStandardBattlePoseVisual();
+  await animateCastleActorsToStandardPose();
   if (speechHtml) showCastleSpeech(speechHtml);
   await wait(delayMs);
   hideCastleSpeech();
@@ -926,21 +967,21 @@ function unlockSfxForMobile() {
   [sfxCorrect, sfxWrong, sfxClick, sfxMageHit, castleUltimateMusic, castleWinMusic].forEach(audio => {
     if (!audio) return;
     try {
+      const previousMuted = audio.muted;
+      audio.muted = true;
       audio.volume = 0;
-      const played = audio.play();
-      if (played && typeof played.then === 'function') {
-        played.then(() => {
+      audio.currentTime = 0;
+      const finishUnlock = () => {
+        try {
           audio.pause();
           audio.currentTime = 0;
           audio.volume = currentVolume();
-        }).catch(() => {
-          audio.volume = currentVolume();
-        });
-      } else {
-        audio.pause();
-        audio.currentTime = 0;
-        audio.volume = currentVolume();
-      }
+          audio.muted = previousMuted;
+        } catch {}
+      };
+      const played = audio.play();
+      if (played && typeof played.then === 'function') played.then(finishUnlock).catch(finishUnlock);
+      else finishUnlock();
     } catch {}
   });
 }
@@ -2146,7 +2187,7 @@ function updateCastleProjectiles(deltaSeconds) {
       projectile.el.remove();
       if (projectile.kind === 'good') {
         state.goodCollected = Math.min(state.goal, state.goodCollected + 1);
-        playSfx(sfxClick);
+        playSfx(sfxCorrect);
         updateCastleTasteStatus();
         showCastleTasteFeedback(`Apfel gesammelt! ${state.goodCollected} von ${state.goal}.`, 850);
         if (state.goodCollected >= state.goal) {
@@ -2369,6 +2410,7 @@ async function finishCastleDodgeGame() {
     return;
   }
 
+  await animateCastleActorsToStandardPose();
   if (zone) {
     zone.classList.remove('castle-dodge-mode');
     zone.classList.add('castle-final-hit-mode');
@@ -2470,9 +2512,8 @@ async function playCastleFinalHit() {
   enemy.classList.remove('castle-final-damage-blink');
   knight.src = castleKnightAsset('normal');
   enemy.src = castleEnemyAsset('laugh');
-  zone.classList.remove('castle-final-hit-mode');
-  zone.classList.add('castle-stand-off-mode');
-  await wait(520);
+  await animateCastleActorsToStandardPose();
+  await wait(260);
   await startCastleCloneSearchSequence();
 }
 
@@ -2628,22 +2669,17 @@ async function beginCastleCloneAttempt(showMageEnter = true) {
   hideCastleSpeech();
   setCastleCloneKnightX(Number(state.playerX) || 31);
   setCastleCloneMagePoint(64, 22);
-  enemy.classList.remove('castle-clone-hidden', 'castle-final-damage-blink', 'castle-clone-mage-enter', 'castle-flight-left', 'castle-phase-hidden');
-  if (!showMageEnter) {
-    enemy.classList.add('castle-clone-hidden');
-    buildCastleCloneChoices();
-    return;
-  }
-  enemy.src = castleEnemyAsset('flyRight');
+
+  enemy.classList.remove('castle-clone-hidden', 'castle-final-damage-blink', 'castle-clone-mage-enter', 'castle-flight-left', 'castle-flight-right', 'castle-phase-hidden');
+  enemy.src = castleEnemyAsset('flyLeft');
   void enemy.offsetWidth;
-  enemy.classList.add('castle-clone-mage-enter');
-  await wait(900);
+  enemy.classList.add('castle-flight-left');
+  await wait(showMageEnter ? 1120 : 980);
   if (!activeQuiz?.castleClone?.running) return;
-  enemy.classList.remove('castle-clone-mage-enter');
-  enemy.src = castleEnemyAsset('normal');
-  await wait(220);
-  if (!activeQuiz?.castleClone?.running) return;
+  enemy.classList.remove('castle-flight-left');
   enemy.classList.add('castle-clone-hidden');
+  await wait(120);
+  if (!activeQuiz?.castleClone?.running) return;
   buildCastleCloneChoices();
 }
 
@@ -2826,8 +2862,9 @@ async function finishCastleCloneSearch() {
   if (!state || !state.running || !enemy || !knight || !zone) return;
   state.running = false;
 
-  if (panel) panel.classList.add('hidden');
   hideCastleSpeech();
+  await animateCastleActorsToStandardPose();
+  if (panel) panel.classList.add('hidden');
   cleanupCastleCloneSearch();
   if (!activeQuiz) return;
   activeQuiz.cloneSearchCompleted = true;
@@ -3202,9 +3239,13 @@ async function handleCastleBushPick(index) {
 
     await animateCastleBushKnightJump(targetX, false);
     if (!activeQuiz?.castleBush?.running) return;
+    knight.src = castleKnightAsset('finalAttack');
+    knight.classList.add('castle-bush-sword-swing');
     playSfx(sfxMageHit);
     image?.classList.add('castle-bush-hit-blink');
     await wait(520);
+    knight.classList.remove('castle-bush-sword-swing');
+    knight.src = castleKnightAsset('normal');
     image?.classList.remove('castle-bush-hit-blink');
     state.hits += 1;
     updateCastleBushLabel();
@@ -3239,8 +3280,9 @@ async function finishCastleBushSearch() {
   if (state.revealTimer) clearTimeout(state.revealTimer);
   hideAllCastleBushReveals(true);
 
+  await animateCastleActorsToStandardPose();
   panel?.classList.add('hidden');
-  await wait(180);
+  await wait(120);
   cleanupCastleBushGame();
   await pauseCastleBeforeNextPhase('<strong>Du hast mich ertastet.</strong><br>Aber kannst du auch den richtigen Duft finden?', 'left');
   await startCastleSmellSearchSequence();
@@ -3314,6 +3356,7 @@ async function finishCastleSmellSearch() {
   state.attemptToken += 1;
   clearCastleSmellRows(true);
   await wait(240);
+  await animateCastleActorsToStandardPose();
   cleanupCastleSmellGame();
   await pauseCastleBeforeNextPhase('<strong>Du folgst schon der richtigen Spur.</strong><br>Mal sehen, ob dein Gehör genauso stark ist!', 'left');
   await startCastleHearingSearchSequence();
@@ -4254,6 +4297,7 @@ async function finishCastleHearingSearch() {
   state.attemptToken += 1;
   showCastleHearingFeedback('Der Klangzauber ist gebrochen!', 1200);
   await wait(520);
+  await animateCastleActorsToStandardPose();
   cleanupCastleHearingGame();
   await pauseCastleBeforeNextPhase('<strong>Genug gespielt!</strong><br>Jetzt entfessele ich meine ganze Macht.', 'left');
   if (activeQuiz && !activeQuiz.finished) await startCastleUltimateSequence();

@@ -6280,3 +6280,93 @@ html.sm-page-loading body > *:not(#globalPageLoader):not(script) {
     padding-inline: 9% !important;
   }
 }
+
+/* === v106: versöhnlicher Bild-Abspann und weichere Boss-Übergänge === */
+.castle-credit-scene {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(280px, .85fr);
+  gap: 18px;
+  align-items: stretch;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 26px;
+  background: rgba(255,255,255,.055);
+  border: 1px solid rgba(255,255,255,.1);
+  box-shadow: 0 20px 46px rgba(0,0,0,.3);
+}
+.castle-credit-scene > img {
+  width: 100%;
+  height: 100%;
+  min-height: 320px;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  display: block;
+  background: #090510;
+}
+.castle-credit-copy {
+  display: grid;
+  align-content: center;
+  gap: 10px;
+  padding: 22px;
+  color: #f5ebd4;
+}
+.castle-credit-copy h3 {
+  margin: 0;
+  color: #fff4da;
+  font-size: clamp(1.3rem, 3vw, 1.85rem);
+}
+.castle-credit-copy p {
+  margin: 0;
+  line-height: 1.68;
+  font-size: clamp(.98rem, 2vw, 1.08rem);
+  color: rgba(245,235,212,.96);
+}
+.castle-credit-word {
+  opacity: 0;
+  filter: blur(2px);
+  display: inline;
+  transition: opacity .28s ease, filter .28s ease;
+}
+.castle-credit-scene.credit-copy-visible .castle-credit-word {
+  animation: castleCreditWordIn .32s ease forwards;
+  animation-delay: calc(var(--credit-word-index) * 32ms);
+}
+@keyframes castleCreditWordIn {
+  from { opacity: 0; filter: blur(2px); }
+  to { opacity: 1; filter: blur(0); }
+}
+.castle-credit-final-scene {
+  margin-bottom: 0;
+}
+.castle-credit-final-copy {
+  background: linear-gradient(180deg, rgba(77,34,112,.64), rgba(35,18,53,.84));
+}
+.castle-credit-final-copy p {
+  font-size: clamp(1rem, 2.2vw, 1.14rem);
+}
+
+.castle-bush-sword-swing {
+  animation: castleBushSwordSwing .52s cubic-bezier(.2,.82,.25,1) both !important;
+  transform-origin: 42% 82% !important;
+}
+@keyframes castleBushSwordSwing {
+  0% { transform: translateX(-50%) rotate(-8deg) scale(.98); }
+  45% { transform: translateX(-42%) rotate(9deg) scale(1.06); }
+  100% { transform: translateX(-50%) rotate(0deg) scale(1); }
+}
+
+@media (max-width: 900px) {
+  .castle-credit-scene {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .castle-credit-scene > img {
+    min-height: 0;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    object-fit: contain;
+  }
+  .castle-credit-copy {
+    padding: 18px 18px 22px;
+  }
+}

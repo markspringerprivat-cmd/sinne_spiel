@@ -76,6 +76,8 @@ const storyCard = document.querySelector('.castle-outro-story-card');
 const imageWrap = document.querySelector('.castle-outro-story-image-wrap');
 const creditsSection = document.getElementById('castleCreditsSection');
 const outroFinish = document.getElementById('castleOutroFinish');
+const creditsFinalScene = document.getElementById('castleCreditsFinalScene');
+let creditRevealObserver = null;
 
 let orbIndex = 0;
 let busy = true;
@@ -197,6 +199,38 @@ function renderOutroPanel(index) {
   showWords(panel.text, index === outroPanels.length - 1 ? 8 : 8.6);
 }
 
+function prepareCreditWordReveals() {
+  const scenes = [...document.querySelectorAll('[data-credit-reveal]')];
+  scenes.forEach(scene => {
+    const paragraph = scene.querySelector('[data-credit-text]');
+    if (!paragraph || paragraph.dataset.prepared === '1') return;
+    paragraph.dataset.prepared = '1';
+    const words = paragraph.textContent.trim().split(/\s+/);
+    paragraph.innerHTML = '';
+    words.forEach((word, index) => {
+      const span = document.createElement('span');
+      span.className = 'castle-credit-word';
+      span.style.setProperty('--credit-word-index', index);
+      span.textContent = `${word}${index < words.length - 1 ? ' ' : ''}`;
+      paragraph.appendChild(span);
+    });
+  });
+
+  creditRevealObserver?.disconnect();
+  creditRevealObserver = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      entry.target.classList.add('credit-copy-visible');
+      creditRevealObserver?.unobserve(entry.target);
+    });
+  }, {
+    root: outroOverlay,
+    rootMargin: '0px 0px -18% 0px',
+    threshold: 0.22
+  });
+  scenes.forEach(scene => creditRevealObserver.observe(scene));
+}
+
 function showFinishButton() {
   outroFinish?.classList.remove('hidden');
 }
@@ -209,8 +243,18 @@ function startAutoScrollThroughCredits() {
   if (autoScrollStarted || !outroOverlay) return;
   autoScrollStarted = true;
   syncStoryCardHeight();
+  prepareCreditWordReveals();
   const startTop = outroOverlay.scrollTop;
-  const endTop = Math.max(0, outroOverlay.scrollHeight - outroOverlay.clientHeight);
+  const finalImage = creditsFinalScene?.querySelector('img');
+  const overlayRect = outroOverlay.getBoundingClientRect();
+  const finalImageRect = finalImage?.getBoundingClientRect();
+  const finalImageTop = finalImageRect
+    ? outroOverlay.scrollTop + finalImageRect.top - overlayRect.top
+    : outroOverlay.scrollHeight - outroOverlay.clientHeight;
+  const endTop = Math.max(startTop, Math.min(
+    Math.max(0, outroOverlay.scrollHeight - outroOverlay.clientHeight),
+    finalImageTop
+  ));
   const startTime = performance.now();
 
   function step(now) {
@@ -246,6 +290,7 @@ async function startOutro() {
   finaleShell.classList.add('hidden');
   outroOverlay.classList.remove('hidden');
   outroOverlay.scrollTop = 0;
+  prepareCreditWordReveals();
   renderOutroPanel(0);
   queueNextPanel();
 
@@ -319,4 +364,15 @@ hopefulMusic?.addEventListener('ended', showFinishButton);
 ['../assets/images/finale/knight_idle_finale.png', '../assets/images/finale/knight_attack_finale.png'].forEach(src => { const img = new Image(); img.src = src; });
 orbFrames.forEach(src => { const img = new Image(); img.src = src; });
 outroPanels.forEach(panel => { const img = new Image(); img.src = panel.img; });
+[
+  '../assets/images/finale/credits/credits_01_waldgeist.png',
+  '../assets/images/finale/credits/credits_02_maulwurf.png',
+  '../assets/images/finale/credits/credits_03_feuergolem.png',
+  '../assets/images/finale/credits/credits_04_farbgolem.png',
+  '../assets/images/finale/credits/credits_05_duftgeist.png',
+  '../assets/images/finale/credits/credits_06_stuermen.png',
+  '../assets/images/finale/credits/credits_07_handreichen.png',
+  '../assets/images/finale/credits/credits_08_feier.png',
+  '../assets/images/finale/credits/credits_09_danke.png'
+].forEach(src => { const img = new Image(); img.src = src; });
 enterKnight();

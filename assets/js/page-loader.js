@@ -174,6 +174,11 @@
         'assets/images/finale/knight_attack_finale.png',
         ...[1, 2, 3, 4, 5].map(i => `assets/images/finale/orb_stage_${i}.png`),
         ...[1, 2, 3, 4, 5, 6].map(i => `assets/images/finale/out_${i}.png`),
+        ...[
+          'credits_01_waldgeist.png', 'credits_02_maulwurf.png', 'credits_03_feuergolem.png',
+          'credits_04_farbgolem.png', 'credits_05_duftgeist.png', 'credits_06_stuermen.png',
+          'credits_07_handreichen.png', 'credits_08_feier.png', 'credits_09_danke.png'
+        ].map(name => `assets/images/finale/credits/${name}`),
         'assets/images/characters/ritter_victory.png',
         ...['duftgeist', 'waldgeist', 'farbgolem', 'maulwurf', 'feuergolem'].map(enemy => `assets/images/enemies/${enemy}.png`),
         'assets/images/enemies/zauberer_defeated.png',
