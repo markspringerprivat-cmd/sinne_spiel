@@ -1166,7 +1166,14 @@ function closeLevelPopup() {
   levelPopup.classList.add('hidden');
   const handler = popupCloseHandler;
   popupCloseHandler = null;
-  if (typeof handler === 'function') handler();
+
+  // Popups mit eigener Folgeaktion (Seitenwechsel, Minispiel oder Bosskampf)
+  // steuern die Musik selbst. Dadurch wird die Gebietsmusik nicht versehentlich
+  // nach dem Start einer anderen Hintergrundmusik erneut eingeblendet.
+  if (typeof handler === 'function') {
+    handler();
+    return;
+  }
   startLevelMusic();
 }
 
@@ -4943,6 +4950,12 @@ function showQuizResult() {
 
   let fragmentStatus = { gained: false, reward: null, total: readFragments().size, allCollected: false };
   if (won) {
+    const quizMax = castleVictory ? 5000 : 1000;
+    const questionCount = Math.max(1, activeQuizQuestions().length);
+    const correctness = Math.max(0, Math.min(1, activeQuiz.correct / questionCount));
+    const heartBonus = Math.max(0, Math.min(1, activeQuiz.hearts / 3));
+    const earnedScore = Math.round(quizMax * (0.82 * correctness + 0.18 * heartBonus));
+    window.SinnesScore?.record(castleVictory ? 'boss_zauberschloss_final' : `quiz_${activeQuiz.quizId}`, earnedScore, quizMax);
     setAreaProgress({ level2Completed: true });
     applyMarkerStates();
     fragmentStatus = awardFragment(activeQuiz.quizId);
@@ -4970,10 +4983,12 @@ function showQuizResult() {
         <button id="closeQuizButton" class="primary-button" type="button">${castleVictory ? 'Zurück zum Zauberschloss' : 'Zur Weltkarte'}</button>
       </div>
     `;
+    // Dasselbe Siegeslied wird nach jeder erfolgreich abgeschlossenen
+    // Bossbegegnung gespielt – nicht nur beim Magier im Zauberschloss.
     if (castleVictory) {
       showCastleVictoryScene(knight.src, enemy.src);
-      playCastleWinMusic();
     }
+    playCastleWinMusic();
     document.getElementById('closeQuizButton').addEventListener('click', castleVictory ? returnToCastleLevel : returnToOverworld);
     return;
   }

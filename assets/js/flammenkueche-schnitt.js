@@ -25,7 +25,7 @@
   const musicLoop = null;
 
   const background = new Image();
-  background.src = '../assets/images/battle-backgrounds/flammenkueche.png';
+  background.src = '../assets/images/battle-backgrounds/flammenkueche.webp';
 
   const iconSpriteCache = new Map();
 
@@ -259,7 +259,7 @@
     game.running = false;
     game.finished = true;
     pauseMusic();
-    if (won) completeFlameLevelOne();
+    if (won) { completeFlameLevelOne(); window.SinnesScore?.record('game_flammenkueche', 700 + Math.round((game.lives / MAX_LIVES) * 200) + Math.min(100, Math.round(game.score)), 1000); }
     setTimeout(() => showPopup(won ? 'won' : 'lost'), 360);
   }
 

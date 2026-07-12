@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Farbenreich | Die verlorene Sinnesmagie</title>
-  <link rel="stylesheet" href="../assets/css/style.css?v=105">
+  <link rel="stylesheet" href="../assets/css/style.css?v=109">
 </head>
 <body class="level-map-page">
   <div id="globalPageLoader" class="global-page-loader" role="status" aria-live="polite" aria-label="Spiel wird geladen">
@@ -18,12 +18,12 @@
       </div>
     </div>
   </div>
-  <script src="../assets/js/page-loader.js?v=102"></script>
+  <script src="../assets/js/page-loader.js?v=107"></script>
 
-  <audio id="levelMusic" src="../assets/audio/farbenreich_new.mp3" preload="auto"></audio>
+  <audio id="levelMusic" src="../assets/audio/farbenreich_new.mp3" preload="metadata"></audio>
   <main class="level-map-shell" aria-label="Farbenreich">
     <section class="level-map-stage" style="--level-w:1024;--level-h:1536;--start-x:20%;--start-y:82%;" aria-label="Levelkarte Farbenreich">
-      <img class="level-bg-image" src="../assets/images/level-backgrounds/farbenreich.png" alt="Farbenreich Hintergrund" draggable="false">
+      <img class="level-bg-image" src="../assets/images/level-backgrounds/farbenreich.webp" alt="Farbenreich Hintergrund" draggable="false">
 
       <button class="level-marker" style="--x:75%;--y:41%;--size:24%;" data-target-x="75" data-target-y="41" data-title="Farben-Memory" data-text="Präge dir das Farbmuster ein und zeichne es danach mit den richtigen Farben nach." data-minigame-url="farbenreich-malen.html" aria-label="Farben-Minispiel betreten"></button>
       <button class="level-marker" style="--x:29%;--y:17%;--size:24%;" data-target-x="29" data-target-y="17" data-title="Quiz / Bossbereich" data-text="Hier folgt später das Quiz oder der zweite Levelteil." aria-label="Quiz / Bossbereich betreten" data-quiz-id="farbenreich"></button>
@@ -43,6 +43,8 @@
   </div>
 <script src="../assets/js/audio-crossfade.js"></script>
   <script src="../assets/js/quiz-data.js"></script>
-  <script src="../assets/js/level.js?v=97"></script>
+  <script src="../assets/js/level.js?v=108"></script>
+  <script src="../assets/js/cloud-save.js?v=110"></script>
+  <script src="../assets/js/score-system.js?v=110"></script>
 </body>
 </html>

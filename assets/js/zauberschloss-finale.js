@@ -24,32 +24,32 @@ const hitTexts = [
 
 const outroPanels = [
   {
-    img: '../assets/images/finale/out_1.png',
+    img: '../assets/images/finale/out_1.webp',
     title: 'Die Kugel zerbricht',
     text: 'Mit dem letzten Schlag des Ritters zersprang die Glaskugel. Ein mächtiger Strom aus Farben, Licht und Sinnesmagie schoss aus dem dunklen Schloss hinaus und suchte den Weg zurück ins Königreich.'
   },
   {
-    img: '../assets/images/finale/out_2.png',
+    img: '../assets/images/finale/out_2.webp',
     title: 'Der Ritter kehrt zurück',
     text: 'Am Schlosstor lief die Prinzessin dem Ritter erleichtert entgegen. Sein Mut hatte das Königreich gerettet, und endlich konnten beide wieder hoffnungsvoll in die Zukunft blicken.'
   },
   {
-    img: '../assets/images/finale/out_3.png',
+    img: '../assets/images/finale/out_3.webp',
     title: 'Die Magie erreicht das Königreich',
     text: 'Bunte Ströme zogen über Türme, Mauern und Höfe. Farben leuchteten wieder, vertraute Geräusche kehrten zurück und das ganze Königreich erwachte aus seiner stillen Dunkelheit.'
   },
   {
-    img: '../assets/images/finale/out_4.png',
+    img: '../assets/images/finale/out_4.webp',
     title: 'Die Sinne erwachen',
     text: 'Blumen dufteten, Brot schmeckte frisch und Musik erfüllte die Luft. Die Menschen konnten wieder sehen, hören, riechen, schmecken und fühlen – und freuten sich über jeden Eindruck.'
   },
   {
-    img: '../assets/images/finale/out_5.png',
+    img: '../assets/images/finale/out_5.webp',
     title: 'Ein gemeinsames Fest',
     text: 'Am Abend kamen alle an einem Tisch zusammen. Sie aßen, lachten und erzählten von ihrem Abenteuer. Aus Angst und Stille waren wieder Nähe, Freude und Gemeinschaft geworden.'
   },
   {
-    img: '../assets/images/finale/out_6.png',
+    img: '../assets/images/finale/out_6.webp',
     title: 'Unsere Sinne begleiten und schützen uns',
     text: 'Unsere Sinne verbinden uns mit der Welt. Sie wecken Gefühle, weisen uns den Weg und warnen vor Rauch, Lärm, Hitze oder verdorbenem Essen. Wer aufmerksam sieht, hört, riecht, schmeckt und fühlt, lebt sicherer und bewusster.'
   }
@@ -365,14 +365,14 @@ hopefulMusic?.addEventListener('ended', showFinishButton);
 orbFrames.forEach(src => { const img = new Image(); img.src = src; });
 outroPanels.forEach(panel => { const img = new Image(); img.src = panel.img; });
 [
-  '../assets/images/finale/credits/credits_01_waldgeist.png',
-  '../assets/images/finale/credits/credits_02_maulwurf.png',
-  '../assets/images/finale/credits/credits_03_feuergolem.png',
-  '../assets/images/finale/credits/credits_04_farbgolem.png',
-  '../assets/images/finale/credits/credits_05_duftgeist.png',
-  '../assets/images/finale/credits/credits_06_stuermen.png',
-  '../assets/images/finale/credits/credits_07_handreichen.png',
-  '../assets/images/finale/credits/credits_08_feier.png',
-  '../assets/images/finale/credits/credits_09_danke.png'
+  '../assets/images/finale/credits/credits_01_waldgeist.webp',
+  '../assets/images/finale/credits/credits_02_maulwurf.webp',
+  '../assets/images/finale/credits/credits_03_feuergolem.webp',
+  '../assets/images/finale/credits/credits_04_farbgolem.webp',
+  '../assets/images/finale/credits/credits_05_duftgeist.webp',
+  '../assets/images/finale/credits/credits_06_stuermen.webp',
+  '../assets/images/finale/credits/credits_07_handreichen.webp',
+  '../assets/images/finale/credits/credits_08_feier.webp',
+  '../assets/images/finale/credits/credits_09_danke.webp'
 ].forEach(src => { const img = new Image(); img.src = src; });
 enterKnight();

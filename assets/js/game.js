@@ -28,6 +28,12 @@ const settingsModal = document.getElementById('settingsModal');
 const showQrButton = document.getElementById('showQrButton');
 const unlockAllButton = document.getElementById('unlockAllButton');
 const resetGameButton = document.getElementById('resetGameButton');
+const adminAreaButton = document.getElementById('adminAreaButton');
+const adminPasswordModal = document.getElementById('adminPasswordModal');
+const adminPasswordInput = document.getElementById('adminPasswordInput');
+const adminPasswordError = document.getElementById('adminPasswordError');
+const adminPasswordSubmit = document.getElementById('adminPasswordSubmit');
+const adminPasswordCancel = document.getElementById('adminPasswordCancel');
 const qrOverview = document.getElementById('qrOverview');
 
 const scannerModal = document.getElementById('scannerModal');
@@ -443,6 +449,32 @@ function closeSettings() {
   settingsModal.classList.add('hidden');
 }
 
+function openAdminPassword() {
+  closeSettings();
+  adminPasswordError?.classList.add('hidden');
+  if (adminPasswordInput) adminPasswordInput.value = '';
+  adminPasswordModal?.classList.remove('hidden');
+  window.setTimeout(() => adminPasswordInput?.focus(), 60);
+}
+
+function closeAdminPassword() {
+  adminPasswordModal?.classList.add('hidden');
+  adminPasswordError?.classList.add('hidden');
+}
+
+function submitAdminPassword() {
+  const password = adminPasswordInput?.value || '';
+  if (password !== 'Mark123') {
+    adminPasswordError?.classList.remove('hidden');
+    adminPasswordInput?.focus();
+    adminPasswordInput?.select();
+    return;
+  }
+  sessionStorage.setItem('sinnesmagie-admin-auth', '1');
+  sessionStorage.setItem('sinnesmagie-admin-password', password);
+  window.location.href = 'admin.html';
+}
+
 function showLockedInfo(area) {
   selectedLockedArea = area;
 
@@ -803,6 +835,16 @@ showQrButton.addEventListener('click', () => {
 if (unlockAllButton) {
   unlockAllButton.addEventListener('click', unlockAllForTesting);
 }
+
+adminAreaButton?.addEventListener('click', openAdminPassword);
+adminPasswordSubmit?.addEventListener('click', submitAdminPassword);
+adminPasswordCancel?.addEventListener('click', closeAdminPassword);
+adminPasswordInput?.addEventListener('keydown', event => {
+  if (event.key === 'Enter') submitAdminPassword();
+  if (event.key === 'Escape') closeAdminPassword();
+});
+document.querySelectorAll('[data-close-admin-password]').forEach(button => button.addEventListener('click', closeAdminPassword));
+adminPasswordModal?.addEventListener('click', event => { if (event.target === adminPasswordModal) closeAdminPassword(); });
 
 resetGameButton.addEventListener('click', () => {
   const confirmed = window.confirm('Spiel wirklich zurücksetzen? Alle Freischaltungen, Kristalle und gespeicherten Positionen werden gelöscht.');

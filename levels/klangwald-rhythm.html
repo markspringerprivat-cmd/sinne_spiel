@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Klangwald-Minispiel | Die verlorene Sinnesmagie</title>
-  <link rel="stylesheet" href="../assets/css/style.css?v=105">
+  <link rel="stylesheet" href="../assets/css/style.css?v=109">
   <style>
     :root {
       --klang-card: rgba(255, 249, 223, 0.93);
@@ -240,9 +240,9 @@
       </div>
     </div>
   </div>
-  <script src="../assets/js/page-loader.js?v=102"></script>
+  <script src="../assets/js/page-loader.js?v=107"></script>
 
-  <audio id="rhythmMusic" src="../assets/audio/klangwald_minispiel_new.mp3" preload="auto"></audio>
+  <audio id="rhythmMusic" src="../assets/audio/klangwald_minispiel_new.mp3" preload="metadata"></audio>
 
   <main class="rhythm-shell" aria-label="Klangwald-Rhythmusspiel">
     <canvas id="rhythmCanvas" aria-label="Drücke die Töne im richtigen Moment"></canvas>
@@ -267,5 +267,7 @@
     <section id="rhythmPopup" class="rhythm-popup"></section>
   </div>
 <script src="../assets/js/klangwald-rhythm.js"></script>
+  <script src="../assets/js/cloud-save.js?v=110"></script>
+  <script src="../assets/js/score-system.js?v=110"></script>
 </body>
 </html>

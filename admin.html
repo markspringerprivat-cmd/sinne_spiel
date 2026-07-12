@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="de" class="sm-page-loading">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Admin-Bereich | Sinnesmagie</title>
+  <link rel="stylesheet" href="assets/css/style.css?v=111">
+</head>
+<body class="admin-page">
+  <div id="globalPageLoader" class="global-page-loader" role="status" aria-live="polite" aria-label="Admin-Bereich wird geladen">
+    <div class="global-page-loader-card">
+      <div class="global-page-loader-icon" aria-hidden="true">📊</div>
+      <div class="global-page-loader-title">Admin-Bereich wird vorbereitet …</div>
+      <div class="global-page-loader-track"><div id="globalPageLoaderFill" class="global-page-loader-fill"></div></div>
+      <div class="global-page-loader-meta"><span id="globalPageLoaderNote" class="global-page-loader-note">Daten werden vorbereitet.</span><span id="globalPageLoaderPercent" class="global-page-loader-percent">0 %</span></div>
+    </div>
+  </div>
+  <script src="assets/js/page-loader.js?v=107"></script>
+
+  <header class="admin-header">
+    <div>
+      <p class="admin-kicker">Sinnesmagie</p>
+      <h1>Admin-Bereich</h1>
+      <p>Vollständige Fortschritts- und Highscore-Daten aus Google Sheets.</p>
+    </div>
+    <div class="admin-header-actions">
+      <button id="adminRefreshButton" class="primary-button" type="button">Aktualisieren</button>
+      <button id="adminLogoutButton" class="ghost-button" type="button">Abmelden</button>
+      <a class="ghost-button" href="game.html">Zur Weltkarte</a>
+    </div>
+  </header>
+
+  <main class="admin-main">
+    <section class="admin-summary" aria-label="Zusammenfassung">
+      <article><span>Spieler</span><strong id="adminPlayerCount">–</strong></article>
+      <article><span>Spiel abgeschlossen</span><strong id="adminCompletedCount">–</strong></article>
+      <article><span>Ø Highscore</span><strong id="adminAverageScore">–</strong></article>
+      <article><span>Höchster Highscore</span><strong id="adminTopScore">–</strong></article>
+    </section>
+
+    <section class="admin-panel">
+      <div class="admin-panel-head">
+        <div>
+          <h2>Spielerdaten</h2>
+          <p id="adminStatus">Daten werden geladen …</p>
+        </div>
+        <label class="admin-search-label">Suchen
+          <input id="adminSearchInput" type="search" placeholder="Name oder Geräte-ID">
+        </label>
+      </div>
+      <div id="adminError" class="admin-error hidden"></div>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Name</th><th>Geräte-ID</th><th>Gesamt</th>
+              <th>Duft Fortschritt</th><th>Klang Fortschritt</th><th>Farben Fortschritt</th><th>Tastminen Fortschritt</th><th>Flammen Fortschritt</th><th>Schloss Fortschritt</th>
+              <th>Duft L1</th><th>Duft L2</th><th>Klang L1</th><th>Klang L2</th><th>Farben L1</th><th>Farben L2</th><th>Tastminen L1</th><th>Tastminen L2</th><th>Flammen L1</th><th>Flammen L2</th><th>Schloss L1</th><th>Schloss L2</th><th>Schloss L3</th><th>Aktualisiert</th>
+            </tr>
+          </thead>
+          <tbody id="adminTableBody"><tr><td colspan="23">Daten werden geladen …</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="assets/js/cloud-save.js?v=111"></script>
+  <script src="assets/js/admin.js?v=111"></script>
+</body>
+</html>

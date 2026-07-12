@@ -304,6 +304,7 @@
     game.phase = 'finished';
     if (game.lives > 0) {
       completeColorLevelOne();
+      window.SinnesScore?.record('game_farbenreich', 700 + Math.round((game.lives / 3) * 200) + Math.round((game.points / TOTAL_ROUNDS) * 100), 1000);
       showPopup('won');
     } else {
       showPopup('lost');

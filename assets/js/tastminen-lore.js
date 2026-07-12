@@ -38,7 +38,7 @@
     background: new Image(),
     cart: new Image(),
   };
-  images.background.src = '../assets/images/minigame/mine_chasm_bg.png';
+  images.background.src = '../assets/images/minigame/mine_chasm_bg.webp';
   images.cart.src = '../assets/images/minigame/cart_normal.png';
 
   const materials = [
@@ -312,7 +312,7 @@
     game.finished = true;
     pauseMusic();
     bridgeOverlay.classList.add('hidden');
-    if (won) completeMineLevelOne();
+    if (won) { completeMineLevelOne(); window.SinnesScore?.record('game_tastminen', 700 + Math.round((game.hearts / MAX_HEARTS) * 300), 1000); }
     setTimeout(() => showPopup(won ? 'won' : 'lost'), 420);
   }
 

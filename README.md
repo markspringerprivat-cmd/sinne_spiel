@@ -129,3 +129,28 @@ Die zweiten Levelpunkte der Levelkarten starten nun ein Kampf-Quiz mit sieben Fr
 - Die Bossmusik läuft bis zum Verlassen des Ergebnisses weiter; das frühere alternative Finalstück wird nicht mehr gestartet.
 - Nach der Rückkehr zur Weltkarte erscheint die Schaltfläche „Zurück zum Zauberschloss“.
 - Beim erneuten Betreten des Zauberschlosses wird angezeigt, dass das nächste Level freigeschaltet wurde.
+
+## Version 110 – Cloud-Grundsystem (Teil 1)
+
+- Google-Apps-Script-Anbindung über `assets/js/cloud-save.js`
+- dauerhafte Geräte-ID pro Browser/Gerät
+- Name, Gesamtpunktzahl, Gebietsfortschritt und Einzelpunktzahlen werden automatisch synchronisiert
+- Speicherung wird nach Änderungen an Name, Punktestand oder Level-Fortschritt verzögert gebündelt
+- Offline-Fallback: nicht übertragene Daten bleiben lokal vorgemerkt und werden bei erneuter Internetverbindung wieder gesendet
+- lokale Highscore-Anzeige und lokale Speicherung bleiben vollständig erhalten
+
+Verwendete Web-App:
+`https://script.google.com/macros/s/AKfycbzJYTFZCbExoIkEHapupqHmhX7TP_sihY_SRssAgo-g1ruiXUYfvS6gGpTr5GBJNyW37g/exec`
+
+## Version 111 – Teil 2: Online-Bestenliste und Adminbereich
+
+- Die öffentliche Bestenliste auf der Weltkarte zeigt ausschließlich Name und Gesamt-Highscore von Spielern, die das Spiel abgeschlossen haben.
+- Im Einstellungsmenü befindet sich der Button **„Zum Admin-Bereich“**.
+- Admin-Passwort: `Mark123`
+- `admin.html` zeigt Geräte-ID, Gebietsfortschritt, Gesamt-Highscore und alle Einzel-Level-Highscores.
+- Nach vollständigem Spielabschluss weist ein goldener, schwebender Hinweis auf die Bestenliste.
+- Der End-Highscore bleibt unter „Vielen Dank fürs Spielen“ sichtbar.
+
+### Notwendige Apps-Script-Aktualisierung
+
+Damit `admin.html` die vollständigen Online-Daten abrufen kann, muss der Inhalt aus `apps-script/Code.gs` in das Google-Apps-Script-Projekt übernommen und die bestehende Web-App als **neue Version** erneut bereitgestellt werden. Die `/exec`-Adresse bleibt normalerweise unverändert.

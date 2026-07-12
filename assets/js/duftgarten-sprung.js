@@ -32,7 +32,7 @@
     knight: new Image(),
     beetle: new Image(),
   };
-  images.background.src = '../assets/images/level-backgrounds/duftgarten.png';
+  images.background.src = '../assets/images/level-backgrounds/duftgarten.webp';
   images.flowerNormal.src = '../assets/images/minigame/duftgarten/flower_normal.png';
   images.flowerSlime.src = '../assets/images/minigame/duftgarten/flower_slime.png';
   images.flowerRotten.src = '../assets/images/minigame/duftgarten/flower_rotten.png';
@@ -274,7 +274,7 @@
     jumpOne.disabled = true;
     jumpTwo.disabled = true;
     pauseMusic();
-    if (won) completeLevelOne();
+    if (won) { completeLevelOne(); const gap = Math.max(0, game.playerIndex - Math.floor(game.beetleIndex)); window.SinnesScore?.record('game_duftgarten', 760 + Math.min(240, gap * 40), 1000); }
     setTimeout(() => showPopup(won ? 'won' : 'lost'), 420);
   }
 

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Farben-Memory | Farbenreich</title>
-  <link rel="stylesheet" href="../assets/css/style.css?v=105">
+  <link rel="stylesheet" href="../assets/css/style.css?v=109">
   <style>
     :root {
       --paint-ui: rgba(255, 250, 232, 0.94);
@@ -35,7 +35,7 @@
       inset: 0;
       display: grid;
       place-items: center;
-      background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(0,0,0,0.28)), url('../assets/images/level-backgrounds/farbenreich.png') center / cover no-repeat;
+      background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(0,0,0,0.28)), url('../assets/images/level-backgrounds/farbenreich.webp') center / cover no-repeat;
     }
 
     .paint-shell::after {
@@ -281,9 +281,9 @@
       </div>
     </div>
   </div>
-  <script src="../assets/js/page-loader.js?v=102"></script>
+  <script src="../assets/js/page-loader.js?v=107"></script>
 
-  <audio id="paintMusic" src="../assets/audio/farbenreich_new.mp3" preload="auto"></audio>
+  <audio id="paintMusic" src="../assets/audio/farbenreich_new.mp3" preload="metadata"></audio>
 
   <main class="paint-shell" aria-label="Farbenreich Minispiel">
     <section class="paint-game">
@@ -314,5 +314,7 @@
   </div>
 <script src="../assets/js/audio-crossfade.js"></script>
   <script src="../assets/js/farbenreich-malen.js"></script>
+  <script src="../assets/js/cloud-save.js?v=110"></script>
+  <script src="../assets/js/score-system.js?v=110"></script>
 </body>
 </html>

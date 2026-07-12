@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Spielfeld | Die verlorene Sinnesmagie</title>
-  <link rel="stylesheet" href="assets/css/style.css?v=105">
+  <link rel="stylesheet" href="assets/css/style.css?v=111">
 </head>
 <body class="game-page">
   <div id="globalPageLoader" class="global-page-loader" role="status" aria-live="polite" aria-label="Spiel wird geladen">
@@ -18,13 +18,13 @@
       </div>
     </div>
   </div>
-  <script src="assets/js/page-loader.js?v=102"></script>
+  <script src="assets/js/page-loader.js?v=107"></script>
 
-  <audio id="backgroundMusic" src="assets/audio/overworld_new.mp3" preload="auto"></audio>
+  <audio id="backgroundMusic" src="assets/audio/overworld_new.mp3" preload="metadata"></audio>
 
   <main class="overworld" aria-label="Interaktive Sinneskarte">
     <section class="map-stage" aria-label="Karte des Königreichs">
-      <img class="map-image" src="assets/images/map/overworld.png" alt="Karte des Königreichs mit Sinnesgebieten" draggable="false">
+      <img class="map-image" src="assets/images/map/overworld.webp" alt="Karte des Königreichs mit Sinnesgebieten" draggable="false">
 
       <button class="lock-button" data-lock-button="zauberschloss" data-area="zauberschloss" style="--x:50%;--y:11%;" aria-label="Zauberschloss ist gesperrt">🔒</button>
       <button class="lock-button" data-lock-button="farbenreich" data-area="farbenreich" style="--x:24%;--y:34%;" aria-label="Farbenreich ist gesperrt">🔒</button>
@@ -93,6 +93,7 @@
 
       <button id="showQrButton" class="ghost-button full-width-button" type="button">QR-Codes anzeigen</button>
       <button id="unlockAllButton" class="ghost-button full-width-button" type="button">Alle Level freischalten (Test)</button>
+      <button id="adminAreaButton" class="ghost-button full-width-button" type="button">Zum Admin-Bereich</button>
       <button id="resetGameButton" class="ghost-button full-width-button settings-danger-button" type="button">Spiel zurücksetzen</button>
 
       <div id="qrOverview" class="qr-overview hidden" aria-label="QR-Code-Übersicht">
@@ -106,6 +107,20 @@
     </div>
   </div>
 
+
+  <div id="adminPasswordModal" class="game-modal hidden" role="dialog" aria-modal="true" aria-labelledby="adminPasswordTitle">
+    <div class="game-modal-card admin-password-card">
+      <button class="modal-close" type="button" data-close-admin-password aria-label="Passwortabfrage schließen">×</button>
+      <h2 id="adminPasswordTitle">Admin-Bereich</h2>
+      <p>Bitte das Admin-Passwort eingeben.</p>
+      <input id="adminPasswordInput" class="admin-password-input" type="password" autocomplete="current-password" placeholder="Passwort">
+      <p id="adminPasswordError" class="admin-password-error hidden">Das Passwort ist nicht korrekt.</p>
+      <div class="modal-actions compact-actions">
+        <button id="adminPasswordCancel" class="ghost-button" type="button">Abbrechen</button>
+        <button id="adminPasswordSubmit" class="primary-button" type="button">Öffnen</button>
+      </div>
+    </div>
+  </div>
   <div id="scannerModal" class="game-modal hidden" role="dialog" aria-modal="true" aria-labelledby="scannerModalTitle">
     <div class="game-modal-card scanner-card">
       <button class="modal-close" type="button" data-close-scanner aria-label="Scanner schließen">×</button>
@@ -117,6 +132,8 @@
   </div>
 <script src="https://unpkg.com/html5-qrcode" defer></script>
   <script src="assets/js/audio-crossfade.js"></script>
-  <script src="assets/js/game.js?v=97"></script>
+  <script src="assets/js/game.js?v=111"></script>
+  <script src="assets/js/cloud-save.js?v=111"></script>
+  <script src="assets/js/score-system.js?v=111"></script>
 </body>
 </html>

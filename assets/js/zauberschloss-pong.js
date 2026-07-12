@@ -118,6 +118,7 @@
     finished = true;
     cancelAnimationFrame(raf);
     saveCompletion();
+    window.SinnesScore?.record('game_zauberschloss_pong', 760 + Math.min(240, playerHits * 24), 1000);
     showOverlay(`
       <div>
         <h2>Barriere geschwächt!</h2>

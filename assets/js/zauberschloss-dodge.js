@@ -34,7 +34,8 @@
     projectiles: [],
     spawnTimer: null,
     raf: null,
-    stunnedUntil: 0
+    stunnedUntil: 0,
+    hitsTaken: 0
   };
 
   function currentVolume() {
@@ -85,7 +86,7 @@
 
   async function preloadAll() {
     const images = [
-      '../assets/images/battle-backgrounds/zauberschloss.png',
+      '../assets/images/battle-backgrounds/zauberschloss.webp',
       '../assets/images/characters/knight.png',
       '../assets/images/enemies/zauberer_fly_left.png',
       '../assets/images/enemies/zauberer_fly_right.png'
@@ -167,6 +168,7 @@
     const now = performance.now();
     if (now < state.stunnedUntil) return;
     state.stunnedUntil = now + STUN_MS;
+    state.hitsTaken += 1;
     state.moveDir = 0;
     knight.classList.add('dodge-knight-hit');
     setTimeout(() => knight.classList.remove('dodge-knight-hit'), STUN_MS);
@@ -201,6 +203,7 @@
     clearProjectiles();
     stopMusic();
     completeZauberschlossQuizStep();
+    window.SinnesScore?.record('game_zauberschloss_dodge', Math.max(700, 1000 - state.hitsTaken * 60), 1000);
     popup.classList.remove('hidden');
   }
 
@@ -249,6 +252,7 @@
     state.mageDir = 1;
     state.moveDir = 0;
     state.stunnedUntil = 0;
+    state.hitsTaken = 0;
     clearProjectiles();
     setKnightX();
     setMageX();
