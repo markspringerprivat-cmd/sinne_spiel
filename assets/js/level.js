@@ -1896,12 +1896,13 @@ function renderQuestion(entrance = 'none') {
   }, 1000);
 }
 
-function answerQuestion(idx) {
+async function answerQuestion(idx) {
   if (!activeQuiz || activeQuiz.answered || activeQuiz.finished || activeQuiz.transitioning) return;
   if (isCastleBossQuiz()) {
-    answerCastleQuestion(idx);
+    await answerCastleQuestion(idx);
     return;
   }
+
   activeQuiz.answered = true;
   activeQuiz.transitioning = true;
   clearInterval(quizTimer);
@@ -1909,7 +1910,7 @@ function answerQuestion(idx) {
 
   const q = activeQuizQuestions()[activeQuiz.index];
   const correct = idx === q[2];
-  const answerButtons = document.querySelectorAll('.quiz-answer');
+  const answerButtons = document.querySelectorAll('#quizGame .quiz-answer');
   answerButtons.forEach((btn, i) => {
     btn.disabled = true;
     if (i === q[2]) btn.classList.add('correct-answer');
@@ -1917,101 +1918,105 @@ function answerQuestion(idx) {
   });
   if (correct) playSfx(sfxCorrect);
 
-  setTimeout(() => {
-    const game = document.getElementById('quizGame');
-    game.classList.add('slide-out-left');
-    setTimeout(() => {
-      game.classList.add('hidden');
-      game.classList.remove('slide-out-left');
-      playBattleAnimation(correct, idx);
-    }, QUIZ_TRANSITION_MS);
-  }, 430);
+  // Erst die farbige Rückmeldung sichtbar lassen, danach die Karte vollständig
+  // aus dem Kampffeld bewegen. Die Trefferanimation beginnt erst, wenn die
+  // Karte tatsächlich verborgen ist.
+  await wait(520);
+  const game = document.getElementById('quizGame');
+  game.classList.add('slide-out-left');
+  await wait(QUIZ_TRANSITION_MS + 40);
+  game.classList.add('hidden');
+  game.classList.remove('slide-out-left');
+
+  await playBattleAnimation(correct, idx);
 }
 
-function playBattleAnimation(correct, idx) {
+async function playBattleAnimation(correct, idx) {
+  if (!activeQuiz || activeQuiz.finished) return;
+
   const feedback = document.getElementById('battleFeedback');
   const knight = document.getElementById('quizKnight');
   const enemy = document.getElementById('quizEnemy');
+  if (!feedback || !knight || !enemy) return;
 
   feedback.classList.remove('hidden');
   knight.classList.remove('sprite-pop', 'sprite-shake', 'knight-strike', 'knight-damaged', 'knight-attack-pose');
-  enemy.classList.remove('sprite-shake', 'enemy-hit', 'enemy-attack-strike');
+  enemy.classList.remove('sprite-shake', 'enemy-hit', 'enemy-attack-strike', 'boss-hit-freeze-blink');
 
   if (correct) {
     activeQuiz.correct += 1;
     activeQuiz.scorePoints = Math.min(1000, (activeQuiz.scorePoints || 0) + 125);
     window.SinnesScore?.setSession(`quiz_${activeQuiz.quizId}`, activeQuiz.scorePoints, 1000);
     feedback.textContent = 'Richtig!';
+
     knight.src = knightAsset('attack');
-    knight.classList.add('knight-attack-pose');
     enemy.src = enemyAsset(activeQuiz.data.enemy, 'normal');
+    knight.classList.add('knight-attack-pose');
     void knight.offsetWidth;
-    void enemy.offsetWidth;
     knight.classList.add('knight-strike');
 
-    setTimeout(() => {
-      if (!activeQuiz || activeQuiz.finished) return;
-      enemy.src = enemyAsset(activeQuiz.data.enemy, 'damage');
-      enemy.classList.add('enemy-hit','boss-hit-freeze-blink');
-      playSfx(sfxClick);
-    }, ATTACK_IMPACT_MS);
+    // Der Ritter bewegt sich sichtbar zum Gegner.
+    await wait(ATTACK_IMPACT_MS);
+    if (!activeQuiz || activeQuiz.finished) return;
 
-    setTimeout(() => {
-      if (!activeQuiz || activeQuiz.finished) return;
-      knight.classList.remove('knight-strike');
-      enemy.classList.remove('enemy-hit','boss-hit-freeze-blink');
-      knight.src = knightAsset('normal');
-      knight.classList.remove('knight-attack-pose');
-      enemy.src = enemyAsset(activeQuiz.data.enemy, 'normal');
-    }, 1800);
+    enemy.src = enemyAsset(activeQuiz.data.enemy, 'damage');
+    enemy.classList.add('enemy-hit', 'boss-hit-freeze-blink');
+    playSfx(sfxClick);
+
+    // Gegner bleibt genau in der Trefferposition und blinkt 1,5 Sekunden.
+    await wait(1500);
+    if (!activeQuiz || activeQuiz.finished) return;
+
+    enemy.classList.remove('enemy-hit', 'boss-hit-freeze-blink');
+    knight.classList.remove('knight-strike', 'knight-attack-pose');
+    knight.src = knightAsset('normal');
+    enemy.src = enemyAsset(activeQuiz.data.enemy, 'normal');
+    await wait(220);
   } else {
     activeQuiz.hearts -= 1;
     activeQuiz.scorePoints = Math.max(0, (activeQuiz.scorePoints || 0) - 250);
     window.SinnesScore?.setSession(`quiz_${activeQuiz.quizId}`, activeQuiz.scorePoints, 1000);
     feedback.textContent = idx === -1 ? 'Zeit abgelaufen!' : 'Falsch!';
+
     knight.src = knightAsset('normal');
     enemy.src = enemyAttackAsset(activeQuiz.data.enemy);
-    void knight.offsetWidth;
-    void enemy.offsetWidth;
     playSfx(sfxWrong);
+    void enemy.offsetWidth;
     enemy.classList.add('enemy-attack-strike');
 
-    setTimeout(() => {
-      if (!activeQuiz || activeQuiz.finished) return;
-      knight.src = knightAsset('damage');
-      knight.classList.add('knight-damaged');
-      renderHearts();
-    }, ENEMY_IMPACT_MS);
+    await wait(ENEMY_IMPACT_MS);
+    if (!activeQuiz || activeQuiz.finished) return;
 
-    setTimeout(() => {
-      if (!activeQuiz || activeQuiz.finished) return;
-      knight.classList.remove('knight-damaged');
-      enemy.classList.remove('enemy-attack-strike');
-      knight.src = knightAsset('normal');
-      knight.classList.remove('knight-attack-pose');
-      enemy.src = enemyAsset(activeQuiz.data.enemy, 'normal');
-    }, DAMAGE_RESET_MS);
+    knight.src = knightAsset('damage');
+    knight.classList.add('knight-damaged');
+    renderHearts();
+
+    await wait(Math.max(700, DAMAGE_RESET_MS - ENEMY_IMPACT_MS));
+    if (!activeQuiz || activeQuiz.finished) return;
+
+    knight.classList.remove('knight-damaged');
+    enemy.classList.remove('enemy-attack-strike');
+    knight.src = knightAsset('normal');
+    enemy.src = enemyAsset(activeQuiz.data.enemy, 'normal');
+    await wait(180);
   }
 
-  if (correct) renderHearts();
+  feedback.classList.add('hidden');
+  knight.classList.remove('sprite-pop', 'sprite-shake', 'knight-strike', 'knight-damaged', 'knight-attack-pose');
+  enemy.classList.remove('sprite-shake', 'enemy-hit', 'enemy-attack-strike', 'boss-hit-freeze-blink');
 
-  setTimeout(() => {
-    knight.classList.remove('sprite-pop', 'sprite-shake', 'knight-strike', 'knight-damaged', 'knight-attack-pose');
-    enemy.classList.remove('sprite-shake', 'enemy-hit', 'enemy-attack-strike');
+  if (activeQuiz.hearts <= 0 || activeQuiz.index >= activeQuizQuestions().length - 1) {
+    if (activeQuiz.hearts <= 0) playGameOverSound();
+    showQuizEndPanel();
+    return;
+  }
 
-    if (activeQuiz.hearts <= 0 || activeQuiz.index >= activeQuizQuestions().length - 1) {
-      if (activeQuiz.hearts <= 0) playGameOverSound();
-      showQuizEndPanel();
-    } else {
-      activeQuiz.index += 1;
-      knight.src = knightAsset('normal');
-      knight.classList.remove('knight-attack-pose');
-      enemy.src = enemyAsset(activeQuiz.data.enemy, 'normal');
-      feedback.classList.add('hidden');
-      document.getElementById('quizGame').classList.remove('hidden');
-      renderQuestion('in');
-    }
-  }, correct ? 2050 : BATTLE_ANIMATION_MS);
+  activeQuiz.index += 1;
+  knight.src = knightAsset('normal');
+  enemy.src = enemyAsset(activeQuiz.data.enemy, 'normal');
+  const game = document.getElementById('quizGame');
+  game.classList.remove('hidden');
+  renderQuestion('in');
 }
 
 async function answerCastleQuestion(idx) {

@@ -8027,3 +8027,112 @@ html.sm-page-loading body > *:not(#globalPageLoader):not(script) {
 /* Im langen Zauberschloss-Bosskampf gibt es keinen Neustart-Kreis. */
 .castle-quiz-modal .castle-restart-button,
 .quiz-modal .castle-restart-button { display: none !important; }
+
+/* === v130: stabile Quizkarte und vollständig abgewartete Bossanimation === */
+/* Verborgene Teilansichten dürfen durch spätere display:flex-Regeln niemals
+   wieder sichtbar werden. Das war die Ursache der leeren zweiten Karte. */
+.quiz-modal:not(.hidden) #quizGame.hidden,
+.quiz-modal:not(.hidden) #quizIntro.hidden,
+.quiz-modal:not(.hidden) #quizResult.hidden,
+.quiz-modal:not(.hidden) .quiz-panel.hidden {
+  display: none !important;
+}
+
+/* Eine einzige, kompakte Pergamentkarte. Der Kampfhintergrund und die Figuren
+   bleiben rundherum sichtbar. */
+.quiz-modal:not(.hidden) #quizGame.quiz-game:not(.hidden) {
+  position: absolute !important;
+  left: 50% !important;
+  top: 50% !important;
+  right: auto !important;
+  bottom: auto !important;
+  transform: translate(-50%, -50%) !important;
+  width: min(92%, 620px) !important;
+  max-width: 620px !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: 78% !important;
+  overflow: visible !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  gap: clamp(5px, 1.1vh, 10px) !important;
+  padding: clamp(12px, 2.1vh, 20px) !important;
+  box-sizing: border-box !important;
+  z-index: 30 !important;
+}
+.quiz-modal:not(.hidden) #quizGame .quiz-panel-top {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+  margin: 0 !important;
+}
+.quiz-modal:not(.hidden) #quizGame h2 {
+  margin: 0 !important;
+  font-size: clamp(1.02rem, 2.45vh, 1.5rem) !important;
+  line-height: 1.08 !important;
+}
+.quiz-modal:not(.hidden) #quizGame .quiz-question {
+  margin: 0 0 3px !important;
+  font-size: clamp(.9rem, 1.95vh, 1.12rem) !important;
+  line-height: 1.2 !important;
+}
+.quiz-modal:not(.hidden) #quizGame .quiz-answers {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  width: 100% !important;
+  gap: clamp(5px, .8vh, 8px) !important;
+  overflow: visible !important;
+}
+.quiz-modal:not(.hidden) #quizGame .quiz-answer {
+  width: 100% !important;
+  min-height: clamp(36px, 5.1vh, 50px) !important;
+  margin: 0 !important;
+  padding: clamp(7px, 1.05vh, 10px) 12px !important;
+  font-size: clamp(.8rem, 1.65vh, 1rem) !important;
+  line-height: 1.15 !important;
+  text-align: left !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+}
+
+/* Die Startkarte bleibt ebenfalls eine einzelne Karte; keine leere Timerkarte
+   darf darüberliegen. */
+.quiz-modal:not(.hidden) #quizIntro.quiz-intro:not(.hidden) {
+  z-index: 30 !important;
+}
+
+/* Während Treffer- und Schadensanimationen liegen Figuren sicher über dem
+   Hintergrund, aber unter der später wieder einfliegenden Quizkarte. */
+.quiz-battle-zone .battle-sprite {
+  will-change: transform, opacity, filter !important;
+}
+.quiz-battle-zone .knight-strike,
+.quiz-battle-zone .enemy-hit,
+.quiz-battle-zone .enemy-attack-strike,
+.quiz-battle-zone .boss-hit-freeze-blink {
+  z-index: 20 !important;
+}
+
+@media (max-height: 720px) {
+  .quiz-modal:not(.hidden) #quizGame.quiz-game:not(.hidden) {
+    width: min(94%, 600px) !important;
+    max-height: 82% !important;
+    padding: 9px 11px !important;
+    gap: 4px !important;
+  }
+  .quiz-modal:not(.hidden) #quizGame h2 { font-size: .98rem !important; }
+  .quiz-modal:not(.hidden) #quizGame .quiz-question {
+    font-size: .82rem !important;
+    line-height: 1.12 !important;
+  }
+  .quiz-modal:not(.hidden) #quizGame .quiz-answers { gap: 4px !important; }
+  .quiz-modal:not(.hidden) #quizGame .quiz-answer {
+    min-height: 32px !important;
+    padding: 5px 8px !important;
+    font-size: .74rem !important;
+    line-height: 1.08 !important;
+  }
+}
