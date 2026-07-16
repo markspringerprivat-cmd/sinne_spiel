@@ -7810,3 +7810,81 @@ html.sm-page-loading body > *:not(#globalPageLoader):not(script) {
   .quiz-game{bottom:2%!important;max-height:45%!important}
   .castle-dodge-controls{gap:10px!important;width:96%!important}
 }
+
+
+/* === v127 stabile Zauberschloss-Steuerung und Flammenküchen-Anleitung === */
+.castle-taste-panel .castle-dodge-controls,
+.quiz-modal .castle-dodge-controls {
+  position: fixed !important;
+  left: 50% !important;
+  right: auto !important;
+  bottom: max(18px, calc(env(safe-area-inset-bottom) + 12px)) !important;
+  transform: translateX(-50%) !important;
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: stretch !important;
+  justify-content: center !important;
+  width: min(94vw, 620px) !important;
+  gap: 12px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  z-index: 120 !important;
+  pointer-events: auto !important;
+}
+.castle-taste-panel .castle-dodge-controls > .castle-arrow-button,
+.quiz-modal .castle-dodge-controls > .castle-arrow-button,
+.quiz-modal .castle-dodge-controls > button {
+  flex: 1 1 0 !important;
+  width: 0 !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  min-height: 68px !important;
+  margin: 0 !important;
+  padding: 8px 12px !important;
+  box-sizing: border-box !important;
+}
+@media (max-width: 600px) {
+  .castle-taste-panel .castle-dodge-controls,
+  .quiz-modal .castle-dodge-controls {
+    width: calc(100vw - 28px) !important;
+    gap: 10px !important;
+    bottom: max(16px, calc(env(safe-area-inset-bottom) + 10px)) !important;
+  }
+  .castle-taste-panel .castle-dodge-controls > .castle-arrow-button,
+  .quiz-modal .castle-dodge-controls > .castle-arrow-button,
+  .quiz-modal .castle-dodge-controls > button {
+    min-height: 72px !important;
+    font-size: 2.6rem !important;
+  }
+}
+.slice-guide-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  width: 100%;
+  margin: 14px 0 4px;
+}
+.slice-guide-card {
+  border: 2px solid rgba(96,64,34,.18);
+  border-radius: 20px;
+  background: rgba(255,255,255,.42);
+  padding: 14px 10px;
+  text-align: center;
+}
+.slice-guide-card .slice-guide-icons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  font-size: 2rem;
+  white-space: nowrap;
+}
+.slice-guide-card strong { display:block; margin-top:8px; font-size:1.02rem; }
+.slice-guide-card p { margin:6px auto 0; font-size:.92rem; line-height:1.25; }
+@media (max-width: 430px) {
+  .slice-guide-grid { gap: 8px; }
+  .slice-guide-card { padding: 12px 8px; }
+  .slice-guide-card .slice-guide-icons { font-size: 1.75rem; }
+}

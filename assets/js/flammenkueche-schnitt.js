@@ -164,9 +164,19 @@
       popup.innerHTML = `
         <div class="minigame-intro-content">
           <h1>Schnippelchaos</h1>
-          <p class="minigame-intro-lead">Wische durch das Gemüse und lass ungenießbare Gegenstände unberührt.</p>
-          <div class="minigame-intro-icons" aria-hidden="true"><span>🥕</span><span>🍅</span><span>🚫</span><span>🧦</span></div>
-          <p class="minigame-intro-note">Richtiges Gemüse: +10 · verpasstes Gemüse: −20 · falsches Objekt: −50.</p>
+          <p class="minigame-intro-lead">Schneide das frische Gemüse mit einer Wischbewegung und lass ungenießbare Dinge vorbeifliegen.</p>
+          <div class="slice-guide-grid" aria-label="Spielanleitung">
+            <article class="slice-guide-card">
+              <div class="slice-guide-icons" aria-hidden="true"><span>🥕</span><span>🍅</span><span>🧅</span></div>
+              <strong>Gemüse schneiden</strong>
+              <p>Wische mit dem Finger direkt durch gutes Gemüse.</p>
+            </article>
+            <article class="slice-guide-card">
+              <div class="slice-guide-icons" aria-hidden="true"><span>🧦</span><span>🐞</span><span>🍄</span></div>
+              <strong>Nicht berühren</strong>
+              <p>Lass ungenießbare Gegenstände einfach vorbeifliegen.</p>
+            </article>
+          </div>
           <div class="slice-popup-actions">
             <button id="startSliceGame" class="slice-button" type="button">Starten</button>
             <button id="leaveSliceGame" class="slice-button secondary" type="button">Zurück</button>
@@ -348,12 +358,12 @@
   }
 
   function loseLife(amount, message, color = '#ffb14f') {
-    game.lives = Math.max(0, Math.round((game.lives - amount) * 100) / 100);
+    // Lebenssystem entfernt: nur neutrales Highscore-Feedback bleibt erhalten.
     game.combo = 0;
     markFeedback(message, color);
     updateHud(true);
-    
   }
+
 
   function sliceObject(obj) {
     if (obj.sliced || obj.remove || obj.resolved) return;
@@ -368,7 +378,9 @@
       playSlimeSound();
       game.badHits += 1;
       window.SinnesScore?.addPoints('game_flammenkueche', -50, 1000);
-      loseLife(BAD_DAMAGE, 'Ungenießbar erwischt! -1 Leben', '#98ec65');
+      game.combo = 0;
+      markFeedback('Falsches Objekt: −50', '#ff7b7b');
+      updateHud(true);
       if (navigator.vibrate) navigator.vibrate(70);
       return;
     }
@@ -428,7 +440,9 @@
         if (!obj.isBad) {
           game.missedGood = (game.missedGood || 0) + 1;
           window.SinnesScore?.addPoints('game_flammenkueche', -20, 1000);
-          loseLife(MISS_DAMAGE, 'Gemüse verpasst! -¼ Leben', '#ffcf5d');
+          game.combo = 0;
+          markFeedback('Gemüse verpasst: −20', '#ffcf5d');
+          updateHud(true);
         }
       }
       if (obj.sliced || completelyBelowScreen || obj.y > h + obj.radius + 220 || obj.x < -obj.radius - 180 || obj.x > w + obj.radius + 180) {

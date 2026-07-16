@@ -97,8 +97,13 @@
       deferred.push(...['farbenreich','klangwald','tastminen','duftgarten','flammenkueche'].map(a => `assets/qr/unlock-${a}.png`));
     } else if (areaInfo[pageStem]) {
       core.push(...areaCore(pageStem));
-      deferred.push(...areaDeferred(pageStem));
-      if (pageStem === 'zauberschloss') deferred.push(...castleBossDeferred());
+      if (pageStem === 'zauberschloss') {
+        // Der große Zaubererkampf benötigt seine Sprites bereits beim ersten Bild.
+        // Deshalb werden sie auf der Ziel-HTML vollständig geladen, bevor die Seite freigegeben wird.
+        core.push(...areaDeferred(pageStem), ...castleBossDeferred());
+      } else {
+        deferred.push(...areaDeferred(pageStem));
+      }
     } else if (pageStem === 'tastminen-lore') {
       core.push('assets/images/minigame/mine_chasm_bg.webp', 'assets/images/minigame/cart_normal.png');
       deferred.push('assets/audio/tastminen_minispiel_new.mp3');
