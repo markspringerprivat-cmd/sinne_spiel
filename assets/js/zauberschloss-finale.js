@@ -5,6 +5,7 @@ const OUTRO_PANEL_SECONDS = 10;
 const LAST_PANEL_HOLD_SECONDS = 5;
 const AUTO_SCROLL_DELAY_MS = LAST_PANEL_HOLD_SECONDS * 1000;
 const AUTO_SCROLL_DURATION_MS = 111000;
+const OUTRO_STORY_TOTAL_MS = OUTRO_PANEL_SECONDS * 1000 * 6;
 
 const orbFrames = [
   '../assets/images/finale/orb_stage_1.png',
@@ -88,6 +89,8 @@ let panelTimer = null;
 let autoScrollTimer = null;
 let autoScrollStarted = false;
 let autoScrollRaf = 0;
+let outroProgressRaf = 0;
+let outroStoryStartedAt = 0;
 
 function currentVolume() {
   const saved = Number(localStorage.getItem(STORAGE_VOLUME));
@@ -151,10 +154,34 @@ function enterKnight() {
   }, 1220);
 }
 
-function clearStoryTimers() {
+function clearStoryTimers(options = {}) {
   if (panelTimer) { clearTimeout(panelTimer); panelTimer = null; }
   if (autoScrollTimer) { clearTimeout(autoScrollTimer); autoScrollTimer = null; }
   if (autoScrollRaf) { cancelAnimationFrame(autoScrollRaf); autoScrollRaf = 0; }
+  if (!options.keepProgress && outroProgressRaf) {
+    cancelAnimationFrame(outroProgressRaf);
+    outroProgressRaf = 0;
+  }
+}
+
+function startOutroProgress() {
+  if (!outroProgress) return;
+  if (outroProgressRaf) cancelAnimationFrame(outroProgressRaf);
+  outroStoryStartedAt = performance.now();
+  outroProgress.style.width = '0%';
+
+  const frame = now => {
+    const elapsed = Math.max(0, now - outroStoryStartedAt);
+    const ratio = Math.min(1, elapsed / OUTRO_STORY_TOTAL_MS);
+    outroProgress.style.width = `${ratio * 100}%`;
+    if (ratio < 1 && outroStarted) {
+      outroProgressRaf = requestAnimationFrame(frame);
+    } else {
+      outroProgress.style.width = '100%';
+      outroProgressRaf = 0;
+    }
+  };
+  outroProgressRaf = requestAnimationFrame(frame);
 }
 
 function showWords(sentence, revealSeconds = 8.2) {
@@ -195,7 +222,6 @@ function renderOutroPanel(index) {
   }, 60);
   outroTitle.textContent = panel.title;
   outroCounter.textContent = `${index + 1} / ${outroPanels.length}`;
-  outroProgress.style.width = `${((index + 1) / outroPanels.length) * 100}%`;
   showWords(panel.text, index === outroPanels.length - 1 ? 8 : 8.6);
 }
 
@@ -273,7 +299,7 @@ function startAutoScrollThroughCredits() {
 }
 
 function queueNextPanel() {
-  clearStoryTimers();
+  clearStoryTimers({ keepProgress: true });
   if (outroPanelIndex >= outroPanels.length - 1) {
     autoScrollTimer = window.setTimeout(startAutoScrollThroughCredits, AUTO_SCROLL_DELAY_MS);
     return;
@@ -293,6 +319,7 @@ async function startOutro() {
   outroOverlay.scrollTop = 0;
   prepareCreditWordReveals();
   renderOutroPanel(0);
+  startOutroProgress();
   queueNextPanel();
 
   try {

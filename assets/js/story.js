@@ -174,12 +174,15 @@ function finishStory() {
 }
 
 async function startStory(options = {}) {
-  const fromAutoplay = !!options.autoplay;
   clearAnimation();
   storyFinished = false;
   current = -1;
   actions.classList.add('hidden');
+  audioStarted = false;
+  fallbackStart = performance.now();
 
+  // Die Bildgeschichte startet immer – auch wenn der Browser Audio-Autoplay blockiert.
+  // Die Zeitsteuerung fällt dann auf den internen 75-Sekunden-Timer zurück.
   if (storyAudio) {
     storyAudio.pause();
     storyAudio.currentTime = 0;
@@ -189,15 +192,19 @@ async function startStory(options = {}) {
       audioStarted = true;
     } catch {
       audioStarted = false;
-      if (fromAutoplay) {
-        modal?.classList.remove('hidden');
-        return;
-      }
+      const resumeAudio = async () => {
+        try {
+          storyAudio.currentTime = Math.min(STORY_END_SECONDS, currentTimeSeconds());
+          await storyAudio.play();
+          audioStarted = true;
+        } catch {}
+      };
+      document.addEventListener('pointerdown', resumeAudio, { once: true, passive: true });
+      document.addEventListener('keydown', resumeAudio, { once: true });
     }
   }
 
   modal?.classList.add('hidden');
-  fallbackStart = performance.now();
   showPanel(0);
   rafId = requestAnimationFrame(updateStory);
 }
@@ -215,5 +222,10 @@ panels.forEach(panel => {
   preload.src = panel.img;
 });
 
-const autoplay = true;
-window.setTimeout(() => startStory({ autoplay: true }), 120);
+const query = new URLSearchParams(window.location.search);
+const shouldAutoplay = query.get('autoplay') === '1' || sessionStorage.getItem('sinnesmagie-play-intro-story') === '1';
+sessionStorage.removeItem('sinnesmagie-play-intro-story');
+
+// Die Storyseite ist selbst die Wiedergabeseite. Sie startet deshalb in jedem Fall,
+// sobald die Ziel-HTML geladen ist; die Abfrage davor findet ausschließlich auf index.html statt.
+window.setTimeout(() => startStory({ autoplay: shouldAutoplay }), 160);

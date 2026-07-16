@@ -8178,3 +8178,39 @@ html.sm-page-loading body > *:not(#globalPageLoader):not(script) {
   from { transform: translate3d(0, 0, 0); opacity: 1; }
   to   { transform: translate3d(-110vw, 0, 0); opacity: 0; }
 }
+
+
+/* === v133: Story-Wiedergabe und Fortschrittsleisten tiefer positioniert === */
+.story-page .story-text-card {
+  padding-top: 38px !important;
+}
+.story-page .story-progress {
+  margin-top: 0 !important;
+  margin-bottom: 22px !important;
+}
+.story-page .story-text {
+  margin-top: 38px !important;
+}
+
+body.castle-outro-active .castle-outro-story-card {
+  padding-top: 38px !important;
+}
+body.castle-outro-active .castle-outro-story-card .story-progress {
+  margin-top: 0 !important;
+  margin-bottom: 22px !important;
+}
+body.castle-outro-active .castle-outro-story-card .castle-outro-title {
+  margin-top: 38px !important;
+}
+
+@media (max-width: 700px) {
+  .story-page .story-text-card {
+    padding-top: 38px !important;
+  }
+  .story-page .story-text {
+    margin-top: 38px !important;
+  }
+  body.castle-outro-active .castle-outro-story-card {
+    padding-top: 38px !important;
+  }
+}

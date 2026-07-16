@@ -14,6 +14,8 @@
   const error = document.getElementById('nameStepError');
   const saveButton = document.getElementById('saveFullName');
 
+  const watchStoryButton = document.getElementById('watchIntroStory');
+
   function cleanPart(value, max) {
     return String(value || '')
       .replace(/[<>]/g, '')
@@ -66,6 +68,10 @@
   }
 
   openButton?.addEventListener('click', openFlow);
+  watchStoryButton?.addEventListener('click', () => {
+    sessionStorage.setItem('sinnesmagie-play-intro-story', '1');
+    window.location.assign('story.html?autoplay=1');
+  });
   saveButton?.addEventListener('click', saveName);
   [firstInput, lastInput].forEach(input => input?.addEventListener('keydown', event => {
     if (event.key === 'Enter') saveName();

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Die verlorene Sinnesmagie</title>
-  <link rel="stylesheet" href="assets/css/style.css?v=132">
+  <link rel="stylesheet" href="assets/css/style.css?v=133">
 </head>
 <body class="cover-page">
   <div id="globalPageLoader" class="global-page-loader" role="status" aria-live="polite" aria-label="Spiel wird geladen">
@@ -45,7 +45,7 @@
         <h2>Wie möchtest du beginnen?</h2>
         <p>Die Vorgeschichte dauert etwa 1 Minute und 15 Sekunden und erklärt, warum die Sinne aus dem Königreich verschwunden sind.</p>
         <div class="start-flow-actions">
-          <a class="primary-button" href="story.html?autoplay=1">Geschichte ansehen</a>
+          <button id="watchIntroStory" class="primary-button" type="button">Geschichte ansehen</button>
           <a class="ghost-button" href="game.html">Geschichte überspringen</a>
         </div>
       </section>
@@ -54,7 +54,7 @@
 
   <script src="assets/js/cloud-save.js?v=127"></script>
   <script src="assets/js/score-system.js?v=127"></script>
-  <script src="assets/js/start-flow.js?v=127"></script>
+  <script src="assets/js/start-flow.js?v=133"></script>
 <script>window.SinnesGameOver={play(){try{const a=new Audio((location.pathname.includes('/levels/')?'../':'')+'assets/audio/gameover.mp3');a.volume=Number(localStorage.getItem('masterVolume')||localStorage.getItem('sinnesmagie-volume')||0.5);a.play().catch(()=>{});}catch{}}};</script>
 </body>
 </html>
