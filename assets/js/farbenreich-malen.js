@@ -153,33 +153,11 @@
     overlay.classList.remove('hidden');
     if (type === 'intro') {
       popup.innerHTML = `
-        <div>
+        <div class="minigame-intro-content">
           <h1>Farbenreich</h1>
-          <div class="mini-guide-wrap">
-            <p class="mini-guide-hint">Merken, malen, Runde abschließen.</p>
-            <div class="mini-guide-slider" aria-label="Farbenreich Anleitung">
-              <article class="mini-guide-card">
-                <div class="mini-guide-icon">👀</div>
-                <p class="mini-guide-title">Merken</p>
-                <p class="mini-guide-text">Schau dir das Muster kurz an.</p>
-              </article>
-              <article class="mini-guide-card">
-                <div class="mini-guide-icon"><span class="mini-guide-inline-row"><span class="mini-guide-inline-item">🟦</span><span class="mini-guide-inline-item">🔺</span></span></div>
-                <p class="mini-guide-title">Nachmalen</p>
-                <p class="mini-guide-text">Setze Formen und Farben passend.</p>
-              </article>
-              <article class="mini-guide-card">
-                <div class="mini-guide-icon">✅</div>
-                <p class="mini-guide-title">Prüfen</p>
-                <p class="mini-guide-text">Drücke „Runde abschließen“.</p>
-              </article>
-              <article class="mini-guide-card">
-                <div class="mini-guide-icon">⏱️</div>
-                <p class="mini-guide-title">Zeit</p>
-                <p class="mini-guide-text">Schaffe alle Muster rechtzeitig.</p>
-              </article>
-            </div>
-          </div>
+          <p class="minigame-intro-lead">Merke dir das Farbmuster und zeichne es anschließend möglichst genau nach.</p>
+          <div class="minigame-intro-icons" aria-hidden="true"><span>👀</span><span>🎨</span><span>✅</span></div>
+          <p class="minigame-intro-note">Jede Runde bringt abhängig von deiner Genauigkeit bis zu 250 Highscore-Punkte.</p>
           <div class="paint-actions">
             <button id="startPaintGame" class="paint-button" type="button">Starten</button>
             <button id="leavePaintGame" class="paint-button secondary" type="button">Zurück</button>
@@ -244,7 +222,7 @@
     const label = game.phase === 'memorize' ? 'Merken' : game.phase === 'draw' ? 'Zeichnen' : 'Zeit';
     timerText.textContent = `${label}: ${Math.max(0, Math.ceil(game.timeLeft))} s`;
     if(livesText) livesText.textContent='';
-    scoreText.textContent = `Highscore-Punkte: ${game.scorePoints || 0}`;
+    if (scoreText) scoreText.textContent = `Highscore-Punkte: ${game.scorePoints || 0}`;
   }
 
   function startGame() {

@@ -7721,3 +7721,92 @@ html.sm-page-loading body > *:not(#globalPageLoader):not(script) {
 .castle-finale-page .castle-finale-caption{z-index:80!important;padding-left:18px!important;padding-right:18px!important}
 .castle-finale-page #globalScoreHud,.castle-finale-page .global-score-hud{display:none!important}
 .castle-outro-story-card{padding-bottom:18px!important}.castle-credits-actions{height:0!important;min-height:0!important;padding:0!important;margin:0!important;overflow:hidden!important}
+
+
+/* === v126: Wiederherstellung der Minispiel-Anleitungen und Kampfdarstellung === */
+.minigame-intro-content{
+  position:relative!important;
+  z-index:3!important;
+  width:100%!important;
+  max-width:420px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:14px!important;
+  margin:auto!important;
+  color:#432b16!important;
+  opacity:1!important;
+  visibility:visible!important;
+  text-align:center!important;
+}
+.minigame-intro-content h1{margin:0!important;font-size:clamp(2rem,7vw,3rem)!important;line-height:1.05!important}
+.minigame-intro-lead,.minigame-intro-note{margin:0!important;max-width:390px!important;font-size:clamp(1rem,3.8vw,1.22rem)!important;font-weight:850!important;line-height:1.4!important;color:#4c321b!important}
+.minigame-intro-icons{display:flex!important;align-items:center!important;justify-content:center!important;gap:12px!important;flex-wrap:nowrap!important;white-space:nowrap!important;font-size:clamp(2rem,8vw,3.2rem)!important;line-height:1!important}
+.paint-popup,.slice-popup{overflow:visible!important}
+.paint-popup>.minigame-intro-content,.slice-popup>.minigame-intro-content{display:flex!important}
+
+/* Der Kampfhintergrund bleibt stets sichtbar; nur die kompakte Karte liegt darüber. */
+.quiz-modal{background:#080d1a!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+.quiz-card{background:#111827!important}
+.quiz-battle-bg{display:block!important;opacity:1!important;visibility:visible!important;z-index:0!important}
+.quiz-panel{z-index:8!important}
+.quiz-battle-zone{z-index:4!important}
+.quiz-hearts-area{z-index:12!important}
+
+/* Einleitungs-, Frage- und Ergebnisfenster kompakt statt vollflächig. */
+.quiz-intro,.quiz-game,.quiz-result{
+  left:4%!important;
+  right:4%!important;
+  width:auto!important;
+  min-height:0!important;
+  height:auto!important;
+  max-height:54%!important;
+  overflow:auto!important;
+  padding:clamp(18px,4vw,30px)!important;
+  background:linear-gradient(180deg,rgba(255,249,232,.97),rgba(245,226,189,.97))!important;
+  backdrop-filter:blur(2px)!important;
+  -webkit-backdrop-filter:blur(2px)!important;
+}
+.quiz-intro{top:18%!important}
+.quiz-game{top:auto!important;bottom:3%!important;max-height:43%!important}
+.quiz-result:not(.quiz-final-result){top:auto!important;bottom:3%!important;max-height:42%!important}
+
+/* Aktive Zauberschloss-Spielphasen liegen transparent über dem sichtbaren Kampffeld. */
+.castle-clone-panel,.castle-smell-panel,.castle-hearing-panel,.castle-dodge-panel,.castle-ultimate-panel{
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  overflow:visible!important;
+}
+.castle-clone-dialog,.castle-phase-guide,.castle-ultimate-intro,.castle-taste-panel{
+  background:linear-gradient(180deg,rgba(255,249,232,.98),rgba(245,226,189,.98))!important;
+  border:2px solid rgba(255,255,255,.9)!important;
+  border-radius:24px!important;
+  box-shadow:0 18px 50px rgba(0,0,0,.32)!important;
+}
+.castle-clone-playfield{position:absolute!important;inset:0!important;background:transparent!important}
+
+/* Apfelphase: beide Richtungstasten zuverlässig nebeneinander. */
+.castle-dodge-controls{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+  gap:12px!important;
+  width:min(94%,620px)!important;
+  margin-inline:auto!important;
+}
+.castle-dodge-controls>.castle-arrow-button{
+  width:100%!important;
+  max-width:none!important;
+  min-width:0!important;
+  margin:0!important;
+}
+
+@media(max-width:600px){
+  .paint-popup,.slice-popup{width:min(94vw,520px)!important;padding:42px 28px 48px!important;min-height:390px!important}
+  .quiz-intro{top:16%!important;max-height:58%!important}
+  .quiz-game{bottom:2%!important;max-height:45%!important}
+  .castle-dodge-controls{gap:10px!important;width:96%!important}
+}

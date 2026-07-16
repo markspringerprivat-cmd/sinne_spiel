@@ -8,7 +8,7 @@
 </head>
 <body class="bard-game-page">
   <div id="globalPageLoader" class="global-page-loader" role="status" aria-live="polite"><div class="global-page-loader-card"><div class="global-page-loader-icon">🎼</div><div class="global-page-loader-title">Melodie wird geladen …</div><div class="global-page-loader-track"><div id="globalPageLoaderFill" class="global-page-loader-fill"></div></div><div class="global-page-loader-meta"><span id="globalPageLoaderNote">Noten werden vorbereitet.</span><span id="globalPageLoaderPercent">0 %</span></div></div></div>
-  <script src="assets/js/page-loader.js?v=125"></script>
+  <script src="assets/js/page-loader.js?v=126"></script>
   <main id="bardStage" class="bard-stage">
     <div class="bard-topbar"><a class="bard-back" href="musikdorf.html">← Auswahl</a><div><strong id="bardTitle">Musikspiel</strong><span id="bardDifficulty"></span></div><div class="bard-local-score">Punkte: <b id="bardScore">0</b><small id="bardBest">Bestwert: 0</small></div></div>
     <div id="bardLanes" class="bard-lanes" aria-label="Notenbahnen">
@@ -21,7 +21,7 @@
     <div id="bardResult" class="bard-modal hidden"><div class="bard-modal-card"><h1>Melodie beendet</h1><p>Du hast <strong id="bardResultScore">0</strong> Punkte erreicht.</p><p id="bardResultBest"></p><div class="modal-actions"><button id="bardReplay" class="primary-button">Noch einmal</button><a class="ghost-button" href="musikdorf.html">Zur Auswahl</a></div></div></div>
   </main>
   <audio id="bardAudio" preload="metadata"></audio>
-  <script src="assets/js/musikspiel.js?v=125"></script>
+  <script src="assets/js/musikspiel.js?v=126"></script>
 <script>window.SinnesGameOver={play(){try{const a=new Audio((location.pathname.includes('/levels/')?'../':'')+'assets/audio/gameover.mp3');a.volume=Number(localStorage.getItem('masterVolume')||localStorage.getItem('sinnesmagie-volume')||0.5);a.play().catch(()=>{});}catch{}}};</script>
 </body>
 </html>

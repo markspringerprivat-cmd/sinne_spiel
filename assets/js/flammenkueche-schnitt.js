@@ -162,33 +162,11 @@
     overlay.classList.remove('hidden');
     if (type === 'intro') {
       popup.innerHTML = `
-        <div>
+        <div class="minigame-intro-content">
           <h1>Schnippelchaos</h1>
-          <div class="mini-guide-wrap">
-            <p class="mini-guide-hint">Wische über gute Zutaten.</p>
-            <div class="mini-guide-slider" aria-label="Flammenküche Anleitung">
-              <article class="mini-guide-card">
-                <div class="mini-guide-icon"><span class="mini-guide-inline-row"><span class="mini-guide-inline-item">🥕</span><span class="mini-guide-inline-item">🍅</span></span></div>
-                <p class="mini-guide-title">Schneiden</p>
-                <p class="mini-guide-text">Gemüse mit einer Wischbewegung treffen.</p>
-              </article>
-              <article class="mini-guide-card">
-                <div class="mini-guide-icon"><span class="mini-guide-inline-row"><span class="mini-guide-inline-item">🧦</span><span class="mini-guide-inline-item">🐞</span><span class="mini-guide-inline-item">🍄</span></span></div>
-                <p class="mini-guide-title">Nicht treffen</p>
-                <p class="mini-guide-text">Ungenießbares kostet 50 Highscore-Punkte.</p>
-              </article>
-              <article class="mini-guide-card">
-                <div class="mini-guide-icon"><span class="mini-guide-inline-row tight"><span class="mini-guide-inline-item">❤️</span><span class="mini-guide-inline-item">❤️</span><span class="mini-guide-inline-item">❤️</span></span></div>
-                <p class="mini-guide-title">Highscore</p>
-                <p class="mini-guide-text">Verpasstes Gemüse kostet 20 Highscore-Punkte.</p>
-              </article>
-              <article class="mini-guide-card">
-                <div class="mini-guide-icon">⭐</div>
-                <p class="mini-guide-title">Ziel</p>
-                <p class="mini-guide-text">Sammle genug Punkte, bevor die Zeit endet.</p>
-              </article>
-            </div>
-          </div>
+          <p class="minigame-intro-lead">Wische durch das Gemüse und lass ungenießbare Gegenstände unberührt.</p>
+          <div class="minigame-intro-icons" aria-hidden="true"><span>🥕</span><span>🍅</span><span>🚫</span><span>🧦</span></div>
+          <p class="minigame-intro-note">Richtiges Gemüse: +10 · verpasstes Gemüse: −20 · falsches Objekt: −50.</p>
           <div class="slice-popup-actions">
             <button id="startSliceGame" class="slice-button" type="button">Starten</button>
             <button id="leaveSliceGame" class="slice-button secondary" type="button">Zurück</button>
@@ -285,9 +263,9 @@
     if (!force && now - game.lastHudUpdate < 160) return;
     game.lastHudUpdate = now;
     const remaining = Math.max(0, Math.ceil(GAME_DURATION - game.elapsed));
-    scoreEl.textContent = `Highscore: ${window.SinnesScore?.sessionValue?.('game_flammenkueche') || 0}`;
+    if (scoreEl) scoreEl.textContent = `Highscore: ${window.SinnesScore?.sessionValue?.('game_flammenkueche') || 0}`;
     timerEl.textContent = `Zeit: ${remaining} s`;
-    badEl.textContent = `Leben: ${formatLives(game.lives)}/${MAX_LIVES}`;
+    if (badEl) badEl.textContent = `Leben: ${formatLives(game.lives)}/${MAX_LIVES}`;
     progressFill.style.width = `${Math.min(100, (game.elapsed / GAME_DURATION) * 100)}%`;
   }
 

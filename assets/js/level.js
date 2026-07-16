@@ -1624,7 +1624,7 @@ function knightAsset(state) {
 }
 
 function battleBackgroundAsset(quizId) {
-  return `../assets/images/battle-backgrounds/${quizId}.png`;
+  return `../assets/images/battle-backgrounds/${quizId}.webp`;
 }
 
 const preloadedImages = new Set();
