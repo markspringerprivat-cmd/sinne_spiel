@@ -7888,3 +7888,65 @@ html.sm-page-loading body > *:not(#globalPageLoader):not(script) {
   .slice-guide-card { padding: 12px 8px; }
   .slice-guide-card .slice-guide-icons { font-size: 1.75rem; }
 }
+
+/* === v128: Quizkarten ohne internes Scrollen === */
+.quiz-modal:not(.hidden) .quiz-game {
+  overflow: hidden !important;
+  max-height: none !important;
+  height: auto !important;
+  padding: clamp(12px, 2.8vw, 20px) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+}
+.quiz-modal:not(.hidden) .quiz-game .quiz-panel-top {
+  flex: 0 0 auto !important;
+  margin-bottom: 2px !important;
+}
+.quiz-modal:not(.hidden) .quiz-game h2 {
+  margin: 0 !important;
+  font-size: clamp(1.15rem, 4.4vw, 1.65rem) !important;
+  line-height: 1.08 !important;
+}
+.quiz-modal:not(.hidden) .quiz-question {
+  margin: 2px 0 6px !important;
+  font-size: clamp(.98rem, 3.6vw, 1.22rem) !important;
+  line-height: 1.22 !important;
+}
+.quiz-modal:not(.hidden) .quiz-answers {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+  overflow: visible !important;
+  flex: 0 0 auto !important;
+}
+.quiz-modal:not(.hidden) .quiz-answer {
+  min-height: 48px !important;
+  padding: 9px 10px !important;
+  margin: 0 !important;
+  font-size: clamp(.88rem, 3.25vw, 1.05rem) !important;
+  line-height: 1.16 !important;
+  white-space: normal !important;
+}
+@media (max-width: 420px), (max-height: 720px) {
+  .quiz-modal:not(.hidden) .quiz-game {
+    left: 3% !important;
+    right: 3% !important;
+    bottom: 1.5% !important;
+    padding: 10px 12px !important;
+    gap: 5px !important;
+  }
+  .quiz-modal:not(.hidden) .quiz-question {
+    font-size: .94rem !important;
+    line-height: 1.16 !important;
+    margin-bottom: 3px !important;
+  }
+  .quiz-modal:not(.hidden) .quiz-answer {
+    min-height: 42px !important;
+    padding: 7px 8px !important;
+    font-size: .84rem !important;
+  }
+}
+
+/* Der Neustartknopf gehört ausschließlich zum Pong-Minispiel. */
+.quiz-modal .castle-restart-button { display: none !important; }

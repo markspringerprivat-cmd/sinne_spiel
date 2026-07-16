@@ -1723,7 +1723,7 @@ function ensureQuizModal() {
 
 function setQuizScene(modal, data, quizId) {
   modal.classList.toggle('castle-quiz-modal', isCastleBossQuiz(quizId));
-  const restartBtn=modal.querySelector('#castleRestartButton'); if(restartBtn){ restartBtn.classList.toggle('hidden', !isCastleBossQuiz(quizId)); restartBtn.onclick=()=>{ stopBossMusic(); startQuiz(quizId); }; }
+  const restartBtn = modal.querySelector('#castleRestartButton'); if (restartBtn) { restartBtn.classList.add('hidden'); restartBtn.onclick = null; }
   const bg = modal.querySelector('#quizBattleBg');
   bg.src = battleBackgroundAsset(quizId);
   bg.alt = `${data.title} Kampfhintergrund`;

@@ -19,6 +19,9 @@
   const wallText = document.getElementById('pongWallText');
   const speedText = document.getElementById('pongSpeedText');
   const pongMusic = document.getElementById('pongMusic');
+  const restartButton = document.getElementById('pongRestart');
+  const blockSound = new Audio('../assets/audio/correct.mp3');
+  blockSound.preload = 'auto';
   let pongMusicStarted = false;
 
   const preloadFiles = [
@@ -85,6 +88,30 @@
     } catch {}
   }
 
+  function playBlockSound() {
+    try {
+      blockSound.pause();
+      blockSound.currentTime = 0;
+      blockSound.volume = currentVolume();
+      blockSound.play().catch(() => {});
+    } catch {}
+  }
+
+  function restartPongLevel() {
+    cancelAnimationFrame(raf);
+    running = false;
+    finished = false;
+    fullReset();
+    window.SinnesScore?.startSession('game_zauberschloss_pong', 1000, 0);
+    window.SinnesScore?.setGameplayActive(true);
+    startPongMusic(true);
+    hideOverlay();
+    restartButton?.classList.remove('hidden');
+    running = true;
+    last = performance.now();
+    raf = requestAnimationFrame(loop);
+  }
+
   function preloadImage(src, index) {
     return new Promise(resolve => {
       const img = new Image();
@@ -124,14 +151,7 @@
     `);
     document.getElementById('pongBack').addEventListener('click', () => { window.location.href = 'zauberschloss.html?minigameAborted=1'; });
     document.getElementById('pongStart').addEventListener('click', () => {
-      hideOverlay();
-      fullReset();
-      window.SinnesScore?.startSession('game_zauberschloss_pong', 1000, 0);
-      window.SinnesScore?.setGameplayActive(true);
-      startPongMusic(true);
-      running = true;
-      last = performance.now();
-      raf = requestAnimationFrame(loop);
+      restartPongLevel();
     });
   }
 
@@ -140,6 +160,7 @@
     finished = true;
     cancelAnimationFrame(raf);
     pausePongMusic();
+    restartButton?.classList.add('hidden');
     saveCompletion();
     const points = Math.max(0, Math.min(1000, damage * 300 - playerConceded * 250));
     window.SinnesScore?.setSession('game_zauberschloss_pong', points, 1000);
@@ -366,7 +387,7 @@
         bounceGreenBall(offset * 0.22, -Math.abs(ball.vy || 0.23));
         lastObstacleHit = null;
         playerHits += 1;
-        playImpact(620, .06);
+        playBlockSound();
       }
 
       if (hitPaddle(mageRect, true)) {
@@ -436,6 +457,8 @@
     if (document.hidden) pausePongMusic();
     else if (running && !finished) startPongMusic(false);
   });
+
+  restartButton?.addEventListener('click', restartPongLevel);
 
   updateSprites();
   preloadAll();
