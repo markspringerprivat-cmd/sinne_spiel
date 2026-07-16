@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="de" class="sm-page-loading">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Barden-Minispiel | Sinnesmagie</title>
+  <link rel="stylesheet" href="assets/css/style.css?v=124">
+</head>
+<body class="bard-game-page">
+  <div id="globalPageLoader" class="global-page-loader" role="status" aria-live="polite"><div class="global-page-loader-card"><div class="global-page-loader-icon">🎼</div><div class="global-page-loader-title">Melodie wird geladen …</div><div class="global-page-loader-track"><div id="globalPageLoaderFill" class="global-page-loader-fill"></div></div><div class="global-page-loader-meta"><span id="globalPageLoaderNote">Noten werden vorbereitet.</span><span id="globalPageLoaderPercent">0 %</span></div></div></div>
+  <script src="assets/js/page-loader.js?v=125"></script>
+  <main id="bardStage" class="bard-stage">
+    <div class="bard-topbar"><a class="bard-back" href="musikdorf.html">← Auswahl</a><div><strong id="bardTitle">Musikspiel</strong><span id="bardDifficulty"></span></div><div class="bard-local-score">Punkte: <b id="bardScore">0</b><small id="bardBest">Bestwert: 0</small></div></div>
+    <div id="bardLanes" class="bard-lanes" aria-label="Notenbahnen">
+      <div class="bard-hit-line"></div>
+      <div class="bard-lane" data-lane="0"><span>A</span></div><div class="bard-lane" data-lane="1"><span>S</span></div><div class="bard-lane" data-lane="2"><span>D</span></div><div class="bard-lane" data-lane="3"><span>F</span></div>
+    </div>
+    <div id="bardFeedback" class="bard-feedback">Bereit?</div>
+    <div class="bard-controls"><button data-key="0">A</button><button data-key="1">S</button><button data-key="2">D</button><button data-key="3">F</button></div>
+    <div id="bardIntro" class="bard-modal"><div class="bard-modal-card"><h1 id="bardIntroTitle">Bardenprobe</h1><p id="bardIntroText">Drücke die passende Taste, wenn die Note die Ziellinie erreicht.</p><button id="bardStart" class="primary-button">Musik starten</button></div></div>
+    <div id="bardResult" class="bard-modal hidden"><div class="bard-modal-card"><h1>Melodie beendet</h1><p>Du hast <strong id="bardResultScore">0</strong> Punkte erreicht.</p><p id="bardResultBest"></p><div class="modal-actions"><button id="bardReplay" class="primary-button">Noch einmal</button><a class="ghost-button" href="musikdorf.html">Zur Auswahl</a></div></div></div>
+  </main>
+  <audio id="bardAudio" preload="metadata"></audio>
+  <script src="assets/js/musikspiel.js?v=125"></script>
+<script>window.SinnesGameOver={play(){try{const a=new Audio((location.pathname.includes('/levels/')?'../':'')+'assets/audio/gameover.mp3');a.volume=Number(localStorage.getItem('masterVolume')||localStorage.getItem('sinnesmagie-volume')||0.5);a.play().catch(()=>{});}catch{}}};</script>
+</body>
+</html>

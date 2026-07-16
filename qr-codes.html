@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="de" class="sm-page-loading">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>QR-Codes | Die verlorene Sinnesmagie</title>
+  <style>
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 24px; color: #1f2430; background: #f4f6fb; }
+    h1 { margin: 0 0 8px; }
+    p { margin: 0 0 24px; color: #536071; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; }
+    .card { background: white; border-radius: 18px; padding: 18px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,.08); break-inside: avoid; }
+    .card img { width: 180px; height: 180px; image-rendering: pixelated; }
+    .card h2 { margin: 10px 0 4px; font-size: 1.25rem; }
+    .card code { display: block; font-size: .75rem; overflow-wrap: anywhere; color: #536071; }
+    @media print { body { background: white; } .card { box-shadow: none; border: 1px solid #ddd; } }
+  </style>
+</head>
+<body>
+  <div id="globalPageLoader" class="global-page-loader" role="status" aria-live="polite" aria-label="Spiel wird geladen">
+    <div class="global-page-loader-card">
+      <div class="global-page-loader-icon" aria-hidden="true">✨</div>
+      <div class="global-page-loader-title">Spiel wird vorbereitet …</div>
+      <div class="global-page-loader-track"><div id="globalPageLoaderFill" class="global-page-loader-fill"></div></div>
+      <div class="global-page-loader-meta">
+        <span id="globalPageLoaderNote" class="global-page-loader-note">Benötigte Dateien werden geladen.</span>
+        <span id="globalPageLoaderPercent" class="global-page-loader-percent">0 %</span>
+      </div>
+    </div>
+  </div>
+  <script src="assets/js/page-loader.js?v=125"></script>
+
+  <h1>QR-Codes zum Freischalten</h1>
+  <p>Diese QR-Codes an den passenden Stationen auslegen. Jeder Code öffnet ein gesperrtes Gebiet auf der Karte.</p>
+  <section class="grid">
+    <article class="card"><img src="assets/qr/unlock-farbenreich.png" alt="QR-Code Farbenreich"><h2>Farbenreich</h2><code>game.html?unlock=farbenreich</code></article>
+    <article class="card"><img src="assets/qr/unlock-klangwald.png" alt="QR-Code Klangwald"><h2>Klangwald</h2><code>game.html?unlock=klangwald</code></article>
+    <article class="card"><img src="assets/qr/unlock-tastminen.png" alt="QR-Code Tastminen"><h2>Tastminen</h2><code>game.html?unlock=tastminen</code></article>
+    <article class="card"><img src="assets/qr/unlock-duftgarten.png" alt="QR-Code Duftgarten"><h2>Duftgarten</h2><code>game.html?unlock=duftgarten</code></article>
+    <article class="card"><img src="assets/qr/unlock-flammenkueche.png" alt="QR-Code Flammenküche"><h2>Flammenküche</h2><code>game.html?unlock=flammenkueche</code></article>
+    <article class="card"><img src="assets/qr/unlock-zauberschloss.png" alt="QR-Code Zauberschloss"><h2>Zauberschloss</h2><code>game.html?unlock=zauberschloss</code></article>
+  </section>
+  <script src="assets/js/cloud-save.js?v=125"></script>
+  <script src="assets/js/score-system.js?v=125"></script>
+<script>window.SinnesGameOver={play(){try{const a=new Audio((location.pathname.includes('/levels/')?'../':'')+'assets/audio/gameover.mp3');a.volume=Number(localStorage.getItem('masterVolume')||localStorage.getItem('sinnesmagie-volume')||0.5);a.play().catch(()=>{});}catch{}}};</script>
+</body>
+</html>

@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="de" class="sm-page-loading">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Admin-Bereich | Sinnesmagie</title>
+  <link rel="stylesheet" href="assets/css/style.css?v=125">
+</head>
+<body class="admin-page">
+  <div id="globalPageLoader" class="global-page-loader" role="status" aria-live="polite" aria-label="Admin-Bereich wird geladen">
+    <div class="global-page-loader-card">
+      <div class="global-page-loader-icon" aria-hidden="true">📊</div>
+      <div class="global-page-loader-title">Admin-Bereich wird vorbereitet …</div>
+      <div class="global-page-loader-track"><div id="globalPageLoaderFill" class="global-page-loader-fill"></div></div>
+      <div class="global-page-loader-meta"><span id="globalPageLoaderNote" class="global-page-loader-note">Daten werden vorbereitet.</span><span id="globalPageLoaderPercent" class="global-page-loader-percent">0 %</span></div>
+    </div>
+  </div>
+  <script src="assets/js/page-loader.js?v=125"></script>
+
+  <header class="admin-header">
+    <div>
+      <p class="admin-kicker">Sinnesmagie</p>
+      <h1>Admin-Bereich</h1>
+      <p>Vollständige Fortschritts- und Highscore-Daten aus Google Sheets.</p>
+    </div>
+    <div class="admin-header-actions">
+      <button id="adminRefreshButton" class="primary-button" type="button">Aktualisieren</button>
+      <button id="adminClearAllButton" class="ghost-button admin-danger-button" type="button">Liste komplett leeren</button>
+      <button id="adminLogoutButton" class="ghost-button" type="button">Abmelden</button>
+      <a class="ghost-button" href="game.html">Zur Weltkarte</a>
+    </div>
+  </header>
+
+  <main class="admin-main">
+    <section class="admin-summary" aria-label="Zusammenfassung">
+      <article><span>Spieler</span><strong id="adminPlayerCount">–</strong></article>
+      <article><span>Spiel abgeschlossen</span><strong id="adminCompletedCount">–</strong></article>
+      <article><span>Ø Highscore</span><strong id="adminAverageScore">–</strong></article>
+      <article><span>Höchster Highscore</span><strong id="adminTopScore">–</strong></article>
+    </section>
+
+    <section class="admin-panel">
+      <div class="admin-panel-head">
+        <div>
+          <h2>Spielerdaten</h2>
+          <p id="adminStatus">Daten werden geladen …</p>
+        </div>
+        <div class="admin-filter-tools"><label class="admin-search-label">Suchen
+          <input id="adminSearchInput" type="search" placeholder="Name oder Geräte-ID">
+        </label><label class="admin-sort-label">Sortieren nach<select id="adminSortSelect"><option value="totalScore">Gesamt-Highscore</option><option value="name">Name</option><option value="progress.duftgarten">Duft-Fortschritt</option><option value="progress.klangwald">Klang-Fortschritt</option><option value="progress.farbenreich">Farben-Fortschritt</option><option value="progress.tastminen">Tastminen-Fortschritt</option><option value="progress.flammenkueche">Flammen-Fortschritt</option><option value="progress.zauberschloss">Schloss-Fortschritt</option><option value="scores.duftgarten1">Duft L1</option><option value="scores.duftgarten2">Duft L2</option><option value="scores.klangwald1">Klang L1</option><option value="scores.klangwald2">Klang L2</option><option value="scores.farbenreich1">Farben L1</option><option value="scores.farbenreich2">Farben L2</option><option value="scores.tastminen1">Tastminen L1</option><option value="scores.tastminen2">Tastminen L2</option><option value="scores.flammen1">Flammen L1</option><option value="scores.flammen2">Flammen L2</option><option value="scores.zauber1">Schloss L1</option><option value="scores.zauber2">Schloss L2</option><option value="scores.zauber3">Schloss L3</option></select></label><button id="adminSortDirection" class="ghost-button admin-sort-direction" type="button" aria-label="Sortierrichtung ändern">↓</button></div>
+      </div>
+      <div id="adminError" class="admin-error hidden"></div>
+      <div id="adminMobileList" class="admin-mobile-list" aria-label="Spielerdaten als aufklappbare Liste"></div>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th data-sort="name">Name</th><th data-sort="deviceId">Geräte-ID</th><th data-sort="totalScore">Gesamt</th>
+              <th data-sort="progress.duftgarten">Duft Fortschritt</th><th data-sort="progress.klangwald">Klang Fortschritt</th><th data-sort="progress.farbenreich">Farben Fortschritt</th><th data-sort="progress.tastminen">Tastminen Fortschritt</th><th data-sort="progress.flammenkueche">Flammen Fortschritt</th><th data-sort="progress.zauberschloss">Schloss Fortschritt</th>
+              <th data-sort="scores.duftgarten1">Duft L1</th><th data-sort="scores.duftgarten2">Duft L2</th><th data-sort="scores.klangwald1">Klang L1</th><th data-sort="scores.klangwald2">Klang L2</th><th data-sort="scores.farbenreich1">Farben L1</th><th data-sort="scores.farbenreich2">Farben L2</th><th data-sort="scores.tastminen1">Tastminen L1</th><th data-sort="scores.tastminen2">Tastminen L2</th><th data-sort="scores.flammen1">Flammen L1</th><th data-sort="scores.flammen2">Flammen L2</th><th data-sort="scores.zauber1">Schloss L1</th><th data-sort="scores.zauber2">Schloss L2</th><th data-sort="scores.zauber3">Schloss L3</th><th data-sort="updatedAt">Aktualisiert</th><th>Aktionen</th>
+            </tr>
+          </thead>
+          <tbody id="adminTableBody"><tr><td colspan="24">Daten werden geladen …</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="assets/js/cloud-save.js?v=125"></script>
+  <script src="assets/js/admin.js?v=125"></script>
+<script>window.SinnesGameOver={play(){try{const a=new Audio((location.pathname.includes('/levels/')?'../':'')+'assets/audio/gameover.mp3');a.volume=Number(localStorage.getItem('masterVolume')||localStorage.getItem('sinnesmagie-volume')||0.5);a.play().catch(()=>{});}catch{}}};</script>
+</body>
+</html>

@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="de" class="sm-page-loading">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Spielfeld | Die verlorene Sinnesmagie</title>
+  <link rel="stylesheet" href="assets/css/style.css?v=125">
+</head>
+<body class="game-page">
+  <div id="globalPageLoader" class="global-page-loader" role="status" aria-live="polite" aria-label="Spiel wird geladen">
+    <div class="global-page-loader-card">
+      <div class="global-page-loader-icon" aria-hidden="true">✨</div>
+      <div class="global-page-loader-title">Spiel wird vorbereitet …</div>
+      <div class="global-page-loader-track"><div id="globalPageLoaderFill" class="global-page-loader-fill"></div></div>
+      <div class="global-page-loader-meta">
+        <span id="globalPageLoaderNote" class="global-page-loader-note">Benötigte Dateien werden geladen.</span>
+        <span id="globalPageLoaderPercent" class="global-page-loader-percent">0 %</span>
+      </div>
+    </div>
+  </div>
+  <script src="assets/js/page-loader.js?v=125"></script>
+
+  <audio id="backgroundMusic" src="assets/audio/overworld_new.mp3" preload="metadata"></audio>
+
+  <main class="overworld" aria-label="Interaktive Sinneskarte">
+    <section class="map-stage" aria-label="Karte des Königreichs">
+      <img class="map-image" src="assets/images/map/overworld.webp" alt="Karte des Königreichs mit Sinnesgebieten" draggable="false">
+
+      <button class="lock-button" data-lock-button="zauberschloss" data-area="zauberschloss" style="--x:50%;--y:11%;" aria-label="Zauberschloss ist gesperrt">🔒</button>
+      <button class="lock-button" data-lock-button="farbenreich" data-area="farbenreich" style="--x:24%;--y:34%;" aria-label="Farbenreich ist gesperrt">🔒</button>
+      <button class="lock-button" data-lock-button="klangwald" data-area="klangwald" style="--x:76%;--y:35%;" aria-label="Klangwald ist gesperrt">🔒</button>
+      <button class="lock-button" data-lock-button="tastminen" data-area="tastminen" style="--x:20%;--y:80%;" aria-label="Tastminen sind gesperrt">🔒</button>
+      <button class="lock-button" data-lock-button="duftgarten" data-area="duftgarten" style="--x:79%;--y:80%;" aria-label="Duftgarten ist gesperrt">🔒</button>
+      <button class="lock-button" data-lock-button="flammenkueche" data-area="flammenkueche" style="--x:51%;--y:91%;" aria-label="Flammenküche ist gesperrt">🔒</button>
+
+      <img id="knight" class="knight-sprite" src="assets/images/characters/knight.png" alt="Ritter" draggable="false">
+
+      <button class="hotspot" style="--x:50%;--y:11%;--w:38%;--h:15%;" data-area="zauberschloss" data-name="Zauberschloss" data-target-x="50" data-target-y="16" aria-label="Zum Zauberschloss bewegen"></button>
+      <button class="hotspot" style="--x:24%;--y:34%;--w:39%;--h:21%;" data-area="farbenreich" data-name="Farbenreich" data-target-x="24" data-target-y="38" aria-label="Zum Farbenreich bewegen"></button>
+      <button class="hotspot" style="--x:76%;--y:35%;--w:36%;--h:21%;" data-area="klangwald" data-name="Klangwald" data-target-x="76" data-target-y="39" aria-label="Zum Klangwald bewegen"></button>
+      <button class="hotspot" style="--x:50%;--y:57%;--w:38%;--h:19%;" data-area="koenigsschloss" data-name="Königsschloss" data-target-x="50" data-target-y="60" aria-label="Zum Königsschloss bewegen"></button>
+      <button class="hotspot" style="--x:20%;--y:80%;--w:34%;--h:18%;" data-area="tastminen" data-name="Tastminen" data-target-x="20" data-target-y="83" aria-label="Zu den Tastminen bewegen"></button>
+      <button class="hotspot" style="--x:79%;--y:80%;--w:34%;--h:18%;" data-area="duftgarten" data-name="Duftgarten" data-target-x="79" data-target-y="83" aria-label="Zum Duftgarten bewegen"></button>
+      <button class="hotspot" style="--x:51%;--y:91%;--w:44%;--h:15%;" data-area="flammenkueche" data-name="Flammenküche" data-target-x="51" data-target-y="93" aria-label="Zur Flammenküche bewegen"></button>
+    </section>
+
+    <button id="settingsButton" class="settings-button" aria-label="Einstellungen öffnen">⚙️</button>
+  </main>
+
+  <div id="introModal" class="game-modal hidden" role="dialog" aria-modal="true" aria-labelledby="introTitle">
+    <div class="game-modal-card intro-card">
+      <h2 id="introTitle"></h2>
+      <p id="introText"></p>
+      <div class="slider-dots" id="introDots" aria-hidden="true"></div>
+      <div class="modal-actions compact-actions">
+        <button id="introBackButton" class="ghost-button" type="button">Zurück</button>
+        <button id="introNextButton" class="primary-button" type="button">Weiter</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="returnModal" class="game-modal hidden" role="dialog" aria-modal="true" aria-labelledby="returnModalTitle">
+    <div class="game-modal-card">
+      <h2 id="returnModalTitle">Zurück auf dem Spielfeld</h2>
+      <p>Scanne einen QR-Code, um weitere Level freizuschalten, oder tippe ein bereits geöffnetes Gebiet an.</p>
+      <div class="modal-actions compact-actions">
+        <button id="returnContinueButton" class="primary-button" type="button">Weiter</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="infoModal" class="game-modal hidden" role="dialog" aria-modal="true" aria-labelledby="infoModalTitle">
+    <div class="game-modal-card">
+      <button class="modal-close" type="button" data-close-modal aria-label="Fenster schließen">×</button>
+      <h2 id="infoModalTitle"></h2>
+      <div id="infoModalText"></div>
+      <div id="infoModalActions" class="modal-actions compact-actions">
+        <button id="backButton" class="ghost-button" type="button" data-close-modal>Zurück</button>
+        <button id="scanFromInfoButton" class="primary-button" type="button">QR-Code scannen</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="settingsModal" class="game-modal hidden" role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle">
+    <div class="game-modal-card settings-card">
+      <button class="modal-close" type="button" data-close-settings aria-label="Einstellungen schließen">×</button>
+      <h2 id="settingsModalTitle">Einstellungen</h2>
+
+      <label class="setting-row" for="volumeSlider">
+        <span>Lautstärke</span>
+        <input id="volumeSlider" type="range" min="0" max="100" value="50">
+      </label>
+
+      <button id="adminActivateButton" class="primary-button full-width-button" type="button">Admin aktivieren</button>
+
+      <div id="adminTools" class="admin-tools hidden" aria-label="Admin-Werkzeuge">
+        <button id="adminEvaluationButton" class="ghost-button full-width-button" type="button">Zur Auswertung</button>
+        <button id="unlockAdminLevelsButton" class="ghost-button full-width-button" type="button">Alle Level freischalten</button>
+        <button id="removeAreaLocksButton" class="ghost-button full-width-button" type="button">Schlösser entfernen</button>
+        <button id="showQrButton" class="ghost-button full-width-button" type="button">QR-Codes anzeigen</button>
+      </div>
+
+      <button id="resetGameButton" class="ghost-button full-width-button settings-danger-button" type="button">Spiel zurücksetzen</button>
+
+      <div id="qrOverview" class="qr-overview hidden" aria-label="QR-Code-Übersicht">
+        <div class="qr-tile"><img src="assets/qr/unlock-zauberschloss.png" alt="QR-Code Zauberschloss"><span>Zauberschloss</span></div>
+        <div class="qr-tile"><img src="assets/qr/unlock-farbenreich.png" alt="QR-Code Farbenreich"><span>Farbenreich</span></div>
+        <div class="qr-tile"><img src="assets/qr/unlock-klangwald.png" alt="QR-Code Klangwald"><span>Klangwald</span></div>
+        <div class="qr-tile"><img src="assets/qr/unlock-tastminen.png" alt="QR-Code Tastminen"><span>Tastminen</span></div>
+        <div class="qr-tile"><img src="assets/qr/unlock-duftgarten.png" alt="QR-Code Duftgarten"><span>Duftgarten</span></div>
+        <div class="qr-tile"><img src="assets/qr/unlock-flammenkueche.png" alt="QR-Code Flammenküche"><span>Flammenküche</span></div>
+      </div>
+    </div>
+  </div>
+
+
+  <div id="adminPasswordModal" class="game-modal hidden" role="dialog" aria-modal="true" aria-labelledby="adminPasswordTitle">
+    <div class="game-modal-card admin-password-card">
+      <button class="modal-close" type="button" data-close-admin-password aria-label="Passwortabfrage schließen">×</button>
+      <h2 id="adminPasswordTitle">Admin aktivieren</h2>
+      <p>Bitte das Admin-Passwort eingeben.</p>
+      <input id="adminPasswordInput" class="admin-password-input" type="password" autocomplete="current-password" placeholder="Passwort">
+      <p id="adminPasswordError" class="admin-password-error hidden">Das Passwort ist nicht korrekt.</p>
+      <div class="modal-actions compact-actions">
+        <button id="adminPasswordCancel" class="ghost-button" type="button">Abbrechen</button>
+        <button id="adminPasswordSubmit" class="primary-button" type="button">Aktivieren</button>
+      </div>
+    </div>
+  </div>
+  <div id="scannerModal" class="game-modal hidden" role="dialog" aria-modal="true" aria-labelledby="scannerModalTitle">
+    <div class="game-modal-card scanner-card">
+      <button class="modal-close" type="button" data-close-scanner aria-label="Scanner schließen">×</button>
+      <h2 id="scannerModalTitle">QR-Code scannen</h2>
+      <p class="scanner-hint">Scanne den QR-Code an der passenden Station, um ein Gebiet freizuschalten.</p>
+      <div id="qr-reader" class="qr-reader"></div>
+      <p id="scannerStatus" class="scanner-status">Kamera wird vorbereitet …</p>
+    </div>
+  </div>
+<script src="https://unpkg.com/html5-qrcode" defer></script>
+  <script src="assets/js/audio-crossfade.js"></script>
+  <script src="assets/js/game.js?v=125"></script>
+  <script src="assets/js/cloud-save.js?v=125"></script>
+  <script src="assets/js/score-system.js?v=125"></script>
+<script>window.SinnesGameOver={play(){try{const a=new Audio((location.pathname.includes('/levels/')?'../':'')+'assets/audio/gameover.mp3');a.volume=Number(localStorage.getItem('masterVolume')||localStorage.getItem('sinnesmagie-volume')||0.5);a.play().catch(()=>{});}catch{}}};</script>
+</body>
+</html>

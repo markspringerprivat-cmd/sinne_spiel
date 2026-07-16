@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="de" class="sm-page-loading">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Finale im Schloss | Die verlorene Sinnesmagie</title>
+  <link rel="stylesheet" href="../assets/css/style.css?v=125">
+</head>
+<body class="castle-finale-page">
+  <div id="globalPageLoader" class="global-page-loader" role="status" aria-live="polite" aria-label="Spiel wird geladen">
+    <div class="global-page-loader-card">
+      <div class="global-page-loader-icon" aria-hidden="true">✨</div>
+      <div class="global-page-loader-title">Spiel wird vorbereitet …</div>
+      <div class="global-page-loader-track"><div id="globalPageLoaderFill" class="global-page-loader-fill"></div></div>
+      <div class="global-page-loader-meta">
+        <span id="globalPageLoaderNote" class="global-page-loader-note">Benötigte Dateien werden geladen.</span>
+        <span id="globalPageLoaderPercent" class="global-page-loader-percent">0 %</span>
+      </div>
+    </div>
+  </div>
+  <script src="../assets/js/page-loader.js?v=125"></script>
+
+  <main id="castleFinaleShell" class="castle-finale-shell" aria-label="Finale im Schloss des Magiers">
+    <section id="castleFinaleStage" class="castle-finale-stage" aria-live="polite">
+      <img class="castle-finale-bg" src="../assets/images/finale/background.webp" alt="Dunkler Thronsaal im Schloss des Magiers" draggable="false">
+
+      <div id="castleFinaleCaption" class="castle-finale-caption">Der Ritter betritt den Thronsaal. Vor ihm ruht die Glaskugel, in der die Magie der Sinne gefangen ist.</div>
+
+      <img id="castleFinaleOrb" class="castle-finale-orb" src="../assets/images/finale/orb_stage_1.png" alt="Glaskugel mit der Magie der Sinne" draggable="false">
+      <img id="castleFinaleKnight" class="castle-finale-knight" src="../assets/images/finale/knight_idle_finale.png" alt="Ritter" draggable="false">
+
+      <div class="castle-finale-controls">
+        <button id="castleFinaleAttack" class="primary-button" type="button" disabled>Angriff</button>
+        <a class="ghost-button" href="zauberschloss.html">Zurück</a>
+      </div>
+    </section>
+  </main>
+
+  <section id="castleOutroOverlay" class="castle-outro-overlay hidden" aria-label="Endgeschichte" aria-live="polite">
+    <div class="castle-outro-flow">
+      <div class="castle-outro-story-stage">
+        <div class="castle-outro-story-image-wrap">
+          <img id="castleOutroImage" class="castle-outro-story-image" src="../assets/images/finale/out_1.webp" alt="Endgeschichte Bild 1" draggable="false">
+        </div>
+        <article class="castle-outro-story-card">
+          <div class="story-progress">
+            <span id="castleOutroCounter">1 / 6</span>
+            <div class="story-progress-bar"><div id="castleOutroProgress" style="width:0%"></div></div>
+          </div>
+          <h2 id="castleOutroTitle" class="castle-outro-title">Die Magie ist frei</h2>
+          <p id="castleOutroText" class="castle-outro-text"></p>
+        </article>
+      </div>
+
+      <section id="castleCreditsSection" class="castle-credits-section" aria-label="Abspann">
+        <div class="castle-credits-titlecard">
+          <h2>Versöhnlicher Abspann</h2>
+          <p>Die früheren Gegner und der Ritter entdecken, wie die Sinne verbinden, schützen und gemeinsame Freude möglich machen.</p>
+        </div>
+
+        <article class="castle-credit-scene" data-credit-reveal>
+          <img src="../assets/images/finale/credits/credits_01_waldgeist.webp" alt="Ritter und Waldgeist hören gemeinsam den Vögeln zu" draggable="false">
+          <div class="castle-credit-copy"><h3>Der Klangwald wird friedlich</h3><p data-credit-text>Ritter und Waldgeist sitzen Rücken an Rücken und lauschen dem Zwitschern der Vögel. Der Hörsinn hilft ihnen, feine Klänge wahrzunehmen, Ruhe zu finden und sich miteinander verbunden zu fühlen.</p></div>
+        </article>
+
+        <article class="castle-credit-scene" data-credit-reveal>
+          <img src="../assets/images/finale/credits/credits_02_maulwurf.webp" alt="Ritter und Maulwurf entdecken gemeinsam Edelsteine" draggable="false">
+          <div class="castle-credit-copy"><h3>Ein Schatz in der Tastenmine</h3><p data-credit-text>Beim gemeinsamen Graben entdecken Ritter und Maulwurf Diamanten, Rubine und Smaragde. Mit Händen und Werkzeugen ertasten sie Stein, Erde und Kristalle – und erleben, wie der Tastsinn Orientierung und Sicherheit gibt.</p></div>
+        </article>
+
+        <article class="castle-credit-scene" data-credit-reveal>
+          <img src="../assets/images/finale/credits/credits_03_feuergolem.webp" alt="Ritter und Feuergolem essen gemeinsam" draggable="false">
+          <div class="castle-credit-copy"><h3>Gemeinsames Essen in der Flammenküche</h3><p data-credit-text>Der Feuergolem serviert ein großes Festmahl, und beide genießen die vielen Geschmäcker. Der Geschmackssinn schenkt Genuss, weckt Erinnerungen und kann zugleich davor warnen, wenn etwas zu scharf oder verdorben ist.</p></div>
+        </article>
+
+        <article class="castle-credit-scene" data-credit-reveal>
+          <img src="../assets/images/finale/credits/credits_04_farbgolem.webp" alt="Ritter und Farbgolem malen zusammen" draggable="false">
+          <div class="castle-credit-copy"><h3>Neue Farben im Farbenreich</h3><p data-credit-text>Vor der Leinwand malen Ritter und Farbgolem gemeinsam ein buntes Bild. Mit dem Sehsinn erkennen sie Formen, Farben und Unterschiede – und verwandeln ihre Eindrücke in Fantasie und Freude.</p></div>
+        </article>
+
+        <article class="castle-credit-scene" data-credit-reveal>
+          <img src="../assets/images/finale/credits/credits_05_duftgeist.webp" alt="Ritter und freundlicher Duftgeist riechen an Blumen" draggable="false">
+          <div class="castle-credit-copy"><h3>Der Duftgeist ist vom Fluch befreit</h3><p data-credit-text>Im blühenden Garten ist der Duftgeist wieder freundlich und hell, aber noch immer als Geist erkennbar. Gemeinsam riechen beide an Rosen und Kräutern. Düfte können beruhigen, Erinnerungen wecken und vor Rauch oder verdorbenem Essen warnen.</p></div>
+        </article>
+
+        <article class="castle-credit-scene" data-credit-reveal>
+          <img src="../assets/images/finale/credits/credits_06_stuermen.webp" alt="Prinzessin, Bürger und Ritter stürmen in den Thronsaal" draggable="false">
+          <div class="castle-credit-copy"><h3>Alle betreten den Thronsaal</h3><p data-credit-text>Prinzessin, Ritter und Bürger kommen gemeinsam in das Zauberschloss. Sie sehen den traurigen Magier auf seinem Thron und erkennen, dass Aufmerksamkeit und Mitgefühl helfen können, auch hinter Angst und Wut andere Gefühle zu entdecken.</p></div>
+        </article>
+
+        <article class="castle-credit-scene" data-credit-reveal>
+          <img src="../assets/images/finale/credits/credits_07_handreichen.webp" alt="Die Prinzessin reicht dem überraschten Magier die Hand" draggable="false">
+          <div class="castle-credit-copy"><h3>Eine Hand zur Versöhnung</h3><p data-credit-text>Die Prinzessin reicht dem überraschten Magier die Hand und lädt ihn ein mitzukommen. Berührung, Blickkontakt und Stimme vermitteln Vertrauen – unsere Sinne helfen uns, Gefühle anderer Menschen zu verstehen.</p></div>
+        </article>
+
+        <article class="castle-credit-scene" data-credit-reveal>
+          <img src="../assets/images/finale/credits/credits_08_feier.webp" alt="Der Magier feiert gemeinsam mit dem Königreich" draggable="false">
+          <div class="castle-credit-copy"><h3>Der Magier darf mitfeiern</h3><p data-credit-text>Im Königreich wird gemeinsam gegessen, musiziert und gelacht. Farben, Klänge, Düfte, Geschmäcker und Nähe lösen Freude und Geborgenheit aus. Der Magier erlebt, dass Gemeinschaft stärker ist als Neid und Einsamkeit.</p></div>
+        </article>
+
+        <article id="castleCreditsFinalScene" class="castle-credit-scene castle-credit-final-scene" data-credit-reveal>
+          <img src="../assets/images/finale/credits/credits_09_danke.webp" alt="Alle Figuren feiern gemeinsam – Vielen Dank fürs Spielen" draggable="false">
+          <div class="castle-credit-copy castle-credit-final-copy">
+            <h3>Vielen Dank fürs Spielen!</h3>
+            <div class="final-score-box">Dein Highscore: <span data-final-score>0</span> Punkte</div>
+            <p data-credit-text>Unsere Sinne verbinden uns mit der Welt und mit anderen Menschen. Sie lassen uns Schönheit, Musik, Nähe, Geschmack und vertraute Düfte erleben. Dadurch entstehen Freude, Sicherheit, Neugier und Erinnerungen. Gleichzeitig warnen uns unsere Sinne vor Gefahren und helfen uns, aufmerksam und bewusst zu handeln. Bewahre dir deshalb einen offenen Blick, ein gutes Gehör, eine feine Nase, Neugier auf Geschmack und ein achtsames Gefühl für deine Umgebung.</p>
+          </div>
+        </article>
+
+        <div class="castle-credits-actions">
+          <a id="castleOutroFinish" class="primary-button hidden" href="../game.html?fromLevel=1">Zur Weltkarte</a>
+        </div>
+      </section>
+    </div>
+  </section>
+
+  <audio id="castleFinaleHitSfx" src="../assets/audio/slice_cut.mp3" preload="metadata"></audio>
+  <audio id="castleFinaleCrashSfx" src="../assets/audio/magehit.mp3" preload="metadata"></audio>
+  <audio id="castleHopefulMusic" src="../assets/audio/hopeful_happy_ending.mp3" preload="metadata"></audio>
+  <script src="../assets/js/zauberschloss-finale.js?v=125"></script>
+  <script src="../assets/js/cloud-save.js?v=125"></script>
+  
+<script>window.SinnesGameOver={play(){try{const a=new Audio((location.pathname.includes('/levels/')?'../':'')+'assets/audio/gameover.mp3');a.volume=Number(localStorage.getItem('masterVolume')||localStorage.getItem('sinnesmagie-volume')||0.5);a.play().catch(()=>{});}catch{}}};</script>
+</body>
+</html>

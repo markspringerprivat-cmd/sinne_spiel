@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="de" class="sm-page-loading">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Zauberschloss: Ausweichen | Die verlorene Sinnesmagie</title>
+  <link rel="stylesheet" href="../assets/css/style.css?v=125">
+</head>
+<body class="castle-dodge-page">
+  <div id="globalPageLoader" class="global-page-loader" role="status" aria-live="polite" aria-label="Spiel wird geladen">
+    <div class="global-page-loader-card">
+      <div class="global-page-loader-icon" aria-hidden="true">✨</div>
+      <div class="global-page-loader-title">Spiel wird vorbereitet …</div>
+      <div class="global-page-loader-track"><div id="globalPageLoaderFill" class="global-page-loader-fill"></div></div>
+      <div class="global-page-loader-meta">
+        <span id="globalPageLoaderNote" class="global-page-loader-note">Benötigte Dateien werden geladen.</span>
+        <span id="globalPageLoaderPercent" class="global-page-loader-percent">0 %</span>
+      </div>
+    </div>
+  </div>
+  <script src="../assets/js/page-loader.js?v=125"></script>
+
+  <audio id="castleDodgeMusic" src="../assets/audio/bossencounter.mp3" preload="metadata" loop></audio>
+
+  <main class="castle-dodge-shell" aria-label="Zauberschloss Kampf">
+    <section id="castleDodgeStage" class="castle-dodge-stage">
+      <img class="castle-dodge-bg" src="../assets/images/battle-backgrounds/zauberschloss.webp" alt="Zauberschloss Kampfhintergrund" draggable="false">
+      <div id="dodgeLoader" class="castle-dodge-loader">
+        <div class="castle-dodge-loader-card">
+          <h1>Der Zauberer greift an</h1>
+          <p>Weiche den lilanen Kugeln 30 Sekunden lang aus.</p>
+          <div class="castle-dodge-loadbar"><span></span></div>
+          <button id="startDodgeButton" class="primary-button" type="button" disabled>Kampf starten</button>
+        </div>
+      </div>
+
+      <div class="castle-dodge-hud">
+        <span>Überlebe</span>
+        <strong id="dodgeTime">30.0</strong>
+      </div>
+
+      <img id="dodgeMage" class="dodge-mage" src="../assets/images/enemies/zauberer_fly_right.png" alt="Zauberer" draggable="false">
+      <img id="dodgeKnight" class="dodge-knight" src="../assets/images/characters/knight.png" alt="Ritter" draggable="false">
+      <div id="dodgeProjectiles" class="dodge-projectiles" aria-hidden="true"></div>
+
+      <div class="dodge-controls" aria-label="Steuerung">
+        <button id="dodgeLeft" class="ghost-button" type="button">← Links</button>
+        <button id="dodgeRight" class="primary-button" type="button">Rechts →</button>
+      </div>
+
+      <div id="dodgePopup" class="dodge-popup hidden" role="dialog" aria-modal="true">
+        <div class="dodge-popup-card">
+          <h2>Fortsetzung folgt</h2>
+          <p>Der Ritter hat den Angriff überstanden. Der finale Kampf geht später weiter.</p>
+          <button id="dodgeContinue" class="primary-button" type="button">Zurück zum Zauberschloss</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="../assets/js/zauberschloss-dodge.js?v=125"></script>
+  <script src="../assets/js/cloud-save.js?v=125"></script>
+  <script src="../assets/js/score-system.js?v=125"></script>
+<script>window.SinnesGameOver={play(){try{const a=new Audio((location.pathname.includes('/levels/')?'../':'')+'assets/audio/gameover.mp3');a.volume=Number(localStorage.getItem('masterVolume')||localStorage.getItem('sinnesmagie-volume')||0.5);a.play().catch(()=>{});}catch{}}};</script>
+</body>
+</html>

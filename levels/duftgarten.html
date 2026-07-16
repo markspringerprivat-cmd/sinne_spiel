@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="de" class="sm-page-loading">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Duftgarten | Die verlorene Sinnesmagie</title>
+  <link rel="stylesheet" href="../assets/css/style.css?v=125">
+</head>
+<body class="level-map-page">
+  <div id="globalPageLoader" class="global-page-loader" role="status" aria-live="polite" aria-label="Spiel wird geladen">
+    <div class="global-page-loader-card">
+      <div class="global-page-loader-icon" aria-hidden="true">✨</div>
+      <div class="global-page-loader-title">Spiel wird vorbereitet …</div>
+      <div class="global-page-loader-track"><div id="globalPageLoaderFill" class="global-page-loader-fill"></div></div>
+      <div class="global-page-loader-meta">
+        <span id="globalPageLoaderNote" class="global-page-loader-note">Benötigte Dateien werden geladen.</span>
+        <span id="globalPageLoaderPercent" class="global-page-loader-percent">0 %</span>
+      </div>
+    </div>
+  </div>
+  <script src="../assets/js/page-loader.js?v=125"></script>
+
+  <audio id="levelMusic" src="../assets/audio/duftgarten_new.mp3" preload="metadata"></audio>
+  <main class="level-map-shell" aria-label="Duftgarten">
+    <section class="level-map-stage" style="--level-w:1024;--level-h:1536;--start-x:20%;--start-y:83%;" aria-label="Levelkarte Duftgarten">
+      <img class="level-bg-image" src="../assets/images/level-backgrounds/duftgarten.webp" alt="Duftgarten Hintergrund" draggable="false">
+
+      <button class="level-marker" style="--x:73%;--y:46%;--size:24%;" data-target-x="73" data-target-y="46" data-title="Blütensprung" data-text="Springe als Ritter von Blume zu Blume und entkomme dem Käfer." data-minigame-url="duftgarten-sprung.html" aria-label="Blütensprung betreten"></button>
+      <button class="level-marker" style="--x:27%;--y:18%;--size:24%;" data-target-x="27" data-target-y="18" data-title="Quiz / Bossbereich" data-text="Hier folgt später das Quiz oder der zweite Levelteil." aria-label="Quiz / Bossbereich betreten" data-quiz-id="duftgarten"></button>
+
+      <img id="levelKnight" class="level-knight" src="../assets/images/characters/knight.png" alt="Ritter" draggable="false">
+    </section>
+  </main>
+
+  <a class="level-back-button" href="../game.html?fromLevel=1">Zurück</a>
+
+  <div id="levelPopup" class="level-popup hidden" role="dialog" aria-modal="true" aria-labelledby="levelPopupTitle">
+    <div class="level-popup-card">
+      <h2 id="levelPopupTitle">Level</h2>
+      <div id="levelPopupText">Inhalt folgt später.</div>
+      <button id="levelPopupClose" class="primary-button" type="button">Weiter</button>
+    </div>
+  </div>
+<script src="../assets/js/audio-crossfade.js"></script>
+  <script src="../assets/js/quiz-data.js"></script>
+  <script src="../assets/js/level.js?v=125"></script>
+  <script src="../assets/js/cloud-save.js?v=125"></script>
+  <script src="../assets/js/score-system.js?v=125"></script>
+<script>window.SinnesGameOver={play(){try{const a=new Audio((location.pathname.includes('/levels/')?'../':'')+'assets/audio/gameover.mp3');a.volume=Number(localStorage.getItem('masterVolume')||localStorage.getItem('sinnesmagie-volume')||0.5);a.play().catch(()=>{});}catch{}}};</script>
+</body>
+</html>
