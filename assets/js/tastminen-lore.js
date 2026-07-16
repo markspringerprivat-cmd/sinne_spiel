@@ -220,7 +220,7 @@
           </div>
         </div>`;
       document.getElementById('startMineGame').addEventListener('click', startGame);
-      document.getElementById('leaveMineGame').addEventListener('click', () => { window.location.href = 'tastminen.html'; });
+      document.getElementById('leaveMineGame').addEventListener('click', () => { returnToArea(true); });
       return;
     }
 
@@ -234,10 +234,11 @@
             <button id="returnToMine" class="mine-button" type="button">Zurück zu den Tastminen</button>
           </div>
         </div>`;
-      document.getElementById('returnToMine').addEventListener('click', () => { window.location.href = 'tastminen.html'; });
+      document.getElementById('returnToMine').addEventListener('click', () => { returnToArea(false); });
       return;
     }
 
+    playGameOverSound();
     popup.innerHTML = `
       <div>
         <h2>Abgestürzt!</h2>
@@ -249,7 +250,7 @@
         </div>
       </div>`;
     document.getElementById('retryMineGame').addEventListener('click', startGame);
-    document.getElementById('returnToMine').addEventListener('click', () => { window.location.href = 'tastminen.html'; });
+    document.getElementById('returnToMine').addEventListener('click', () => { returnToArea(false); });
   }
 
   function hidePopup() {

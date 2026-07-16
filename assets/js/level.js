@@ -8,6 +8,8 @@ const levelPopupText = document.getElementById('levelPopupText');
 const levelPopupClose = document.getElementById('levelPopupClose');
 const levelMusic = document.getElementById('levelMusic');
 const levelMusicLoop = window.createCrossfadeLoop ? window.createCrossfadeLoop(levelMusic, { fadeSeconds: 0.025 }) : null;
+const gameOverAudio = new Audio('../assets/audio/gameover.mp3');
+gameOverAudio.preload = 'auto';
 const backButton = document.querySelector('.level-back-button');
 
 const STORAGE_VOLUME = 'sinnesmagie-volume';
@@ -75,7 +77,7 @@ const CASTLE_SMELL_ROUNDS_TOTAL = 2;
 const CASTLE_SMELL_CLOUD_COUNT = 6;
 const CASTLE_SMELL_FLIGHT_MS = 2200;
 const CASTLE_SMELL_ROW_GAP_MS = 2400;
-const CASTLE_SMELL_FALL_SPEED = 18.2;
+const CASTLE_SMELL_FALL_SPEED = 22.75;
 const CASTLE_SMELL_SPAWN_Y = 12;
 const CASTLE_SMELL_IMPACT_Y = 80;
 const CASTLE_HEARING_ROUNDS_TOTAL = 2;
@@ -284,6 +286,7 @@ function askCastleSenseQuestion(areaId, title) {
       <p class="castle-sense-question-feedback hidden" aria-live="polite"></p>
     </div>
   `;
+  setTempHighscoreHidden(true);
   panel.classList.remove('hidden');
   panel.setAttribute('aria-hidden', 'false');
   panel.style.display = 'grid';
@@ -1128,6 +1131,24 @@ function pauseLevelMusic() {
   }
 }
 
+function playGameOverSound() {
+  try {
+    gameOverAudio.pause();
+    gameOverAudio.currentTime = 0;
+    gameOverAudio.volume = currentVolume();
+    const playResult = gameOverAudio.play();
+    if (playResult?.catch) playResult.catch(() => {});
+  } catch {}
+}
+
+function setTempHighscoreHidden(hidden) {
+  document.body.classList.toggle('hide-global-score-hud', !!hidden);
+}
+
+function updateCastleFinalHudVisibility() {
+  setTempHighscoreHidden(currentArea === 'zauberschloss' && currentNode === 'level3');
+}
+
 function bossVolumeForMode(mode = bossMusicMode) {
   const base = currentVolume();
   return base * (mode === 'question' ? 0.7 : 1);
@@ -1256,6 +1277,7 @@ function showLevelPopup(title, text, buttonLabel = 'Weiter', onClose = null) {
 function closeLevelPopup() {
   if (!levelPopup) return;
   levelPopup.classList.add('hidden');
+  updateCastleFinalHudVisibility();
   const handler = popupCloseHandler;
   popupCloseHandler = null;
   adminPopupLevelIndex = null;
@@ -1324,6 +1346,7 @@ function saveCurrentNode(node) {
   const saved = readLevelNodes();
   saved[currentArea] = node;
   localStorage.setItem(STORAGE_LEVEL_NODE, JSON.stringify(saved));
+  updateCastleFinalHudVisibility();
 }
 
 function initialNodeFromProgress() {
@@ -1741,6 +1764,7 @@ async function openQuizIntro(quizId) {
   const modal = ensureQuizModal();
   clearInterval(quizTimer);
   modal.classList.remove('hidden');
+  modal.querySelector('#castleRestartButton')?.classList.toggle('hidden', quizId !== 'zauberschloss');
   modal.querySelector('#quizGame').classList.add('hidden');
   modal.querySelector('#quizResult').classList.add('hidden');
   hideCastleVictoryScene();
@@ -1929,11 +1953,13 @@ function playBattleAnimation(correct, idx) {
 
   feedback.classList.remove('hidden');
   knight.classList.remove('sprite-pop', 'sprite-shake', 'knight-strike', 'knight-damaged', 'knight-attack-pose');
-  enemy.classList.remove('sprite-shake', 'enemy-hit', 'enemy-attack-strike');
+  enemy.classList.remove('sprite-shake', 'enemy-hit', 'enemy-hit-hold', 'enemy-attack-strike');
+
+  let continueDelay = BATTLE_ANIMATION_MS;
 
   if (correct) {
     activeQuiz.correct += 1;
-    activeQuiz.scorePoints = Math.min(1000, (activeQuiz.scorePoints || 0) + 500);
+    activeQuiz.scorePoints = Math.min(1000, (activeQuiz.scorePoints || 0) + 125);
     window.SinnesScore?.setSession(`quiz_${activeQuiz.quizId}`, activeQuiz.scorePoints, 1000);
     feedback.textContent = 'Richtig!';
     knight.src = knightAsset('attack');
@@ -1946,18 +1972,24 @@ function playBattleAnimation(correct, idx) {
     setTimeout(() => {
       if (!activeQuiz || activeQuiz.finished) return;
       enemy.src = enemyAsset(activeQuiz.data.enemy, 'damage');
-      enemy.classList.add('enemy-hit');
+      enemy.classList.add('enemy-hit-hold');
       playSfx(sfxClick);
     }, ATTACK_IMPACT_MS);
 
     setTimeout(() => {
       if (!activeQuiz || activeQuiz.finished) return;
       knight.classList.remove('knight-strike');
-      enemy.classList.remove('enemy-hit');
       knight.src = knightAsset('normal');
       knight.classList.remove('knight-attack-pose');
-      enemy.src = enemyAsset(activeQuiz.data.enemy, 'normal');
     }, STRIKE_RESET_MS);
+
+    setTimeout(() => {
+      if (!activeQuiz || activeQuiz.finished) return;
+      enemy.classList.remove('enemy-hit-hold');
+      enemy.src = enemyAsset(activeQuiz.data.enemy, 'normal');
+    }, ATTACK_IMPACT_MS + 1500);
+
+    continueDelay = 2050;
   } else {
     activeQuiz.hearts -= 1;
     activeQuiz.scorePoints = Math.max(0, (activeQuiz.scorePoints || 0) - 250);
@@ -1991,7 +2023,7 @@ function playBattleAnimation(correct, idx) {
 
   setTimeout(() => {
     knight.classList.remove('sprite-pop', 'sprite-shake', 'knight-strike', 'knight-damaged', 'knight-attack-pose');
-    enemy.classList.remove('sprite-shake', 'enemy-hit', 'enemy-attack-strike');
+    enemy.classList.remove('sprite-shake', 'enemy-hit', 'enemy-hit-hold', 'enemy-attack-strike');
 
     if (activeQuiz.hearts <= 0 || activeQuiz.index >= activeQuizQuestions().length - 1) {
       showQuizEndPanel();
@@ -2004,7 +2036,7 @@ function playBattleAnimation(correct, idx) {
       document.getElementById('quizGame').classList.remove('hidden');
       renderQuestion('in');
     }
-  }, BATTLE_ANIMATION_MS);
+  }, continueDelay);
 }
 
 async function answerCastleQuestion(idx) {
@@ -2539,7 +2571,6 @@ async function finishCastleDodgeGame() {
     return;
   }
 
-  await animateCastleActorsToStandardPose();
   if (zone) {
     zone.classList.remove('castle-dodge-mode');
     zone.classList.add('castle-final-hit-mode');
@@ -5289,6 +5320,7 @@ saveCurrentNode(currentNode);
 const initialPoint = getNodes()[currentNode] || stageStart();
 levelKnight.style.left = `${initialPoint.x}%`;
 levelKnight.style.top = `${initialPoint.y}%`;
+updateCastleFinalHudVisibility();
 applyMarkerStates();
 const pendingNotice = readPendingNotice();
 const areaIntroShown = showAreaIntroductionIfNeeded();
@@ -5305,6 +5337,14 @@ if (!areaIntroShown && pendingNotice?.type === 'minigameComplete' && pendingNoti
       'Weiter'
     );
   }, 320);
+} else if (!areaIntroShown && pendingNotice?.type === 'minigameAborted' && pendingNotice.area === currentArea) {
+  clearPendingNotice();
+  window.setTimeout(() => {
+    showLevelPopup('Level neu starten', 'Du kannst das Level jederzeit neu starten.', 'Okay', () => {
+      updateCastleFinalHudVisibility();
+      startLevelMusic();
+    });
+  }, 220);
 } else if (!areaIntroShown) {
   startLevelMusic();
 }

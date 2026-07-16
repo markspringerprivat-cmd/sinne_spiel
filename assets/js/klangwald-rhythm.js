@@ -6,6 +6,11 @@
   const canvas = document.getElementById('rhythmCanvas');
   const ctx = canvas.getContext('2d');
   const music = document.getElementById('rhythmMusic');
+  const PENDING_NOTICE_KEY = 'sinnesmagie-pending-notice';
+  const gameOverAudio = new Audio('../assets/audio/gameover.mp3');
+  gameOverAudio.preload = 'auto';
+  function playGameOverSound() { try { gameOverAudio.pause(); gameOverAudio.currentTime = 0; gameOverAudio.volume = currentVolume(); const r = gameOverAudio.play(); if (r?.catch) r.catch(() => {}); } catch {} }
+  function returnToArea(aborted = false) { if (aborted) localStorage.setItem(PENDING_NOTICE_KEY, JSON.stringify({ type: 'minigameAborted', area: 'klangwald' })); window.location.href = 'klangwald.html?fromMini=1'; }
   const overlay = document.getElementById('rhythmOverlay');
   const popup = document.getElementById('rhythmPopup');
   const scoreText = document.getElementById('rhythmScoreText');
@@ -155,7 +160,7 @@
         </div>`;
       document.getElementById('startRhythmGame').addEventListener('click', startGame);
       document.getElementById('leaveRhythmGame').addEventListener('click', () => {
-        window.location.href = 'klangwald.html';
+        returnToArea(true);
       });
       return;
     }
@@ -173,11 +178,12 @@
           </div>
         </div>`;
       document.getElementById('returnToKlangwald').addEventListener('click', () => {
-        window.location.href = 'klangwald.html';
+        returnToArea(false);
       });
       return;
     }
 
+    playGameOverSound();
     popup.innerHTML = `
       <div>
         <h2>Klangfolge verpasst</h2>
@@ -190,7 +196,7 @@
       </div>`;
     document.getElementById('retryRhythmGame').addEventListener('click', startGame);
     document.getElementById('returnToKlangwald').addEventListener('click', () => {
-      window.location.href = 'klangwald.html';
+      returnToArea(false);
     });
   }
 
@@ -316,13 +322,13 @@
 
     if (bestDistance <= HIT_WINDOWS.perfect) {
       game.perfect += 1;
-      game.score += 10;
+      game.score += 6;
       window.SinnesScore?.addPoints('game_klangwald', 10, 1000);
       game.energy = Math.min(100, game.energy + 1.2);
       addFeedback('Perfekt', lane, 'perfect');
     } else if (bestDistance <= HIT_WINDOWS.good) {
       game.good += 1;
-      game.score += 5;
+      game.score += 3;
       window.SinnesScore?.addPoints('game_klangwald', 5, 1000);
       game.energy = Math.min(100, game.energy + 0.6);
       addFeedback('Gut', lane, 'good');

@@ -7652,3 +7652,55 @@ html.sm-page-loading body > *:not(#globalPageLoader):not(script) {
 .bard-feedback{position:absolute;left:50%;top:48%;transform:translate(-50%,-50%);z-index:22;padding:9px 16px;border-radius:999px;background:rgba(25,15,39,.86);font-weight:950;opacity:.45}.bard-feedback.great{color:#74ff8e;opacity:1}.bard-feedback.good{color:#ffdf67;opacity:1}.bard-feedback.bad{color:#ff7474;opacity:1}
 .bard-modal{position:absolute;inset:0;z-index:60;display:grid;place-items:center;padding:18px;background:rgba(10,6,18,.65);backdrop-filter:blur(8px)}.bard-modal.hidden{display:none}.bard-modal-card{width:min(92vw,500px);padding:26px;border-radius:28px;background:linear-gradient(#fff8e7,#f2dfb8);color:#432913;text-align:center;box-shadow:0 25px 70px rgba(0,0,0,.45)}.bard-modal-card h1{margin:0 0 12px}.bard-modal-card p{font-size:1.08rem;line-height:1.5}.bard-modal-card .modal-actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
 @media(max-width:700px){.music-world-grid{grid-template-columns:1fr}.music-world-card{min-height:285px}.bard-topbar{grid-template-columns:auto 1fr}.bard-local-score{grid-column:1/-1;display:flex;justify-content:center;gap:10px}.bard-lanes{top:105px;bottom:138px}.bard-controls button{min-height:92px}.bard-lane>span{width:48px;height:48px;font-size:1.4rem}.bard-note{width:46px;height:46px;font-size:1.7rem}}
+
+
+/* === v124 adjustments === */
+.quiz-hearts-area {
+  justify-content: flex-end !important;
+}
+.quiz-hearts {
+  margin-left: auto !important;
+}
+.enemy-hit-hold {
+  animation: enemyDamageHold 1.5s linear both !important;
+}
+@keyframes enemyDamageHold {
+  0%,100% { filter: drop-shadow(0 12px 12px rgba(0,0,0,.28)) brightness(1); opacity: 1; }
+  20%, 60% { filter: drop-shadow(0 12px 12px rgba(0,0,0,.28)) brightness(1.3); opacity: .35; }
+  40%, 80% { filter: drop-shadow(0 12px 12px rgba(0,0,0,.28)) brightness(1.05); opacity: 1; }
+}
+.hide-global-score-hud .global-score-hud,
+.hide-global-score-hud .unified-game-hud { display: none !important; }
+.map-stage-shaking { animation: mapStageShake 0.24s linear 5; }
+@keyframes mapStageShake {
+  0%,100% { transform: translate3d(0,0,0); }
+  25% { transform: translate3d(-3px, 2px, 0); }
+  50% { transform: translate3d(3px, -2px, 0); }
+  75% { transform: translate3d(-2px, -1px, 0); }
+}
+.castle-taste-panel .castle-dodge-controls {
+  width: min(92%, 360px) !important;
+  flex-wrap: nowrap !important;
+}
+.castle-final-question-panel {
+  top: 50% !important;
+  bottom: auto !important;
+  transform: translate(-50%, -50%) !important;
+}
+.castle-restart-button {
+  position: absolute;
+  right: 14px;
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  z-index: 18;
+  width: 48px;
+  height: 48px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255,255,255,.95);
+  color: #41256d;
+  font-size: 28px;
+  font-weight: 900;
+  box-shadow: 0 10px 24px rgba(0,0,0,.25);
+}
+.castle-restart-button.hidden { display: none !important; }
+.castle-credits-actions.hidden { display: none !important; }

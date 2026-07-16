@@ -3,9 +3,6 @@
   const STORAGE_LEVEL_PROGRESS = 'sinnesmagie-level-progress';
   const STORAGE_PENDING_NOTICE = 'sinnesmagie-pending-notice';
   const GAME_DURATION = 60;
-  const MAX_LIVES = 5;
-  const MISS_DAMAGE = 0.25;
-  const BAD_DAMAGE = 1;
   const MAX_OBJECTS = 6;
   const MAX_PARTICLES = 42;
 
@@ -50,7 +47,6 @@
     elapsed: 0,
     score: 0,
     combo: 0,
-    lives: MAX_LIVES,
     badHits: 0,
     spawnTimer: 0.4,
     objects: [],
@@ -175,12 +171,12 @@
               <article class="mini-guide-card">
                 <div class="mini-guide-icon"><span class="mini-guide-inline-row"><span class="mini-guide-inline-item">🧦</span><span class="mini-guide-inline-item">🐞</span><span class="mini-guide-inline-item">🍄</span></span></div>
                 <p class="mini-guide-title">Nicht treffen</p>
-                <p class="mini-guide-text">Ungenießbares kostet ein Leben.</p>
+                <p class="mini-guide-text">Falsche Objekte geben -50 Punkte.</p>
               </article>
               <article class="mini-guide-card">
                 <div class="mini-guide-icon"><span class="mini-guide-inline-row tight"><span class="mini-guide-inline-item">❤️</span><span class="mini-guide-inline-item">❤️</span><span class="mini-guide-inline-item">❤️</span></span></div>
                 <p class="mini-guide-title">Leben</p>
-                <p class="mini-guide-text">Verpasstes Gemüse kostet nur wenig.</p>
+                <p class="mini-guide-text">Verpasstes Gemüse gibt -20 Punkte.</p>
               </article>
               <article class="mini-guide-card">
                 <div class="mini-guide-icon">⭐</div>
@@ -196,7 +192,7 @@
         </div>`;
       document.getElementById('startSliceGame').addEventListener('click', startGame);
       document.getElementById('leaveSliceGame').addEventListener('click', () => {
-        window.location.href = 'flammenkueche.html';
+        returnToArea(true);
       });
       return;
     }
@@ -206,13 +202,13 @@
         <div>
           <h2>Geschafft!</h2>
           <div class="mini-guide-icon">🥕</div>
-          <p>Punkte: ${game.score}</p>
+          <p>Highscore-Punkte: ${game.score}</p>
           <div class="slice-popup-actions">
             <button id="returnToFlame" class="slice-button" type="button">Zur Flammenküche</button>
           </div>
         </div>`;
       document.getElementById('returnToFlame').addEventListener('click', () => {
-        window.location.href = 'flammenkueche.html';
+        returnToArea(false);
       });
       return;
     }
@@ -229,7 +225,7 @@
       </div>`;
     document.getElementById('retrySliceGame').addEventListener('click', startGame);
     document.getElementById('returnToFlame').addEventListener('click', () => {
-      window.location.href = 'flammenkueche.html';
+      returnToArea(false);
     });
   }
 
@@ -245,7 +241,6 @@
     game.elapsed = 0;
     game.score = 0;
     game.combo = 0;
-    game.lives = MAX_LIVES;
     game.badHits = 0;
     game.goodCuts = 0;
     game.missedGood = 0;
@@ -449,8 +444,9 @@
         obj.missedPenaltyApplied = true;
         if (!obj.isBad) {
           game.missedGood = (game.missedGood || 0) + 1;
-          window.SinnesScore?.addPoints('game_flammenkueche', -25, 1000);
-          loseLife(MISS_DAMAGE, 'Gemüse verpasst! -¼ Leben', '#ffcf5d');
+          game.score -= 20;
+          window.SinnesScore?.addPoints('game_flammenkueche', -20, 1000);
+          flashMessage('Gemüse verpasst! -20', '#ffcf5d');
         }
       }
       if (obj.sliced || completelyBelowScreen || obj.y > h + obj.radius + 220 || obj.x < -obj.radius - 180 || obj.x > w + obj.radius + 180) {

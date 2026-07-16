@@ -20,8 +20,6 @@
   const popup = document.getElementById('paintPopup');
   const roundText = document.getElementById('paintRound');
   const timerText = document.getElementById('paintTimer');
-  const livesText = document.getElementById('paintLives');
-  const scoreText = document.getElementById('paintScore');
   const statusText = document.getElementById('paintStatus');
   const clearButton = document.getElementById('paintClear');
   const finishButton = document.getElementById('paintFinish');
@@ -75,7 +73,6 @@
     phase: 'idle',
     round: 0,
     points: 0,
-    lives: 3,
     selectedColor: 'blue',
     phaseStartedAt: 0,
     timeLeft: MEMORIZE_SECONDS,
@@ -186,7 +183,7 @@
           </div>
         </div>`;
       document.getElementById('startPaintGame').addEventListener('click', startGame);
-      document.getElementById('leavePaintGame').addEventListener('click', () => { window.location.href = 'farbenreich.html'; });
+      document.getElementById('leavePaintGame').addEventListener('click', () => { returnToArea(true); });
       return;
     }
 
@@ -195,7 +192,7 @@
         <div>
           <h2>Runde ${data.round} Ergebnis</h2>
           <p>Genauigkeit: <strong>${data.percent}%</strong></p>
-          <p>${data.success ? 'Gut getroffen. Du bekommst einen Punkt.' : 'Unter 50 Prozent. Du verlierst ein Leben.'}</p>
+          <p>Highscore in dieser Runde: <strong>+${data.roundPoints}</strong></p>
           <div class="paint-actions">
             <button id="nextPaintRound" class="paint-button" type="button">Weiter</button>
           </div>
@@ -213,12 +210,12 @@
         <div>
           <h2>Geschafft!</h2>
           <div class="mini-guide-icon">🎨</div>
-          <p>${game.points}/${TOTAL_ROUNDS} Muster geschafft.</p>
+          <p>Gesamthighscore: <strong>${game.scorePoints}</strong></p>
           <div class="paint-actions">
             <button id="returnColorMap" class="paint-button" type="button">Zurück zum Farbenreich</button>
           </div>
         </div>`;
-      document.getElementById('returnColorMap').addEventListener('click', () => { window.location.href = 'farbenreich.html'; });
+      document.getElementById('returnColorMap').addEventListener('click', () => { returnToArea(false); });
       return;
     }
 
@@ -233,7 +230,7 @@
         </div>
       </div>`;
     document.getElementById('retryPaintGame').addEventListener('click', startGame);
-    document.getElementById('returnColorMap').addEventListener('click', () => { window.location.href = 'farbenreich.html'; });
+    document.getElementById('returnColorMap').addEventListener('click', () => { returnToArea(false); });
   }
 
   function updateHud(force = false) {
@@ -243,8 +240,6 @@
     roundText.textContent = `Runde ${Math.min(game.round + 1, TOTAL_ROUNDS)} / ${TOTAL_ROUNDS}`;
     const label = game.phase === 'memorize' ? 'Merken' : game.phase === 'draw' ? 'Zeichnen' : 'Zeit';
     timerText.textContent = `${label}: ${Math.max(0, Math.ceil(game.timeLeft))} s`;
-    livesText.textContent = `${game.lives > 0 ? '♥'.repeat(game.lives) : ''}${game.lives < 3 ? '♡'.repeat(3 - game.lives) : ''}`;
-    scoreText.textContent = `Punkte: ${game.points}`;
   }
 
   function startGame() {
@@ -253,7 +248,6 @@
     game.round = 0;
     game.points = 0;
     game.scorePoints = 0;
-    game.lives = 3;
     window.SinnesScore?.startSession('game_farbenreich', 1000, 0);
     window.SinnesScore?.setGameplayActive(true);
     game.strokes = [];
@@ -305,16 +299,11 @@
   function finishGame() {
     pauseMusic();
     game.phase = 'finished';
-    if (game.lives > 0) {
-      completeColorLevelOne();
-      window.SinnesScore?.setSession('game_farbenreich', game.scorePoints, 1000);
-      window.SinnesScore?.finishSession('game_farbenreich', game.scorePoints, 1000);
-      window.SinnesScore?.setGameplayActive(false);
-      showPopup('won');
-    } else {
-      window.SinnesScore?.setGameplayActive(false);
-      showPopup('lost');
-    }
+    completeColorLevelOne();
+    window.SinnesScore?.setSession('game_farbenreich', game.scorePoints, 1000);
+    window.SinnesScore?.finishSession('game_farbenreich', game.scorePoints, 1000);
+    window.SinnesScore?.setGameplayActive(false);
+    showPopup('won');
   }
 
   function evaluateRound() {
@@ -322,18 +311,16 @@
     game.phase = 'result';
     cancelAnimationFrame(game.timerFrame);
     const percent = scoreRound();
-    const success = percent >= 50;
-    const roundPoints = Math.round(Math.max(0, Math.min(100, percent)) * 5);
+    const roundPoints = Math.round(Math.max(0, Math.min(100, percent)) / 100 * 250);
     game.scorePoints = Math.max(0, Math.min(1000, (game.scorePoints || 0) + roundPoints));
-    if (success) game.points += 1;
-    else { game.lives -= 1; game.scorePoints = Math.max(0, game.scorePoints - 250); }
+    game.points += roundPoints;
     window.SinnesScore?.setSession('game_farbenreich', game.scorePoints, 1000);
-    game.resultOverlay = { percent, success };
-    statusText.textContent = success ? `Runde geschafft: ${percent}%` : `Zu ungenau: ${percent}%`;
+    game.resultOverlay = { percent, roundPoints };
+    statusText.textContent = `Runde beendet: ${percent}% · Highscore +${roundPoints}`;
     updateHud(true);
     draw();
     game.round += 1;
-    setTimeout(() => showPopup('round', { round: game.round, percent, success }), 650);
+    setTimeout(() => showPopup('round', { round: game.round, percent, roundPoints }), 650);
   }
 
   function sampleLine(a, b, color, out) {

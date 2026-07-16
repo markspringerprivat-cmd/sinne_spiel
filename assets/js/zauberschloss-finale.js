@@ -1,10 +1,10 @@
 const STORAGE_LEVEL_PROGRESS = 'sinnesmagie-level-progress';
 const STORAGE_LEVEL_NODE = 'sinnesmagie-level-node';
 const STORAGE_VOLUME = 'masterVolume';
-const OUTRO_PANEL_SECONDS = 10;
-const LAST_PANEL_HOLD_SECONDS = 5;
+const OUTRO_PANEL_SECONDS = 15;
+const LAST_PANEL_HOLD_SECONDS = 7.5;
 const AUTO_SCROLL_DELAY_MS = LAST_PANEL_HOLD_SECONDS * 1000;
-const AUTO_SCROLL_DURATION_MS = 74000;
+const AUTO_SCROLL_DURATION_MS = 111000;
 
 const orbFrames = [
   '../assets/images/finale/orb_stage_1.png',

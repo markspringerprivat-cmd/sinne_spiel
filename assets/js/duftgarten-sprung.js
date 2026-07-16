@@ -223,7 +223,7 @@
           </div>
         </div>`;
       document.getElementById('startDuftGame').addEventListener('click', startGame);
-      document.getElementById('leaveDuftGame').addEventListener('click', () => { window.location.href = 'duftgarten.html'; });
+      document.getElementById('leaveDuftGame').addEventListener('click', () => { returnToArea(true); });
       return;
     }
 
@@ -237,7 +237,7 @@
             <button id="returnDuft" class="duft-button" type="button">Zurück zum Duftgarten</button>
           </div>
         </div>`;
-      document.getElementById('returnDuft').addEventListener('click', () => { window.location.href = 'duftgarten.html'; });
+      document.getElementById('returnDuft').addEventListener('click', () => { returnToArea(false); });
       return;
     }
 
@@ -252,7 +252,7 @@
         </div>
       </div>`;
     document.getElementById('retryDuft').addEventListener('click', startGame);
-    document.getElementById('returnDuft').addEventListener('click', () => { window.location.href = 'duftgarten.html'; });
+    document.getElementById('returnDuft').addEventListener('click', () => { returnToArea(false); });
   }
 
   function hidePopup() {
@@ -289,23 +289,27 @@
 
   function updateHud(now = performance.now()) {
     const progress = Math.max(0, Math.min(100, (game.playerIndex / TARGET_INDEX) * 100));
-    progressFill.style.width = `${progress}%`;
+    if (progressFill) progressFill.style.width = `${progress}%`;
 
-    if (game.message) {
-      statusText.textContent = game.message;
-    } else if (now < game.slowUntil) {
-      const sec = Math.max(0, (game.slowUntil - now) / 1000).toFixed(1);
-      statusText.textContent = `Verlangsamt: noch ${sec} s`; 
-    } else {
-      statusText.textContent = 'Ziel: Die goldene Blüte erreichen';
+    if (statusText) {
+      if (game.message) {
+        statusText.textContent = game.message;
+      } else if (now < game.slowUntil) {
+        const sec = Math.max(0, (game.slowUntil - now) / 1000).toFixed(1);
+        statusText.textContent = `Verlangsamt: noch ${sec} s`; 
+      } else {
+        statusText.textContent = 'Ziel: Die goldene Blüte erreichen';
+      }
     }
 
-    if (now < game.beetleStartAt) {
-      const sec = Math.max(0, (game.beetleStartAt - now) / 1000).toFixed(1);
-      infoText.textContent = `Startet in ${sec} s`;
-    } else {
-      const distance = Math.max(0, game.playerIndex - Math.floor(game.beetleIndex));
-      infoText.textContent = `${distance} Felder Abstand`;
+    if (infoText) {
+      if (now < game.beetleStartAt) {
+        const sec = Math.max(0, (game.beetleStartAt - now) / 1000).toFixed(1);
+        infoText.textContent = `Startet in ${sec} s`;
+      } else {
+        const distance = Math.max(0, game.playerIndex - Math.floor(game.beetleIndex));
+        infoText.textContent = `${distance} Felder Abstand`;
+      }
     }
   }
 
