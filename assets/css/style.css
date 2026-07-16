@@ -7950,3 +7950,80 @@ html.sm-page-loading body > *:not(#globalPageLoader):not(script) {
 
 /* Der Neustartknopf gehört ausschließlich zum Pong-Minispiel. */
 .quiz-modal .castle-restart-button { display: none !important; }
+
+
+/* === v129: Quizfragen statisch zentriert, Antworten untereinander === */
+.quiz-modal:not(.hidden) #quizGame.quiz-game {
+  position: absolute !important;
+  left: 50% !important;
+  right: auto !important;
+  top: 50% !important;
+  bottom: auto !important;
+  transform: translate(-50%, -50%) !important;
+  width: min(92%, 620px) !important;
+  max-width: 620px !important;
+  height: auto !important;
+  max-height: calc(100% - 28px) !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  padding: clamp(14px, 2.8vmin, 22px) !important;
+  gap: clamp(5px, 1.2vmin, 10px) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  z-index: 30 !important;
+}
+.quiz-modal:not(.hidden) #quizGame .quiz-panel-top {
+  margin: 0 0 2px !important;
+  min-height: 0 !important;
+}
+.quiz-modal:not(.hidden) #quizGame h2 {
+  margin: 0 !important;
+  font-size: clamp(1.05rem, 3.4vmin, 1.55rem) !important;
+  line-height: 1.08 !important;
+}
+.quiz-modal:not(.hidden) #quizGame .quiz-question {
+  margin: 1px 0 4px !important;
+  font-size: clamp(.92rem, 2.75vmin, 1.16rem) !important;
+  line-height: 1.18 !important;
+}
+.quiz-modal:not(.hidden) #quizGame .quiz-answers {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: clamp(5px, 1vmin, 8px) !important;
+  width: 100% !important;
+  overflow: visible !important;
+  min-height: 0 !important;
+}
+.quiz-modal:not(.hidden) #quizGame .quiz-answer {
+  width: 100% !important;
+  min-height: clamp(38px, 6.2vmin, 52px) !important;
+  padding: clamp(7px, 1.4vmin, 11px) 12px !important;
+  margin: 0 !important;
+  font-size: clamp(.82rem, 2.35vmin, 1.02rem) !important;
+  line-height: 1.16 !important;
+  text-align: left !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+}
+@media (max-height: 700px) {
+  .quiz-modal:not(.hidden) #quizGame.quiz-game {
+    width: min(94%, 600px) !important;
+    max-height: calc(100% - 18px) !important;
+    padding: 10px 12px !important;
+    gap: 4px !important;
+  }
+  .quiz-modal:not(.hidden) #quizGame h2 { font-size: .98rem !important; }
+  .quiz-modal:not(.hidden) #quizGame .quiz-question { font-size: .84rem !important; line-height: 1.12 !important; }
+  .quiz-modal:not(.hidden) #quizGame .quiz-answers { gap: 4px !important; }
+  .quiz-modal:not(.hidden) #quizGame .quiz-answer {
+    min-height: 34px !important;
+    padding: 6px 9px !important;
+    font-size: .76rem !important;
+    line-height: 1.1 !important;
+  }
+}
+/* Im langen Zauberschloss-Bosskampf gibt es keinen Neustart-Kreis. */
+.castle-quiz-modal .castle-restart-button,
+.quiz-modal .castle-restart-button { display: none !important; }

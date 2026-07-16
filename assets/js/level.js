@@ -1687,7 +1687,7 @@ function ensureQuizModal() {
         <img id="castleVictoryKnight" class="castle-victory-character castle-victory-knight" alt="Siegreicher Ritter" draggable="false">
         <img id="castleVictoryMage" class="castle-victory-character castle-victory-mage" alt="Besiegter Zauberer" draggable="false">
       </div>
-      <button id="castleRestartButton" class="castle-restart-button hidden" type="button" aria-label="Kampf neu starten">↻</button><div id="quizIntro" class="quiz-intro quiz-panel"></div>
+      <div id="quizIntro" class="quiz-intro quiz-panel"></div>
       <div id="quizGame" class="quiz-game quiz-panel hidden">
         <div class="quiz-panel-top">
           <div id="quizCounter" class="quiz-counter"></div>
