@@ -20,8 +20,6 @@
   const speedText = document.getElementById('pongSpeedText');
   const pongMusic = document.getElementById('pongMusic');
   const restartButton = document.getElementById('pongRestart');
-  const blockSound = new Audio('../assets/audio/correct.mp3');
-  blockSound.preload = 'auto';
   let pongMusicStarted = false;
 
   const preloadFiles = [
@@ -88,14 +86,6 @@
     } catch {}
   }
 
-  function playBlockSound() {
-    try {
-      blockSound.pause();
-      blockSound.currentTime = 0;
-      blockSound.volume = currentVolume();
-      blockSound.play().catch(() => {});
-    } catch {}
-  }
 
   function restartPongLevel() {
     cancelAnimationFrame(raf);
@@ -165,7 +155,6 @@
     const points = Math.max(0, Math.min(1000, damage * 300 - playerConceded * 250));
     window.SinnesScore?.setSession('game_zauberschloss_pong', points, 1000);
     window.SinnesScore?.finishSession('game_zauberschloss_pong', points, 1000);
-    if (!won) window.SinnesGameOver?.play?.();
     window.SinnesScore?.setGameplayActive(false);
     showOverlay(`
       <div>
@@ -387,7 +376,6 @@
         bounceGreenBall(offset * 0.22, -Math.abs(ball.vy || 0.23));
         lastObstacleHit = null;
         playerHits += 1;
-        playBlockSound();
       }
 
       if (hitPaddle(mageRect, true)) {

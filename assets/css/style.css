@@ -8136,3 +8136,45 @@ html.sm-page-loading body > *:not(#globalPageLoader):not(script) {
     line-height: 1.08 !important;
   }
 }
+
+/* === v132: ruckelfreie horizontale Quiz-Transitions ===
+   Zentrierung und Bewegung verwenden nun dieselbe transform-Kette. */
+.quiz-modal:not(.hidden) #quizGame.quiz-game:not(.hidden),
+.castle-sense-question-card,
+.castle-final-question-panel {
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  transform-origin: center center;
+}
+
+.quiz-modal:not(.hidden) #quizGame.quiz-game:not(.hidden).slide-in-right {
+  animation: quizPanelEnterV132 .56s cubic-bezier(.22,.78,.22,1) both !important;
+}
+.quiz-modal:not(.hidden) #quizGame.quiz-game:not(.hidden).slide-out-left {
+  animation: quizPanelExitV132 .56s cubic-bezier(.55,.05,.72,.45) both !important;
+}
+.castle-sense-question-card.slide-in-right,
+.castle-final-question-panel.slide-in-right {
+  animation: centeredCardEnterV132 .56s cubic-bezier(.22,.78,.22,1) both !important;
+}
+.castle-sense-question-card.slide-out-left,
+.castle-final-question-panel.slide-out-left {
+  animation: centeredCardExitV132 .56s cubic-bezier(.55,.05,.72,.45) both !important;
+}
+
+@keyframes quizPanelEnterV132 {
+  from { transform: translate3d(calc(-50% + 110vw), -50%, 0); opacity: 0; }
+  to   { transform: translate3d(-50%, -50%, 0); opacity: 1; }
+}
+@keyframes quizPanelExitV132 {
+  from { transform: translate3d(-50%, -50%, 0); opacity: 1; }
+  to   { transform: translate3d(calc(-50% - 110vw), -50%, 0); opacity: 0; }
+}
+@keyframes centeredCardEnterV132 {
+  from { transform: translate3d(110vw, 0, 0); opacity: 0; }
+  to   { transform: translate3d(0, 0, 0); opacity: 1; }
+}
+@keyframes centeredCardExitV132 {
+  from { transform: translate3d(0, 0, 0); opacity: 1; }
+  to   { transform: translate3d(-110vw, 0, 0); opacity: 0; }
+}
