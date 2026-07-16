@@ -223,9 +223,18 @@ panels.forEach(panel => {
 });
 
 const query = new URLSearchParams(window.location.search);
+const embedded = query.get('embedded') === '1';
 const shouldAutoplay = query.get('autoplay') === '1' || sessionStorage.getItem('sinnesmagie-play-intro-story') === '1';
 sessionStorage.removeItem('sinnesmagie-play-intro-story');
 
-// Die Storyseite ist selbst die Wiedergabeseite. Sie startet deshalb in jedem Fall,
-// sobald die Ziel-HTML geladen ist; die Abfrage davor findet ausschließlich auf index.html statt.
-window.setTimeout(() => startStory({ autoplay: shouldAutoplay }), 160);
+// Wird die Story im bereits geladenen, gleich-originigen Frame geöffnet, kann der
+// ursprüngliche Klick direkt zum Starten der Musik genutzt werden. Das vermeidet
+// die Autoplay-Sperre von iOS/Android nach einem vollständigen Seitenwechsel.
+window.startStoryFromParent = function startStoryFromParent() {
+  return startStory({ autoplay: false });
+};
+window.__sinnesStoryReady = true;
+
+if (!embedded) {
+  window.setTimeout(() => startStory({ autoplay: shouldAutoplay }), 160);
+}

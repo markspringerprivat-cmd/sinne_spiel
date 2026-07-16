@@ -15,6 +15,7 @@
   const saveButton = document.getElementById('saveFullName');
 
   const watchStoryButton = document.getElementById('watchIntroStory');
+  const storyFrame = document.getElementById('introStoryFrame');
 
   function cleanPart(value, max) {
     return String(value || '')
@@ -69,6 +70,17 @@
 
   openButton?.addEventListener('click', openFlow);
   watchStoryButton?.addEventListener('click', () => {
+    // Der Story-Frame ist bereits geladen. Dadurch wird startStory() noch innerhalb
+    // dieses echten Nutzerklicks aufgerufen und die Hintergrundmusik darf sofort starten.
+    if (storyFrame?.contentWindow?.startStoryFromParent) {
+      modal.classList.add('hidden');
+      modal.setAttribute('aria-hidden', 'true');
+      storyFrame.classList.remove('hidden');
+      storyFrame.contentWindow.startStoryFromParent();
+      return;
+    }
+
+    // Sicherheitsfallback, falls der Frame auf einem sehr langsamen Gerät noch lädt.
     sessionStorage.setItem('sinnesmagie-play-intro-story', '1');
     window.location.assign('story.html?autoplay=1');
   });
