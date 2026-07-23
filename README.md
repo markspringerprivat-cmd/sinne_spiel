@@ -156,3 +156,9 @@ Verwendete Web-App:
 ### Notwendige Apps-Script-Aktualisierung
 
 Damit `admin.html` die vollständigen Online-Daten abrufen kann, muss der Inhalt aus `apps-script/Code.gs` in das Google-Apps-Script-Projekt übernommen und die bestehende Web-App als **neue Version** erneut bereitgestellt werden. Die `/exec`-Adresse bleibt normalerweise unverändert.
+
+
+## Version 135 – Minispiel-Musik
+- Tiny Village Boss Fight: Zauberschloss-Pong und Duftgarten-Sprung.
+- Cooking Mini Game: Farbenreich-Malen und Flammenküche-Schnitt.
+- Die bisherigen Hintergrundstücke wurden in diesen vier Minispielen ersetzt.

@@ -112,17 +112,18 @@
       deferred.push('assets/audio/klangwald_minispiel_new.mp3');
     } else if (pageStem === 'farbenreich-malen') {
       core.push('assets/images/level-backgrounds/farbenreich.webp');
+      deferred.push('assets/audio/cooking_minigame.mp3');
     } else if (pageStem === 'flammenkueche-schnitt') {
       core.push('assets/images/battle-backgrounds/flammenkueche.webp');
-      deferred.push('assets/audio/volcano.mp3', 'assets/audio/slice_cut.mp3');
+      deferred.push('assets/audio/cooking_minigame.mp3', 'assets/audio/slice_cut.mp3');
     } else if (pageStem === 'duftgarten-sprung') {
       core.push('assets/images/level-backgrounds/duftgarten.webp', 'assets/images/minigame/duftgarten/flower_normal.png');
       deferred.push(
         ...['flower_slime.png','flower_rotten.png','flower_gold.png','cloud_stink.png','knight_top.png','beetle_stink.png'].map(n => `assets/images/minigame/duftgarten/${n}`),
-        'assets/audio/duftgarten_new.mp3', 'assets/audio/slime_squish.mp3');
+        'assets/audio/tiny_village_boss_fight.mp3', 'assets/audio/slime_squish.mp3');
     } else if (pageStem === 'zauberschloss-pong') {
       core.push('assets/images/minigame/zauberschloss-pong/background.jpg', 'assets/images/minigame/zauberschloss-pong/ritter_paddle.png', 'assets/images/minigame/zauberschloss-pong/magier_paddle.png');
-      deferred.push('assets/images/minigame/zauberschloss-pong/wall1.png', 'assets/images/ui/parchment_popup.png');
+      deferred.push('assets/images/minigame/zauberschloss-pong/wall1.png', 'assets/images/ui/parchment_popup.png', 'assets/audio/tiny_village_boss_fight.mp3');
     } else if (pageStem === 'zauberschloss-dodge') {
       core.push('assets/images/battle-backgrounds/zauberschloss.webp', 'assets/images/characters/knight.png');
       deferred.push('assets/images/enemies/zauberer_fly_left.png', 'assets/images/enemies/zauberer_fly_right.png', 'assets/audio/bossencounter.mp3');
