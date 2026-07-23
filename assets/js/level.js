@@ -5334,3 +5334,48 @@ if (!areaIntroShown && pendingNotice?.type === 'minigameComplete' && pendingNoti
   history.replaceState({},'',location.pathname);
   setTimeout(()=>showLevelPopup('Hinweis','Du kannst das Level jederzeit neu starten.','OK',()=>startLevelMusic()),300);
 })();
+
+/* v136 – WebKit-Farbfilter-Sicherheitsnetz
+   Trefferklassen dürfen nach einer Animation weder Filter noch Blend-Modi
+   auf dem Sprite-Layer zurücklassen. */
+(() => {
+  const HIT_CLASSES = new Set([
+    'enemy-hit', 'knight-damaged', 'castle-knight-hit', 'dodge-knight-hit',
+    'castle-final-damage-blink', 'boss-hit-freeze-blink',
+    'castle-bush-hit-blink', 'castle-bush-knight-damage',
+    'castle-smell-knight-damage', 'castle-hearing-knight-damage',
+    'castle-ultimate-knight-hit'
+  ]);
+
+  function resetSpriteCompositing(el) {
+    if (!(el instanceof HTMLElement)) return;
+    el.style.removeProperty('filter');
+    el.style.removeProperty('-webkit-filter');
+    el.style.removeProperty('mix-blend-mode');
+    el.style.opacity = '1';
+
+    // Safari zu einem frischen Compositing-Layer zwingen, ohne die normale
+    // Transform-Position dauerhaft zu überschreiben.
+    const previousTransform = el.style.transform;
+    el.style.transform = previousTransform || 'translateZ(0)';
+    void el.offsetWidth;
+    requestAnimationFrame(() => {
+      if (previousTransform) el.style.transform = previousTransform;
+      else el.style.removeProperty('transform');
+      el.style.opacity = '1';
+    });
+  }
+
+  document.addEventListener('animationend', (event) => {
+    const el = event.target;
+    if (!(el instanceof HTMLElement)) return;
+    const relevant = [...HIT_CLASSES].some((name) => el.classList.contains(name));
+    if (relevant) resetSpriteCompositing(el);
+  }, true);
+
+  // Auch nach Sprite-Wechseln und beim Rückkehr in den Vordergrund bereinigen.
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) return;
+    document.querySelectorAll('.battle-sprite, .knight-battle, .enemy-battle').forEach(resetSpriteCompositing);
+  });
+})();
